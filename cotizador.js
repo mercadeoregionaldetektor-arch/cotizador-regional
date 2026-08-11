@@ -2,13 +2,87 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v11-custom-solo-economica';
+window.DTK_BUILD_VERSION = 'v12-pdf-compacto-redes';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
   apiBase: 'https://cotizador-regional.onrender.com',
   companyPrefix: 'DET',
   quoteCounterStorageKey: 'dtk_quote_counters_v2'
+};
+
+
+window.DTK_COUNTRY_CONTACTS = {
+  'Colombia': {
+    web: 'https://www.detektor.com.co/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/profile.php?id=100029671341345&locale=es_LA' },
+      { type: 'linkedin', label: 'in', url: 'https://www.linkedin.com/company/tracker-de-colombia-s-a-s-/' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorcolombia/' }
+    ]
+  },
+  'Costa Rica': {
+    web: 'https://www.detektor.co.cr/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/detektorcostarica/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektor' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorcr/' },
+      { type: 'whatsapp', label: 'WA', url: 'https://wa.me/50684534331' }
+    ]
+  },
+  'Panamá': {
+    web: 'https://www.detektor.com.pa/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/detektorpanama/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektor_pa' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorpa/' },
+      { type: 'whatsapp', label: 'WA', url: 'https://wa.me/50762002871' }
+    ]
+  },
+  'Guatemala': {
+    web: 'https://www.detektor.com.gt/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/detektorguatemala/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektor' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorgt/' },
+      { type: 'whatsapp', label: 'WA', url: 'https://bit.ly/DetektorGTWhatsapp' }
+    ]
+  },
+  'Honduras': {
+    web: 'https://www.detektor.com.hn/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/detektorhonduras/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektor_hn' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorhn/' },
+      { type: 'whatsapp', label: 'WA', url: 'https://wa.me/50432416682' }
+    ]
+  },
+  'El Salvador': {
+    web: 'https://www.detektor.com.sv/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/detektorelsalvador/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektor_sv' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorsv/' },
+      { type: 'whatsapp', label: 'WA', url: 'https://wa.me/50370038712' }
+    ]
+  },
+  'Nicaragua': {
+    web: 'https://www.detektor.com.ni/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/detektornicaragua/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektor_ni' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorni/' },
+      { type: 'whatsapp', label: 'WA', url: 'https://wa.me/50586150778' }
+    ]
+  },
+  'Venezuela': {
+    web: 'https://www.detektor.com.ve/',
+    socials: [
+      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/DetektorVE/' },
+      { type: 'x', label: 'X', url: 'https://twitter.com/detektorVE' },
+      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorve/' }
+    ]
+  }
 };
 
 window.DTK_DATA = {
@@ -61,7 +135,7 @@ window.DTK_DATA = {
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
         validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
-        extra: 'Consulte con su asesor comercial las soluciones complementarias que Detektor pone a su disposición para fortalecer la seguridad, el monitoreo y la gestión integral de su operación, acompañando el crecimiento de su negocio a futuro.'
+        extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
       }
     },
     'Panamá': {
@@ -78,7 +152,7 @@ window.DTK_DATA = {
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
         validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
-        extra: 'Consulte con su asesor comercial las soluciones complementarias que Detektor pone a su disposición para fortalecer la seguridad, el monitoreo y la gestión integral de su operación, acompañando el crecimiento de su negocio a futuro.'
+        extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
       }
     },
     'Guatemala': {
@@ -268,6 +342,7 @@ window.DTK_DATA = {
 
   const CONFIG = window.DTK_CONFIG || {};
   const DATA = window.DTK_DATA || { countries: {}, products: [] };
+  const CONTACTS = window.DTK_COUNTRY_CONTACTS || {};
   const $ = (id) => document.getElementById(id);
   const els = {};
   let reservedKey = '';
@@ -855,29 +930,90 @@ window.DTK_DATA = {
     if (el) el.textContent = String(value || fallback);
   }
 
+  function setPdfOptionalText(id, value, { row = true } = {}) {
+    const el = $(id);
+    if (!el) return;
+
+    const clean = String(value || '').trim();
+    el.textContent = clean;
+
+    if (row) {
+      const wrapper = el.closest('.pdf-info-row');
+      if (wrapper) wrapper.style.display = clean ? 'grid' : 'none';
+    } else {
+      el.style.display = clean ? '' : 'none';
+    }
+  }
+
+  function populateCountryContact() {
+    const countryName = els['quote-country']?.value || '';
+    const contact = CONTACTS[countryName] || null;
+    const wrap = $('prev-country-contact');
+    const links = $('prev-country-social-links');
+    const web = $('prev-country-web');
+
+    if (!wrap || !links || !web) return;
+
+    if (!contact?.web) {
+      wrap.style.display = 'none';
+      links.innerHTML = '';
+      web.textContent = '';
+      web.removeAttribute('href');
+      return;
+    }
+
+    wrap.style.display = '';
+
+    links.innerHTML = (contact.socials || [])
+      .filter(item => item?.url)
+      .map(item => `
+        <a
+          class="pdf-country-social-link ${escapeHtml(item.type || '')}"
+          href="${escapeHtml(item.url)}"
+          target="_blank"
+          rel="noopener"
+          title="${escapeHtml(item.type || 'Red social')}"
+        >${escapeHtml(item.label || '•')}</a>
+      `).join('');
+
+    web.href = contact.web;
+    web.textContent = contact.web
+      .replace(/^https?:\/\//, '')
+      .replace(/\/$/, '');
+  }
+
   function productForRow(item) {
     return DATA.products.find(p => p.id === item.productId) || DATA.products.find(p => p.name === item.name) || null;
   }
 
   function populatePreview() {
     const gv = id => $(id)?.value?.trim() || '';
-    setText('prev-client-name', gv('client-name'));
-    setText('prev-client-company', gv('client-company'));
-    setText('prev-client-role', gv('client-role'));
-    setText('prev-client-email', gv('client-email'));
-    setText('prev-client-phone', gv('client-phone'));
-    setText('prev-client-city', gv('client-city'));
-    setText('prev-quote-date', gv('quote-date'));
-    setText('prev-quote-number', gv('quote-number'));
-    setText('prev-country', gv('quote-country'));
-    setText('prev-advisor', getAdvisorName());
+    // Los campos no diligenciados desaparecen del PDF, en lugar de mostrar "-".
+    setPdfOptionalText('prev-client-name', gv('client-name'));
+    setPdfOptionalText('prev-client-company', gv('client-company'));
+    setPdfOptionalText('prev-client-role', gv('client-role'));
+    setPdfOptionalText('prev-client-email', gv('client-email'));
+    setPdfOptionalText('prev-client-phone', gv('client-phone'));
+    setPdfOptionalText('prev-client-city', gv('client-city'));
+    setPdfOptionalText('prev-quote-date', gv('quote-date'));
+    setPdfOptionalText('prev-quote-number', gv('quote-number'));
+    setPdfOptionalText('prev-country', gv('quote-country'));
+    setPdfOptionalText('prev-advisor', getAdvisorName());
+
     setText('prev-adv-name-box', getAdvisorName());
-    setText('prev-adv-mail-box', gv('quote-advisor-email'), '');
-    setText('prev-adv-phone-box', gv('quote-advisor-phone'), '');
+    setPdfOptionalText('prev-adv-mail-box', gv('quote-advisor-email'), { row: false });
+    setPdfOptionalText('prev-adv-phone-box', gv('quote-advisor-phone'), { row: false });
+
     setText('prev-subtotal', els['val-subtotal'].textContent);
     setText('prev-tax', els['val-tax'].textContent);
     setText('prev-total', els['val-total'].textContent);
-    setText('prev-obs', gv('quote-obs'));
+
+    const obs = gv('quote-obs');
+    const obsWrap = $('prev-obs')?.closest('.pdf-observation');
+    if ($('prev-obs')) $('prev-obs').textContent = obs;
+    if (obsWrap) obsWrap.style.display = obs ? '' : 'none';
+
+    populateCountryContact();
 
     const country = getCountry();
     setText('prev-tax-label', country?.taxName || 'IVA');
@@ -944,16 +1080,32 @@ window.DTK_DATA = {
       }
     }
 
-    const termsText = [
-      `Condiciones de pago: ${gv('terms-payment')}`,
-      `Instalación y entrega: ${gv('terms-installation')}`,
-      `Vigencia: ${gv('terms-validity')}`,
-      `Garantía: ${gv('terms-warranty')}`,
-      '',
-      'Consideraciones adicionales:',
-      gv('terms-extra') || '-'
-    ].join('\n');
-    setText('prev-terms', termsText, '');
+    const termsLines = [];
+
+    if (gv('terms-payment')) {
+      termsLines.push(`Condiciones de pago: ${gv('terms-payment')}`);
+    }
+    if (gv('terms-installation')) {
+      termsLines.push(`Instalación y entrega: ${gv('terms-installation')}`);
+    }
+    if (gv('terms-validity')) {
+      termsLines.push(`Vigencia: ${gv('terms-validity')}`);
+    }
+    if (gv('terms-warranty')) {
+      termsLines.push(`Garantía: ${gv('terms-warranty')}`);
+    }
+    if (gv('terms-extra')) {
+      if (termsLines.length) termsLines.push('');
+      termsLines.push('Consideraciones adicionales:');
+      termsLines.push(gv('terms-extra'));
+    }
+
+    const termsText = termsLines.join('\n');
+    const termsBox = $('prev-terms');
+    if (termsBox) {
+      termsBox.textContent = termsText;
+      termsBox.style.display = termsText ? '' : 'none';
+    }
   }
 
   async function openPreview() {
