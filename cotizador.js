@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v9-moneda-local-usd';
+window.DTK_BUILD_VERSION = 'v10-product-images';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -216,31 +216,46 @@ window.DTK_DATA = {
   },
   products: [
     {
-      id: 'cazador', name: 'Detektor El Cazador', imageLabel: 'IMG: RECUPERACIÓN VEHICULAR',
+      id: 'cazador',
+      name: 'Detektor El Cazador',
+      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d48e70aa94196be3df0_Productos-soluciones-detektor-cotizador%20(1).webp',
+      imageLabel: 'IMG: RECUPERACIÓN VEHICULAR',
       description: 'Localización vehicular en tiempo real con red de reacción 24/7.',
       benefit: '✓ Tu vehículo en días, no en meses.',
       pdfDescription: 'Tecnología especializada para localizar vehículos en caso de hurto, incluso donde otras señales no llegan.'
     },
     {
-      id: 'gps', name: 'Detektor GPS', imageLabel: 'IMG: MAPA GPS FLOTA',
+      id: 'gps',
+      name: 'Detektor GPS',
+      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d482a0eec4e41112bc8_Productos-soluciones-detektor-cotizador%20(5).webp',
+      imageLabel: 'IMG: MAPA GPS FLOTA',
       description: 'Rastreo satelital de alta precisión con geocercas y reportes de ruta.',
       benefit: '✓ Visibilidad total de tu flota, en cualquier momento.',
       pdfDescription: 'Dispositivo de rastreo de alta precisión. Permite monitoreo en tiempo real, histórico de rutas y geocercas.'
     },
     {
-      id: 'roadview', name: 'Roadview IA', imageLabel: 'IMG: CÁMARA IA VEHÍCULO',
+      id: 'roadview',
+      name: 'Roadview IA',
+      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d481a47f3c932fec5b9_Productos-soluciones-detektor-cotizador%20(4).webp',
+      imageLabel: 'IMG: CÁMARA IA VEHÍCULO',
       description: 'Cámaras con IA para prevención de fatiga y distracción al volante.',
       benefit: '✓ Reduce accidentes con alertas en tiempo real.',
       pdfDescription: 'Cámara con inteligencia artificial para prevenir riesgos y mejorar la conducción.'
     },
     {
-      id: 'smart-track', name: 'Detektor Smart Track', imageLabel: 'IMG: EQUIPO DE RESPUESTA',
+      id: 'smart-track',
+      name: 'Detektor Smart Track',
+      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d48cd2fcdddf06b6212_Productos-soluciones-detektor-cotizador%20(2).webp',
+      imageLabel: 'IMG: EQUIPO DE RESPUESTA',
       description: 'Una sola plataforma todos sus vehículos sin importar el proveedor, a través de una administración centralizada.',
       benefit: '✓ Monitoreo de su vehículo al alcance de su mano.',
       pdfDescription: 'Aplicación de centro de control basada en la nube. Interfaz intuitiva para gestión de flotas, reportes y alertas automatizadas.'
     },
     {
-      id: 'plus', name: 'Detektor Plus', imageLabel: 'IMG: SATÉLITE / FLOTA CARGA',
+      id: 'plus',
+      name: 'Detektor Plus',
+      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d4880cacf3cb9ac7328_Productos-soluciones-detektor-cotizador%20(3).webp',
+      imageLabel: 'IMG: SATÉLITE / FLOTA CARGA',
       description: 'Seguridad de sus vehículos y flotas, garantizando que podrán ser monitoreados, rastreados y localizados.',
       benefit: '✓ Control operativo y menores costos.',
       pdfDescription: 'Combina GPS + El Cazador para monitoreo diario y localización especializada en caso de hurto.'
@@ -300,6 +315,46 @@ window.DTK_DATA = {
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  }
+
+  function productImageHtml(product, context = 'catalog') {
+    if (!product?.image) {
+      return `<span>${escapeHtml(product?.imageLabel || product?.name || 'Imagen')}</span>`;
+    }
+
+    const style = context === 'pdf'
+      ? 'width:100%;height:100%;object-fit:cover;display:block;'
+      : 'width:100%;height:100%;object-fit:cover;display:block;';
+
+    return `<img
+      src="${escapeHtml(product.image)}"
+      alt="${escapeHtml(product.name || 'Producto Detektor')}"
+      crossorigin="anonymous"
+      loading="eager"
+      referrerpolicy="no-referrer"
+      style="${style}"
+    >`;
+  }
+
+  async function waitForImages(root) {
+    const images = [...(root?.querySelectorAll?.('img') || [])];
+    if (!images.length) return;
+
+    await Promise.all(images.map(img => new Promise(resolve => {
+      const finish = () => resolve();
+
+      if (img.complete && img.naturalWidth > 0) {
+        if (typeof img.decode === 'function') {
+          img.decode().then(finish).catch(finish);
+        } else {
+          finish();
+        }
+        return;
+      }
+
+      img.addEventListener('load', finish, { once: true });
+      img.addEventListener('error', finish, { once: true });
+    })));
   }
 
   function parseNum(value) {
@@ -496,7 +551,9 @@ window.DTK_DATA = {
     if (!grid) return;
     grid.innerHTML = DATA.products.map(p => `
       <article class="dtk-product-card">
-        <div class="dtk-product-image">${escapeHtml(p.imageLabel)}</div>
+        <div class="dtk-product-image" style="padding:0;overflow:hidden;">
+          ${productImageHtml(p, 'catalog')}
+        </div>
         <div class="dtk-product-body">
           <h3 class="dtk-product-name">${escapeHtml(p.name)}</h3>
           <p class="dtk-product-desc">${escapeHtml(p.description)}</p>
@@ -845,7 +902,16 @@ window.DTK_DATA = {
         const title = item.name || product?.name || 'Solución Detektor';
         const description = product?.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
         const bullets = product?.id === 'gps' ? ['● Monitoreo y recorridos', '● Geocercas y alertas', '● Reportes de operación'] : product?.id === 'smart-track' ? ['● Administración centralizada', '● Reportes personalizables', '● Alertas y app móvil'] : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
-        return `<div class="pdf-solution ${i % 2 ? 'reverse' : ''}"><div class="pdf-solution-img"></div><div class="pdf-solution-copy"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}</p><div class="pdf-bullets">${bullets.map(b => `<span>${escapeHtml(b)}</span>`).join('')}</div></div></div>`;
+        return `<div class="pdf-solution ${i % 2 ? 'reverse' : ''}">
+          <div class="pdf-solution-img" style="overflow:hidden;">
+            ${product ? productImageHtml(product, 'pdf') : ''}
+          </div>
+          <div class="pdf-solution-copy">
+            <h4>${escapeHtml(title)}</h4>
+            <p>${escapeHtml(description)}</p>
+            <div class="pdf-bullets">${bullets.map(b => `<span>${escapeHtml(b)}</span>`).join('')}</div>
+          </div>
+        </div>`;
       }).join('');
     }
 
@@ -866,6 +932,7 @@ window.DTK_DATA = {
     calculateAll();
     populatePreview();
     els['dtk-preview-modal'].classList.add('open');
+    waitForImages(els['dtk-pdf-export-content']).catch(() => {});
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => {
       els['modal-scroll-area'].scrollTop = 0;
@@ -918,6 +985,10 @@ window.DTK_DATA = {
     clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
     host.appendChild(clone);
     showNotice('Generando PDF, por favor espera…', 'success');
+
+    // Espera a que las imágenes de producto estén listas antes de capturar el PDF.
+    await waitForImages(clone);
+
     const docName = els['quote-number'].value || 'Cotizacion-Detektor';
     const options = {
       margin: 0,
