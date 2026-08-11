@@ -1,8 +1,8 @@
-* Detektor Cotizador Regional - Frontend Webflow
+/* Detektor Cotizador Regional - Frontend Webflow
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v18-productos-seleccionados-centrados';
+window.DTK_BUILD_VERSION = 'v17-barra-final-abajo';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -1030,13 +1030,13 @@ window.DTK_DATA = {
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td>${escapeHtml(taxLabel)}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
-    // En "NUESTRAS SOLUCIONES TECNOLÓGICAS" aparecen SOLO
-    // los productos del catálogo que el usuario agregó a la cotización.
-    // Los productos personalizados continúan únicamente en PROPUESTA ECONÓMICA.
-    const chosen = rows.filter(item =>
-      item.productId &&
-      DATA.products.some(product => product.id === item.productId)
-    );
+    // "NUESTRAS SOLUCIONES TECNOLÓGICAS" funciona como bloque corporativo fijo.
+    // Siempre muestra los 5 productos principales del catálogo, centrados y en el mismo orden.
+    // Los productos personalizados siguen apareciendo únicamente en PROPUESTA ECONÓMICA.
+    const chosen = DATA.products.map(product => ({
+      productId: product.id,
+      name: product.name
+    }));
 
     const solutions = $('prev-solutions');
     if (solutions) {
