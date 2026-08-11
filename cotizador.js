@@ -24,16 +24,35 @@ window.DTK_DATA = {
     'Costa Rica': {
       code: 'CR', currency: ['CRC', 'USD'], taxName: 'IVA', taxRates: [13, 0], advisorMode: 'list',
       agents: [
-        { name: 'Ileana María Solera Obaldía', code: 'EMP041' },
-        { name: 'Lizbeth Gomez Muñoz', code: 'EMP375' },
-        { name: 'Yonder Ricardo Vega Nuñez', code: 'EMP362' },
-        { name: 'Gabriel Madrigal Blanco', code: 'EMP110' },
-        { name: 'Josué Zúñiga Rodríguez', code: 'EMP622' },
-        { name: 'Cairo Alonso Pérez López', code: 'EMP634' },
-        { name: 'Anthony Chaves Montoya', code: 'EMP636' },
-        { name: 'Melissa Méndez Porras', code: 'EMP233' },
-        { name: 'Javier Alberto Rivera Quesada', code: 'EMP543' },
-        { name: 'Manfred Bogarin Matarrita', code: 'EMP610' }
+        { name: 'Ileana María Solera Obaldía', code: 'EMP041', role: 'Asesor Comercial' },
+        { name: 'Lizbeth Gomez Muñoz', code: 'EMP375', role: 'Gerente Comercial' },
+        { name: 'Yonder Ricardo Vega Nuñez', code: 'EMP362', role: 'Asesor Comercial' },
+        { name: 'Gabriel Madrigal Blanco', code: 'EMP110', role: 'Analista Comercial' },
+        { name: 'Josué Zúñiga Rodríguez', code: 'EMP622', role: 'Asesor Comercial' },
+        { name: 'Cairo Alonso Pérez López', code: 'EMP634', role: 'Asesor Comercial' },
+        { name: 'Anthony Chaves Montoya', code: 'EMP636', role: 'Asesor Comercial' },
+        { name: 'Melissa Méndez Porras', code: 'EMP233', role: 'Asesor Comercial' },
+        { name: 'Javier Alberto Rivera Quesada', code: 'EMP543', role: 'Asesor Comercial' },
+        { name: 'Manfred Bogarin Matarrita', code: 'EMP610', role: 'Asesor Comercial' },
+        { name: 'Freddy Manrique Anchia Aguilar', code: 'EMP420', role: 'Asesor Comercial' },
+        { name: 'Joshua Esteban Mendez Salguero', code: 'EMP518', role: 'Asesor Comercial' },
+        { name: 'María José Aguilar Brenes', code: 'EMP584', role: 'Asesor de Televentas' },
+        { name: 'Valerie Solis Camacho', code: 'EMP589', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Leornardo Mendez Campos', code: 'EMP614', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Daniela Durán Saborío', code: 'EMP621', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Shasling Francinie Brenes Avendaño', code: 'EMP516', role: 'Asesor de Televentas' },
+        { name: 'Tatiana Soto Solano', code: 'EMP623', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Kimberly Alfaro Rodriguez', code: 'EMP234', role: 'Asesor de Televentas' },
+        { name: 'Katherine Nathalia Rojas Leiva', code: 'EMP472', role: 'Asesor de Televentas' },
+        { name: 'Jose Joaquin Brenes Torres', code: 'EMP505', role: 'Asesor de Televentas' },
+        { name: 'Mariana de los Ángeles Navarro Masis', code: 'EMP305', role: 'Coordinador de Televentas' },
+        { name: 'Mario Josue Guzman Aguilar', code: 'EMP537', role: 'Asesor de Televentas' },
+        { name: 'Andrés Gómez Fallas', code: 'EMP573', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Natali Sanchez Benavides', code: 'EMP550', role: 'Asesor Backoffice Televentas' },
+        { name: 'Steven Gonzalez Monge', code: 'EMP587', role: 'Asesor de Televentas' },
+        { name: 'Stephanie Méndez Pizarro', code: 'EMP606', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Emanuel Bejarano Chacón', code: 'EMP629', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Maria Gabriela Moya Varela', code: 'EMP644', role: 'Asistente de Televentas' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
@@ -44,7 +63,14 @@ window.DTK_DATA = {
       }
     },
     'Panamá': {
-      code: 'PA', currency: ['USD'], taxName: 'ITBMS', taxRates: [7, 0], advisorMode: 'manual', agents: [],
+      code: 'PA', currency: ['USD'], taxName: 'ITBMS', taxRates: [7, 0], advisorMode: 'list',
+      agents: [
+        { name: 'Shayra Marielys Luque Castillo', code: 'PA0039', role: 'Asesor Comercial' },
+        { name: 'Nancy Maria Pinto Trejos', code: 'PA0052', role: 'Asesor Comercial' },
+        { name: 'Katherine Michelle Collazo Pilozo', code: 'PA0024', role: 'Asesor Comercial' },
+        { name: 'Saul Antonio Acosta Molinar', code: 'PA0074', role: 'Asesor Comercial' },
+        { name: 'Giovanna Astrid Leblanc Veliz', code: 'PA0072', role: 'Coordinador Comercial' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
         payment: 'Según las condiciones comerciales acordadas con el cliente',
@@ -56,16 +82,31 @@ window.DTK_DATA = {
     'Guatemala': {
       code: 'GT', currency: ['GTQ', 'USD'], taxName: 'IVA', taxRates: [12, 0], advisorMode: 'list',
       agents: [
-        { name: 'Edgar Salazar', code: 'GT-001' },
-        { name: 'Mirna Arevalo', code: 'GT-002' },
-        { name: 'Patricia Estrada', code: 'GT-003' },
-        { name: 'Randy Ford', code: 'GT-004' },
-        { name: 'Dorian Perez', code: 'GT-005' },
-        { name: 'Lucia Hernandez', code: 'GT-006' },
-        { name: 'Jorge Fajardo', code: 'GT-007' },
-        { name: 'Roberto Mendez', code: 'GT-008' },
-        { name: 'Evelyn Foronda', code: 'GT-009' },
-        { name: 'Sthepannie Izaguirre', code: 'GT-010' }
+        { name: 'Edgar Salazar', code: 'GT-001', department: 'Comercial' },
+        { name: 'Mirna Arevalo', code: 'GT-002', department: 'Comercial / Digital' },
+        { name: 'Patricia Estrada', code: 'GT-003', department: 'Comercial / Digital' },
+        { name: 'Randy Ford', code: 'GT-004', department: 'Comercial' },
+        { name: 'Dorian Perez', code: 'GT-005', department: 'Comercial / Digital' },
+        { name: 'Lucia Hernandez', code: 'GT-006', department: 'Comercial / Digital' },
+        { name: 'Jorge Fajardo', code: 'GT-007', department: 'Comercial / Financieras' },
+        { name: 'Roberto Mendez', code: 'GT-008', department: 'Comercial / Comisionistas' },
+        { name: 'Evelyn Foronda', code: 'GT-009', department: 'Televentas/ Digital' },
+        { name: 'Sthepannie Izaguirre', code: 'GT-010', department: 'Televentas/ Digital' },
+        { name: 'Andrea Andrino', code: 'GT-011', department: 'Televentas/ Digital' },
+        { name: 'Andrea Perez', code: 'GT-012', department: 'Televentas/ Digital' },
+        { name: 'Nerly Carrillo', code: 'GT-013', department: 'Televentas' },
+        { name: 'Jeanie Lopez', code: 'GT-014', department: 'Televentas' },
+        { name: 'Nancy Maldonado', code: 'GT-015', department: 'Televentas' },
+        { name: 'Deyna Coronado', code: 'GT-016', department: 'Televentas' },
+        { name: 'Karin Cruz', code: 'GT-017', department: 'Televentas' },
+        { name: 'Hefer Valenzuela', code: 'GT-018', department: 'Televentas/ Digital' },
+        { name: 'Raul Con', code: 'GT-019', department: 'Televentas/ Digital' },
+        { name: 'Wilson Perez', code: 'GT-020', department: 'Cuentas Estrategicas' },
+        { name: 'Mariela Valladares', code: 'GT-021', department: 'Cuentas Estrategicas' },
+        { name: 'Denis Vasquez', code: 'GT-022', department: 'Cuentas Estrategicas' },
+        { name: 'Juan Pirish', code: 'GT-023', department: 'Cuentas Estrategicas' },
+        { name: 'Alberto Morales', code: 'GT-024', department: 'Cuentas Estrategicas' },
+        { name: 'Marvin Suchi', code: 'GT-025', department: 'Cuentas Estrategicas' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -78,16 +119,37 @@ window.DTK_DATA = {
     'Honduras': {
       code: 'HN', currency: ['HNL', 'USD'], taxName: 'ISV', taxRates: [15, 0], advisorMode: 'list',
       agents: [
-        { name: 'Fanny Roxana Rodriguez Lagos', code: 'HD-0030' },
-        { name: 'Cinthia Carolina Alcantara Padilla', code: 'HD-0077' },
-        { name: 'Odilson Arturo Mendoza Fletes', code: 'HD-0085' },
-        { name: 'Belky Carolina Valladares Medina', code: 'HN-0106' },
-        { name: 'Jessy Carolina Burgos Fiallos', code: 'HN-0240' },
-        { name: 'Jeniffer Estefania Herrera Montalban', code: 'HN-0241' },
-        { name: 'Mario Alejandro Garcia Salgado', code: 'HN-0251' },
-        { name: 'Samir Ivan Hernandez Lopez', code: 'HN-0312' },
-        { name: 'Allison Maria Oyuela Flores', code: 'HN-0322' },
-        { name: 'Blanca Vanessa Sanders Barrera', code: 'HN-0325' }
+        { name: 'Fanny Roxana Rodriguez Lagos', code: 'HD-0030', department: 'VENTAS' },
+        { name: 'Cinthia Carolina Alcantara Padilla', code: 'HD-0077', department: 'VENTAS (Televentas)' },
+        { name: 'Odilson Arturo Mendoza Fletes', code: 'HD-0085', department: 'VENTAS' },
+        { name: 'Belky Carolina Valladares Medina', code: 'HN-0106', department: 'VENTAS (Televentas)' },
+        { name: 'Jessy Carolina Burgos Fiallos', code: 'HN-0240', department: 'VENTAS' },
+        { name: 'Jeniffer Estefania Herrera Montalban', code: 'HN-0241', department: 'VENTAS (Televentas)' },
+        { name: 'Mario Alejandro Garcia Salgado', code: 'HN-0251', department: 'VENTAS (Televentas)' },
+        { name: 'Samir Ivan Hernandez Lopez', code: 'HN-0312', department: 'VENTAS' },
+        { name: 'Allison Maria Oyuela Flores', code: 'HN-0322', department: 'VENTAS' },
+        { name: 'Blanca Vanessa Sanders Barrera', code: 'HN-0325', department: 'VENTAS' },
+        { name: 'Cinthya Karina Garcia Rodriguez', code: 'HN-0331', department: 'VENTAS' },
+        { name: 'Wendy Jessenia Zavalo Salgado', code: 'HN-0333', department: 'VENTAS (Televentas)' },
+        { name: 'Cristian Adalid Molina Madrid', code: 'HN-0349', department: 'VENTAS' },
+        { name: 'Stefany Mabel Martinez Sevilla', code: 'HN-0405', department: 'VENTAS (Televentas)' },
+        { name: 'Steffany Jasmin Blanco Posadas', code: 'HN-0441', department: 'VENTAS (Televentas)' },
+        { name: 'Yaritza Pamela Ruiz Contreras', code: 'HN-0443', department: 'VENTAS (Televentas)' },
+        { name: 'David Alejandro Nuñez Mejia', code: 'HN-0452', department: 'VENTAS' },
+        { name: 'Odeth Magdalena Osorio Rodriguez', code: 'HN-0460', department: 'VENTAS' },
+        { name: 'Iris Adelaida Alvarenga Alvarenga', code: 'HN-0477', department: 'VENTAS' },
+        { name: 'Nancy Magaly Mejia Funes', code: 'HN-0483', department: 'VENTAS (Televentas)' },
+        { name: 'Emma Waleska Barahona Rios', code: 'HN-0489', department: 'VENTAS' },
+        { name: 'Seidy Arlete Acosta Brito', code: 'HN-0492', department: 'VENTAS' },
+        { name: 'Daniel Mauricio Aguilar Gonzalez', code: 'HN-0494', department: 'VENTAS' },
+        { name: 'Bryan Oliver Dormes Paz', code: 'HN-0500', department: 'VENTAS' },
+        { name: 'Sandra Amelia Zelaya Bautista', code: 'HN-0502', department: 'VENTAS' },
+        { name: 'William David Escobar Irias', code: 'HN-0503', department: 'VENTAS (Televentas)' },
+        { name: 'Tania Isabel Reyes Fiallos', code: 'HN-0505', department: 'VENTAS (Televentas)' },
+        { name: 'Elvia Carolina Doblado Gonzales', code: 'HN-0508', department: 'VENTAS' },
+        { name: 'Ruth Lizbeth Lopez Rodriguez', code: 'HN-0511', department: 'VENTAS' },
+        { name: 'Victoria Alejandra Guevara Sabillon', code: 'HN-0516', department: 'VENTAS' },
+        { name: 'Dora Maricela Vasquez Marquez', code: 'HN-0518', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -100,16 +162,20 @@ window.DTK_DATA = {
     'El Salvador': {
       code: 'SV', currency: ['USD'], taxName: 'IVA', taxRates: [13, 0], advisorMode: 'list',
       agents: [
-        { name: 'Patricia Veronica Cazun Vasquez', code: 'SL0189' },
-        { name: 'Gerber Edgardo Navarro Ramirez', code: 'SL0281' },
-        { name: 'Brenda Elizabeth Palacios Ruiz', code: 'SL0284' },
-        { name: 'Javier Aaron Valdez Zelaya', code: 'SL0289' },
-        { name: 'Milagro del Carmen Ferrufino de Duque', code: 'SL0292' },
-        { name: 'Guillermo Ernesto Aquino Galan', code: 'SL0306' },
-        { name: 'Nathaly Isela Sosa Guzman', code: 'SL0317' },
-        { name: 'Jimmy Osmin Erazo Martinez', code: 'SL0321' },
-        { name: 'Nestor Josue Guzman Salmeron', code: 'SL0327' },
-        { name: 'Rene Arturo Lazo Velasquez', code: 'SL0328' }
+        { name: 'Patricia Veronica Cazun Vasquez', code: 'SL0189', department: 'VENTAS' },
+        { name: 'Gerber Edgardo Navarro Ramirez', code: 'SL0281', department: 'VENTAS (Televentas)' },
+        { name: 'Brenda Elizabeth Palacios Ruiz', code: 'SL0284', department: 'VENTAS (Televentas)' },
+        { name: 'Javier Aaron Valdez Zelaya', code: 'SL0289', department: 'VENTAS' },
+        { name: 'Milagro del Carmen Ferrufino de Duque', code: 'SL0292', department: 'VENTAS (Televentas)' },
+        { name: 'Guillermo Ernesto Aquino Galan', code: 'SL0306', department: 'VENTAS (Televentas)' },
+        { name: 'Nathaly Isela Sosa Guzman', code: 'SL0317', department: 'VENTAS' },
+        { name: 'Jimmy Osmin Erazo Martinez', code: 'SL0321', department: 'VENTAS' },
+        { name: 'Nestor Josue Guzman Salmeron', code: 'SL0327', department: 'VENTAS' },
+        { name: 'Rene Arturo Lazo Velasquez', code: 'SL0328', department: 'VENTAS' },
+        { name: 'Daniel Alexander Mejia Montano', code: 'SL0332', department: 'VENTAS' },
+        { name: 'Miriam Elizabeth Rodriguez Escobar', code: 'SL0338', department: 'VENTAS' },
+        { name: 'José Wilber Vides Alvarez', code: 'SL0340', department: 'VENTAS' },
+        { name: 'Diego Josue Calderon Perez', code: 'SL0344', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -122,10 +188,10 @@ window.DTK_DATA = {
     'Nicaragua': {
       code: 'NI', currency: ['NIO', 'USD'], taxName: 'IVA', taxRates: [15, 0], advisorMode: 'list',
       agents: [
-        { name: 'Madeling Martinez', code: 'NI-001' },
-        { name: 'Manuel Toruño', code: 'NI-002' },
-        { name: 'Xochil Moreno', code: 'NI-003' },
-        { name: 'Amy Ramirez', code: 'NI-004' }
+        { name: 'Madeling Martinez', code: 'NI-001', department: 'COMERCIAL' },
+        { name: 'Manuel Toruño', code: 'NI-002', department: 'COMERCIAL' },
+        { name: 'Xochil Moreno', code: 'NI-003', department: 'COMERCIAL' },
+        { name: 'Amy Ramirez', code: 'NI-004', department: 'TELEVENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -270,6 +336,37 @@ window.DTK_DATA = {
 
   function getAdvisorCode() {
     return sanitizeCode(els['quote-advisor-code']?.value || '');
+  }
+
+  function buildManualAdvisorCode(name) {
+    const words = String(name || '')
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .split(/\s+/)
+      .map(w => w.replace(/[^A-Za-z0-9]/g, '').toUpperCase())
+      .filter(Boolean);
+
+    if (!words.length) return '';
+    if (words.length === 1) return words[0].slice(0, 12);
+
+    // Ejemplo: "María Gómez" -> "MGOMEZ"
+    return sanitizeCode(`${words[0].charAt(0)}${words[words.length - 1]}`).slice(0, 12);
+  }
+
+  function syncManualAdvisorCode() {
+    const country = getCountry();
+    if (!country || country.advisorMode === 'list') return;
+
+    const code = buildManualAdvisorCode(els['quote-advisor-manual']?.value || '');
+    els['quote-advisor-code'].value = code;
+    els['quote-advisor-code'].classList.remove('dtk-error');
+
+    reservedKey = '';
+    reservedNumber = '';
+    if (els['quote-number']) els['quote-number'].value = '';
+
+    if (code) scheduleQuoteNumber();
   }
 
   function quoteYear() {
@@ -425,8 +522,8 @@ window.DTK_DATA = {
       els['advisor-select-wrap'].classList.add('dtk-hidden');
       els['advisor-manual-wrap'].classList.remove('dtk-hidden');
       els['quote-advisor-select'].innerHTML = '<option value="">Asesor manual</option>';
-      els['quote-advisor-code'].readOnly = false;
-      els['quote-advisor-code'].placeholder = 'Ej. JPEREZ, CO-001 o VE-023';
+      els['quote-advisor-code'].readOnly = true;
+      syncManualAdvisorCode();
     }
 
     els['currency-select'].innerHTML = country.currency.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
@@ -545,6 +642,7 @@ window.DTK_DATA = {
 
   async function validateForm({ requireFinalNumber = false } = {}) {
     clearErrors();
+    if (getCountry()?.advisorMode !== 'list') syncManualAdvisorCode();
     let valid = true;
     const requiredIds = ['client-name','client-email','client-phone','quote-date','quote-country','quote-advisor-code','terms-installation','terms-payment','terms-validity','terms-warranty'];
     for (const id of requiredIds) {
@@ -614,7 +712,6 @@ window.DTK_DATA = {
     setText('prev-quote-number', gv('quote-number'));
     setText('prev-country', gv('quote-country'));
     setText('prev-advisor', getAdvisorName());
-    setText('prev-advisor-code', getAdvisorCode());
     setText('prev-adv-name-box', getAdvisorName());
     setText('prev-adv-mail-box', gv('quote-advisor-email'), '');
     setText('prev-adv-phone-box', gv('quote-advisor-phone'), '');
@@ -769,6 +866,9 @@ window.DTK_DATA = {
   function wireEvents() {
     els['quote-country'].addEventListener('change', applyCountry);
     els['quote-advisor-select'].addEventListener('change', onAdvisorSelect);
+    els['quote-advisor-manual'].addEventListener('input', () => {
+      syncManualAdvisorCode();
+    });
     els['quote-advisor-code'].addEventListener('input', e => {
       if (getCountry()?.advisorMode !== 'list') {
         const clean = sanitizeCode(e.target.value);
