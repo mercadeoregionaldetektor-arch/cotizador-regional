@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v8-iva-manual';
+window.DTK_BUILD_VERSION = 'v9-moneda-local-usd';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -65,7 +65,7 @@ window.DTK_DATA = {
       }
     },
     'Panamá': {
-      code: 'PA', currency: ['USD'], taxName: 'ITBMS', taxRates: [7, 0], phonePlaceholder: 'Ej. +507 6000 0000', cityPlaceholder: 'Ej. Ciudad de Panamá', advisorMode: 'list',
+      code: 'PA', currency: ['PAB', 'USD'], taxName: 'ITBMS', taxRates: [7, 0], phonePlaceholder: 'Ej. +507 6000 0000', cityPlaceholder: 'Ej. Ciudad de Panamá', advisorMode: 'list',
       agents: [
         { name: 'Shayra Marielys Luque Castillo', code: 'PA0039', role: 'Asesor Comercial' },
         { name: 'Nancy Maria Pinto Trejos', code: 'PA0052', role: 'Asesor Comercial' },
@@ -204,7 +204,7 @@ window.DTK_DATA = {
       }
     },
     'Venezuela': {
-      code: 'VE', currency: ['USD', 'VES'], taxName: 'IVA', taxRates: [16, 0], phonePlaceholder: 'Ej. +58 412 000 0000', cityPlaceholder: 'Ej. Caracas', advisorMode: 'manual', agents: [],
+      code: 'VE', currency: ['VES', 'USD'], taxName: 'IVA', taxRates: [16, 0], phonePlaceholder: 'Ej. +58 412 000 0000', cityPlaceholder: 'Ej. Caracas', advisorMode: 'manual', agents: [],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
         payment: 'Según las condiciones comerciales acordadas con el cliente',
