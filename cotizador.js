@@ -2,6 +2,8 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
+window.DTK_BUILD_VERSION = 'v5-asesores-6-paises';
+
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
   apiBase: 'https://cotizador-regional.onrender.com',
@@ -951,6 +953,13 @@ window.DTK_DATA = {
 
   function init() {
     initRefs();
+
+    const listCountries = ['Costa Rica','Panamá','Guatemala','Honduras','El Salvador','Nicaragua'];
+    const advisorCounts = Object.fromEntries(
+      listCountries.map(name => [name, DATA.countries[name]?.agents?.length || 0])
+    );
+    console.info('[Detektor Cotizador]', window.DTK_BUILD_VERSION, 'listas de asesores:', advisorCounts);
+
     populateCountries();
     populateProducts();
     els['quote-date'].value = todayLocal();
