@@ -6,18 +6,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectIva = document.getElementById('select-iva');
   const currencySelect = document.getElementById('currency-select');
   
-  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v7';
-  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v7';
+  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v8';
+  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v8';
+  const STORAGE_KEY_COUNTERS = 'dtk_quote_counters'; // Memoria para los contadores +1
 
   // ==========================================
-  // BASE DE DATOS POR PAÍS
+  // BASE DE DATOS POR PAÍS CON CÓDIGOS DE ASESORES
   // ==========================================
   const countryData = {
     'Colombia': {
       currency: ['COP', 'USD'],
       taxName: 'IVA',
       taxRates: [19, 0],
-      agents: ['Andrés', 'Xime', 'Asesor Comercial Colombia'],
+      agents: [
+        { name: 'Andrés', code: 'CO-001' }, 
+        { name: 'Xime', code: 'CO-002' }, 
+        { name: 'Asesor Comercial Colombia', code: 'CO-003' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
         payment: '30 días crédito',
@@ -30,7 +35,18 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: ['CRC', 'USD'],
       taxName: 'IVA',
       taxRates: [13, 0],
-      agents: ['Ileana María Solera Obaldía', 'Lizbeth Gomez Muñoz', 'Yonder Ricardo Vega Nuñez', 'Gabriel Madrigal Blanco', 'Josué Zúñiga Rodríguez', 'Cairo Alonso Pérez López', 'Anthony Chaves Montoya', 'Melissa Méndez Porras', 'Javier Alberto Rivera Quesada', 'Manfred Bogarin Matarrita'],
+      agents: [
+        { name: 'Ileana María Solera Obaldía', code: 'EMP041' },
+        { name: 'Lizbeth Gomez Muñoz', code: 'EMP375' },
+        { name: 'Yonder Ricardo Vega Nuñez', code: 'EMP362' },
+        { name: 'Gabriel Madrigal Blanco', code: 'EMP110' },
+        { name: 'Josué Zúñiga Rodríguez', code: 'EMP622' },
+        { name: 'Cairo Alonso Pérez López', code: 'EMP634' },
+        { name: 'Anthony Chaves Montoya', code: 'EMP636' },
+        { name: 'Melissa Méndez Porras', code: 'EMP233' },
+        { name: 'Javier Alberto Rivera Quesada', code: 'EMP543' },
+        { name: 'Manfred Bogarin Matarrita', code: 'EMP610' }
+      ],
       terms: {
         installation: 'Pendiente de actualización CR',
         payment: 'Pendiente de actualización CR',
@@ -43,7 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: ['USD'],
       taxName: 'ITBMS',
       taxRates: [7, 0],
-      agents: ['Shayra Marielys Luque Castillo', 'Nancy Maria Pinto Trejos', 'Katherine Michelle Collazo Pilozo', 'Saul Antonio Acosta Molinar', 'Giovanna Astrid Leblanc Veliz'],
+      agents: [
+        { name: 'Shayra Marielys Luque Castillo', code: 'PA0039' },
+        { name: 'Nancy Maria Pinto Trejos', code: 'PA0052' },
+        { name: 'Katherine Michelle Collazo Pilozo', code: 'PA0024' },
+        { name: 'Saul Antonio Acosta Molinar', code: 'PA0074' },
+        { name: 'Giovanna Astrid Leblanc Veliz', code: 'PA0072' }
+      ],
       terms: {
         installation: 'Pendiente de actualización PA',
         payment: 'Pendiente de actualización PA',
@@ -56,7 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: ['GTQ', 'USD'],
       taxName: 'IVA',
       taxRates: [12, 0],
-      agents: ['Edgar Salazar', 'Mirna Arevalo', 'Patricia Estrada', 'Randy Ford', 'Dorian Perez', 'Lucia Hernandez', 'Jorge Fajardo', 'Roberto Mendez', 'Evelyn Foronda', 'Sthepannie Izaguirre'],
+      agents: [
+        { name: 'Edgar Salazar', code: 'GT-001' },
+        { name: 'Mirna Arevalo', code: 'GT-002' },
+        { name: 'Patricia Estrada', code: 'GT-003' },
+        { name: 'Randy Ford', code: 'GT-004' },
+        { name: 'Dorian Perez', code: 'GT-005' },
+        { name: 'Lucia Hernandez', code: 'GT-006' },
+        { name: 'Jorge Fajardo', code: 'GT-007' },
+        { name: 'Roberto Mendez', code: 'GT-008' },
+        { name: 'Evelyn Foronda', code: 'GT-009' },
+        { name: 'Sthepannie Izaguirre', code: 'GT-010' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
         payment: 'El contrato de servicio comprende un período de doce meses (12). El pago del servicio lo puede realizar mediante transferencia electrónica, cargo a tarjeta de crédito.',
@@ -69,7 +102,18 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: ['HNL', 'USD'],
       taxName: 'ISV',
       taxRates: [15, 0],
-      agents: ['Fanny Roxana Rodriguez Lagos', 'Cinthia Carolina Alcantara Padilla', 'Odilson Arturo Mendoza Fletes', 'Belky Carolina Valladares Medina', 'Jessy Carolina Burgos Fiallos', 'Jeniffer Estefania Herrera Montalban', 'Mario Alejandro Garcia Salgado', 'Samir Ivan Hernandez Lopez', 'Allison Maria Oyuela Flores', 'Blanca Vanessa Sanders Barrera'],
+      agents: [
+        { name: 'Fanny Roxana Rodriguez Lagos', code: 'HD-0030' },
+        { name: 'Cinthia Carolina Alcantara Padilla', code: 'HD-0077' },
+        { name: 'Odilson Arturo Mendoza Fletes', code: 'HD-0085' },
+        { name: 'Belky Carolina Valladares Medina', code: 'HN-0106' },
+        { name: 'Jessy Carolina Burgos Fiallos', code: 'HN-0240' },
+        { name: 'Jeniffer Estefania Herrera Montalban', code: 'HN-0241' },
+        { name: 'Mario Alejandro Garcia Salgado', code: 'HN-0251' },
+        { name: 'Samir Ivan Hernandez Lopez', code: 'HN-0312' },
+        { name: 'Allison Maria Oyuela Flores', code: 'HN-0322' },
+        { name: 'Blanca Vanessa Sanders Barrera', code: 'HN-0325' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
         payment: 'Periodo maximo de pago de 30 dias credito. Nuestras políticas de facturación aplican a pago de servicios de manera anticipada.',
@@ -82,7 +126,18 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: ['USD'],
       taxName: 'IVA',
       taxRates: [13, 0],
-      agents: ['Patricia Veronica Cazun Vasquez', 'Gerber Edgardo Navarro Ramirez', 'Brenda Elizabeth Palacios Ruiz', 'Javier Aaron Valdez Zelaya', 'Milagro del Carmen Ferrufino de Duque', 'Guillermo Ernesto Aquino Galan', 'Nathaly Isela Sosa Guzman', 'Jimmy Osmin Erazo Martinez', 'Nestor Josue Guzman Salmeron', 'Rene Arturo Lazo Velasquez'],
+      agents: [
+        { name: 'Patricia Veronica Cazun Vasquez', code: 'SL0189' },
+        { name: 'Gerber Edgardo Navarro Ramirez', code: 'SL0281' },
+        { name: 'Brenda Elizabeth Palacios Ruiz', code: 'SL0284' },
+        { name: 'Javier Aaron Valdez Zelaya', code: 'SL0289' },
+        { name: 'Milagro del Carmen Ferrufino de Duque', code: 'SL0292' },
+        { name: 'Guillermo Ernesto Aquino Galan', code: 'SL0306' },
+        { name: 'Nathaly Isela Sosa Guzman', code: 'SL0317' },
+        { name: 'Jimmy Osmin Erazo Martinez', code: 'SL0321' },
+        { name: 'Nestor Josue Guzman Salmeron', code: 'SL0327' },
+        { name: 'Rene Arturo Lazo Velasquez', code: 'SL0328' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
         payment: 'Periodo maximo de pago de 30 dias credito. Nuestras políticas de facturación aplican a pago de servicios de manera anticipada.',
@@ -95,7 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: ['NIO', 'USD'],
       taxName: 'IVA',
       taxRates: [15, 0],
-      agents: ['Madeling Martinez', 'Manuel Toruño', 'Xochil Moreno', 'Amy Ramirez'],
+      agents: [
+        { name: 'Madeling Martinez', code: 'NI-001' },
+        { name: 'Manuel Toruño', code: 'NI-002' },
+        { name: 'Xochil Moreno', code: 'NI-003' },
+        { name: 'Amy Ramirez', code: 'NI-004' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
         payment: 'Periodo maximo de pago de 30 dias credito. Nuestras políticas de facturación aplican a pago de servicios de manera anticipada.',
@@ -114,12 +174,34 @@ document.addEventListener('DOMContentLoaded', () => {
     'client-phone': '',
     'client-city': '',
     'quote-date': new Date().toISOString().split('T')[0],
-    'quote-number': 'DET-' + new Date().getFullYear() + '-0001',
+    'quote-number': '',
     'quote-country': '',
     'quote-advisor': '',
     'quote-advisor-phone': '',
     'quote-advisor-email': '',
     'quote-obs': 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.'
+  };
+
+  // Función para obtener el código base del país
+  const getBaseCode = (countryStr) => {
+    if(countryStr === 'Colombia') return 'CO';
+    if(countryStr === 'Panamá') return 'PA';
+    if(countryStr === 'Costa Rica') return 'CR';
+    if(countryStr === 'Guatemala') return 'GT';
+    if(countryStr === 'Honduras') return 'HN';
+    if(countryStr === 'El Salvador') return 'SV';
+    if(countryStr === 'Nicaragua') return 'NI';
+    return 'XX';
+  };
+
+  // Actualiza el número de cotización leyendo el contador
+  const updateQuoteNumber = (countryStr) => {
+    if(!countryStr) return;
+    const baseCode = getBaseCode(countryStr);
+    let counters = JSON.parse(localStorage.getItem(STORAGE_KEY_COUNTERS)) || { CO: 1, CR: 1, PA: 1, GT: 1, HN: 1, SV: 1, NI: 1 };
+    const numStr = String(counters[baseCode] || 1).padStart(4, '0');
+    const year = new Date().getFullYear();
+    document.getElementById('quote-number').value = `DET-${baseCode}-${year}-${numStr}`;
   };
 
   let notifTimeout;
@@ -183,11 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = countryData[c];
     if(!data) return;
 
-    // 1. Llenar Asesores
+    // 1. Llenar Asesores (Incluyendo Código)
     const advSelect = document.getElementById('quote-advisor');
     advSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor</option>';
     data.agents.forEach(agent => {
-      advSelect.innerHTML += `<option value="${agent}">${agent}</option>`;
+      advSelect.innerHTML += `<option value="${agent.name}">${agent.code} - ${agent.name}</option>`;
     });
 
     // 2. Llenar Moneda
@@ -213,9 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('terms-warranty').value = data.terms.warranty;
     document.getElementById('terms-extra').value = data.terms.extra;
 
-    // Actualizar correlativo de país
-    const baseCode = c === 'Colombia' ? 'CO' : c === 'Panamá' ? 'PA' : c === 'Costa Rica' ? 'CR' : c === 'Guatemala' ? 'GT' : c === 'Honduras' ? 'HN' : c === 'El Salvador' ? 'SV' : 'NI';
-    document.getElementById('quote-number').value = `DET-${baseCode}-${new Date().getFullYear()}-0001`;
+    // 5. Actualizar el Número de Propuesta Auto-Incremental
+    updateQuoteNumber(c);
 
     calculateAll();
   });
@@ -256,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(savedForm) {
       const parsedForm = JSON.parse(savedForm);
       
-      // Si hay país, disparar evento para poblar las listas primero
+      // Si hay país, disparar evento para poblar listas y contadores
       if(parsedForm['quote-country']) {
         const cSelect = document.getElementById('quote-country');
         cSelect.value = parsedForm['quote-country'];
@@ -341,16 +422,41 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-clear-form').addEventListener('click', () => { mainBtnRow.style.display = 'none'; confirmBtnRow.style.display = 'flex'; });
   document.getElementById('btn-confirm-no').addEventListener('click', () => { confirmBtnRow.style.display = 'none'; mainBtnRow.style.display = 'flex'; });
   
+  // ==========================================
+  // LÓGICA DE LIMPIAR Y AUMENTAR CONTADOR +1
+  // ==========================================
   document.getElementById('btn-confirm-yes').addEventListener('click', () => {
-    localStorage.removeItem(STORAGE_KEY_FORM); localStorage.removeItem(STORAGE_KEY_ROWS);
+    // 1. Aumentamos el contador del país que estaba seleccionado antes de borrar
+    const currentCountry = document.getElementById('quote-country').value;
+    if(currentCountry) {
+      const baseCode = getBaseCode(currentCountry);
+      let counters = JSON.parse(localStorage.getItem(STORAGE_KEY_COUNTERS)) || { CO: 1, CR: 1, PA: 1, GT: 1, HN: 1, SV: 1, NI: 1 };
+      counters[baseCode] = (counters[baseCode] || 1) + 1;
+      localStorage.setItem(STORAGE_KEY_COUNTERS, JSON.stringify(counters));
+    }
+
+    // 2. Limpiamos la memoria general
+    localStorage.removeItem(STORAGE_KEY_FORM); 
+    localStorage.removeItem(STORAGE_KEY_ROWS);
+
+    // 3. Restauramos a los valores POR DEFECTO ORIGINALES
     document.querySelectorAll('.dtk-persist').forEach(input => {
-      if (input.tagName === 'SELECT') input.selectedIndex = 0;
-      else input.value = defaultValues[input.id] !== undefined ? defaultValues[input.id] : '';
+      if (input.tagName === 'SELECT') {
+        input.selectedIndex = 0;
+      } else {
+        input.value = defaultValues[input.id] !== undefined ? defaultValues[input.id] : '';
+      }
       input.classList.remove('dtk-error');
     });
-    tbody.innerHTML = ''; appendRow('Recovery Response', 0); calculateAll();
-    confirmBtnRow.style.display = 'none'; mainBtnRow.style.display = 'flex';
-    showNotification("El formulario se restauró a su estado original.", "success");
+
+    tbody.innerHTML = ''; 
+    appendRow('Recovery Response', 0); 
+    calculateAll();
+
+    // 4. Volver a estado normal y mostrar confirmación
+    confirmBtnRow.style.display = 'none'; 
+    mainBtnRow.style.display = 'flex';
+    showNotification("Cotización guardada. Nuevo lienzo listo.", "success");
   });
 
   // ==========================================
