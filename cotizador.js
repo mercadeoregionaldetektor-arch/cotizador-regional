@@ -57,10 +57,10 @@ window.DTK_DATA = {
         { name: 'Maria Gabriela Moya Varela', code: 'EMP644', role: 'Asistente de Televentas' }
       ],
       terms: {
-        installation: 'En disposición y coordinación con el cliente',
-        payment: 'Según las condiciones comerciales acordadas con el cliente',
-        validity: '30 días calendario',
-        warranty: '1 año por defectos de fábrica',
+        installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
+        payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
+        validity: 'El contrato de servicio comprende un período de doce meses (12). Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
+        warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
         extra: 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Revise y ajuste estas condiciones de acuerdo con la política comercial vigente de Costa Rica.'
       }
     },
@@ -73,11 +73,11 @@ window.DTK_DATA = {
         { name: 'Saul Antonio Acosta Molinar', code: 'PA0074', role: 'Asesor Comercial' },
         { name: 'Giovanna Astrid Leblanc Veliz', code: 'PA0072', role: 'Coordinador Comercial' }
       ],
-      terms: {
-        installation: 'En disposición y coordinación con el cliente',
-        payment: 'Según las condiciones comerciales acordadas con el cliente',
-        validity: '30 días calendario',
-        warranty: '1 año por defectos de fábrica',
+       terms: {
+        installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
+        payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
+        validity: 'El contrato de servicio comprende un período de doce meses (12). Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
+        warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
         extra: 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Revise y ajuste estas condiciones de acuerdo con la política comercial vigente de Panamá.'
       }
     },
