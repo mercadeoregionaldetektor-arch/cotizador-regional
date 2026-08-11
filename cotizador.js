@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v6-listas-forzadas';
+window.DTK_BUILD_VERSION = 'v7-placeholders-pais';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -14,7 +14,7 @@ window.DTK_CONFIG = {
 window.DTK_DATA = {
   countries: {
     'Colombia': {
-      code: 'CO', currency: ['COP', 'USD'], taxName: 'IVA', taxRates: [19, 0], advisorMode: 'manual', agents: [],
+      code: 'CO', currency: ['COP', 'USD'], taxName: 'IVA', taxRates: [19, 0], phonePlaceholder: 'Ej. +57 300 000 0000', cityPlaceholder: 'Ej. Bogotá', advisorMode: 'manual', agents: [],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
         payment: '30 días crédito',
@@ -24,7 +24,7 @@ window.DTK_DATA = {
       }
     },
     'Costa Rica': {
-      code: 'CR', currency: ['CRC', 'USD'], taxName: 'IVA', taxRates: [13, 0], advisorMode: 'list',
+      code: 'CR', currency: ['CRC', 'USD'], taxName: 'IVA', taxRates: [13, 0], phonePlaceholder: 'Ej. +506 8888 8888', cityPlaceholder: 'Ej. San José', advisorMode: 'list',
       agents: [
         { name: 'Ileana María Solera Obaldía', code: 'EMP041', role: 'Asesor Comercial' },
         { name: 'Lizbeth Gomez Muñoz', code: 'EMP375', role: 'Gerente Comercial' },
@@ -65,7 +65,7 @@ window.DTK_DATA = {
       }
     },
     'Panamá': {
-      code: 'PA', currency: ['USD'], taxName: 'ITBMS', taxRates: [7, 0], advisorMode: 'list',
+      code: 'PA', currency: ['USD'], taxName: 'ITBMS', taxRates: [7, 0], phonePlaceholder: 'Ej. +507 6000 0000', cityPlaceholder: 'Ej. Ciudad de Panamá', advisorMode: 'list',
       agents: [
         { name: 'Shayra Marielys Luque Castillo', code: 'PA0039', role: 'Asesor Comercial' },
         { name: 'Nancy Maria Pinto Trejos', code: 'PA0052', role: 'Asesor Comercial' },
@@ -82,7 +82,7 @@ window.DTK_DATA = {
       }
     },
     'Guatemala': {
-      code: 'GT', currency: ['GTQ', 'USD'], taxName: 'IVA', taxRates: [12, 0], advisorMode: 'list',
+      code: 'GT', currency: ['GTQ', 'USD'], taxName: 'IVA', taxRates: [12, 0], phonePlaceholder: 'Ej. +502 5555 5555', cityPlaceholder: 'Ej. Ciudad de Guatemala', advisorMode: 'list',
       agents: [
         { name: 'Edgar Salazar', code: 'GT-001', department: 'Comercial' },
         { name: 'Mirna Arevalo', code: 'GT-002', department: 'Comercial / Digital' },
@@ -119,7 +119,7 @@ window.DTK_DATA = {
       }
     },
     'Honduras': {
-      code: 'HN', currency: ['HNL', 'USD'], taxName: 'ISV', taxRates: [15, 0], advisorMode: 'list',
+      code: 'HN', currency: ['HNL', 'USD'], taxName: 'ISV', taxRates: [15, 0], phonePlaceholder: 'Ej. +504 9999 9999', cityPlaceholder: 'Ej. Tegucigalpa', advisorMode: 'list',
       agents: [
         { name: 'Fanny Roxana Rodriguez Lagos', code: 'HD-0030', department: 'VENTAS' },
         { name: 'Cinthia Carolina Alcantara Padilla', code: 'HD-0077', department: 'VENTAS (Televentas)' },
@@ -162,7 +162,7 @@ window.DTK_DATA = {
       }
     },
     'El Salvador': {
-      code: 'SV', currency: ['USD'], taxName: 'IVA', taxRates: [13, 0], advisorMode: 'list',
+      code: 'SV', currency: ['USD'], taxName: 'IVA', taxRates: [13, 0], phonePlaceholder: 'Ej. +503 7777 7777', cityPlaceholder: 'Ej. San Salvador', advisorMode: 'list',
       agents: [
         { name: 'Patricia Veronica Cazun Vasquez', code: 'SL0189', department: 'VENTAS' },
         { name: 'Gerber Edgardo Navarro Ramirez', code: 'SL0281', department: 'VENTAS (Televentas)' },
@@ -188,7 +188,7 @@ window.DTK_DATA = {
       }
     },
     'Nicaragua': {
-      code: 'NI', currency: ['NIO', 'USD'], taxName: 'IVA', taxRates: [15, 0], advisorMode: 'list',
+      code: 'NI', currency: ['NIO', 'USD'], taxName: 'IVA', taxRates: [15, 0], phonePlaceholder: 'Ej. +505 8888 8888', cityPlaceholder: 'Ej. Managua', advisorMode: 'list',
       agents: [
         { name: 'Madeling Martinez', code: 'NI-001', department: 'COMERCIAL' },
         { name: 'Manuel Toruño', code: 'NI-002', department: 'COMERCIAL' },
@@ -204,7 +204,7 @@ window.DTK_DATA = {
       }
     },
     'Venezuela': {
-      code: 'VE', currency: ['USD', 'VES'], taxName: 'IVA', taxRates: [16, 0], advisorMode: 'manual', agents: [],
+      code: 'VE', currency: ['USD', 'VES'], taxName: 'IVA', taxRates: [16, 0], phonePlaceholder: 'Ej. +58 412 000 0000', cityPlaceholder: 'Ej. Caracas', advisorMode: 'manual', agents: [],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
         payment: 'Según las condiciones comerciales acordadas con el cliente',
@@ -517,6 +517,19 @@ window.DTK_DATA = {
       els['quote-advisor-code'].readOnly = false;
       els['currency-select'].innerHTML = '';
       els['select-tax'].innerHTML = '';
+
+      if (els['quote-advisor-phone']) {
+        els['quote-advisor-phone'].placeholder = 'Ej. +00 000 0000';
+      }
+      const clientPhone = $('client-phone');
+      if (clientPhone) {
+        clientPhone.placeholder = 'Ej. +00 000 0000';
+      }
+      const clientCity = $('client-city');
+      if (clientCity) {
+        clientCity.placeholder = 'Ej. Ciudad';
+      }
+
       return;
     }
 
@@ -537,6 +550,24 @@ window.DTK_DATA = {
       els['quote-advisor-select'].innerHTML = '<option value="">Asesor manual</option>';
       els['quote-advisor-code'].readOnly = true;
       syncManualAdvisorCode();
+    }
+
+    // Placeholders dinámicos según el país seleccionado
+    const phonePlaceholder = country.phonePlaceholder || 'Ej. +00 000 000 0000';
+    const cityPlaceholder = country.cityPlaceholder || 'Ej. Ciudad';
+
+    if (els['quote-advisor-phone']) {
+      els['quote-advisor-phone'].placeholder = phonePlaceholder;
+    }
+
+    const clientPhone = $('client-phone');
+    if (clientPhone) {
+      clientPhone.placeholder = phonePlaceholder;
+    }
+
+    const clientCity = $('client-city');
+    if (clientCity) {
+      clientCity.placeholder = cityPlaceholder;
     }
 
     els['currency-select'].innerHTML = country.currency.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
