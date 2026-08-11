@@ -59,9 +59,9 @@ window.DTK_DATA = {
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
-        validity: 'El contrato de servicio comprende un período de doce meses (12). Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
+        validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
-        extra: 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Revise y ajuste estas condiciones de acuerdo con la política comercial vigente de Costa Rica.'
+        extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
       }
     },
     'Panamá': {
@@ -73,12 +73,12 @@ window.DTK_DATA = {
         { name: 'Saul Antonio Acosta Molinar', code: 'PA0074', role: 'Asesor Comercial' },
         { name: 'Giovanna Astrid Leblanc Veliz', code: 'PA0072', role: 'Coordinador Comercial' }
       ],
-       terms: {
+      terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
-        validity: 'El contrato de servicio comprende un período de doce meses (12). Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
+        validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
-        extra: 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Revise y ajuste estas condiciones de acuerdo con la política comercial vigente de Panamá.'
+        extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
       }
     },
     'Guatemala': {
