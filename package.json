@@ -1,0 +1,10 @@
+{
+  "name": "detektor-cotizador-api",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Backend API del Cotizador Comercial Regional Detektor. El frontend vive en Webflow.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
