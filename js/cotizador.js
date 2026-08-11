@@ -1,0 +1,445 @@
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('dtk-calc-tbody');
+  const valSubtotal = document.getElementById('val-subtotal');
+  const valIva = document.getElementById('val-iva');
+  const valTotal = document.getElementById('val-total');
+  const selectIva = document.getElementById('select-iva');
+  const currencySelect = document.getElementById('currency-select');
+  
+  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v7';
+  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v7';
+
+  // ==========================================
+  // BASE DE DATOS POR PAÍS
+  // ==========================================
+  const countryData = {
+    'Colombia': {
+      currency: ['COP', 'USD'],
+      taxName: 'IVA',
+      taxRates: [19, 0],
+      agents: ['Andrés', 'Xime', 'Asesor Comercial Colombia'],
+      terms: {
+        installation: 'En disposición y coordinación con el cliente',
+        payment: '30 días crédito',
+        validity: '30 días calendario',
+        warranty: '1 año por defectos de fábrica',
+        extra: 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización. Comprometidos con la sostenibilidad, presentamos este documento en formato digital. Antes de imprimirlo, considere si es realmente necesario.'
+      }
+    },
+    'Costa Rica': {
+      currency: ['CRC', 'USD'],
+      taxName: 'IVA',
+      taxRates: [13, 0],
+      agents: ['Ileana María Solera Obaldía', 'Lizbeth Gomez Muñoz', 'Yonder Ricardo Vega Nuñez', 'Gabriel Madrigal Blanco', 'Josué Zúñiga Rodríguez', 'Cairo Alonso Pérez López', 'Anthony Chaves Montoya', 'Melissa Méndez Porras', 'Javier Alberto Rivera Quesada', 'Manfred Bogarin Matarrita'],
+      terms: {
+        installation: 'Pendiente de actualización CR',
+        payment: 'Pendiente de actualización CR',
+        validity: 'Pendiente de actualización CR',
+        warranty: 'Pendiente de actualización CR',
+        extra: 'Pendiente de actualización CR'
+      }
+    },
+    'Panamá': {
+      currency: ['USD'],
+      taxName: 'ITBMS',
+      taxRates: [7, 0],
+      agents: ['Shayra Marielys Luque Castillo', 'Nancy Maria Pinto Trejos', 'Katherine Michelle Collazo Pilozo', 'Saul Antonio Acosta Molinar', 'Giovanna Astrid Leblanc Veliz'],
+      terms: {
+        installation: 'Pendiente de actualización PA',
+        payment: 'Pendiente de actualización PA',
+        validity: 'Pendiente de actualización PA',
+        warranty: 'Pendiente de actualización PA',
+        extra: 'Pendiente de actualización PA'
+      }
+    },
+    'Guatemala': {
+      currency: ['GTQ', 'USD'],
+      taxName: 'IVA',
+      taxRates: [12, 0],
+      agents: ['Edgar Salazar', 'Mirna Arevalo', 'Patricia Estrada', 'Randy Ford', 'Dorian Perez', 'Lucia Hernandez', 'Jorge Fajardo', 'Roberto Mendez', 'Evelyn Foronda', 'Sthepannie Izaguirre'],
+      terms: {
+        installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
+        payment: 'El contrato de servicio comprende un período de doce meses (12). El pago del servicio lo puede realizar mediante transferencia electrónica, cargo a tarjeta de crédito.',
+        validity: 'La presente propuesta de productos y servicios tiene una validez hasta el 23 de junio 2026',
+        warranty: '1 año por defectos de fábrica',
+        extra: 'POLÍTICA DE REVISIONES Y TRABAJOS TÉCNICOS: Toda revisión técnica de equipos fuera de garantía, así como aquellas derivadas de manipulación, accidentes o negligencia, tendrán un costo adicional. El valor de revisión es de Q160.00 por visita y, en caso de requerirse reemplazo de equipos, aplicarán los siguientes precios de referencia: Detektor El Cazador US$180 + IVA, Detektor GPS US$60 + IVA, y accesorios conforme a lista vigente. Las revisiones preventivas programadas y los desperfectos cubiertos por garantía no generan costo para el cliente.'
+      }
+    },
+    'Honduras': {
+      currency: ['HNL', 'USD'],
+      taxName: 'ISV',
+      taxRates: [15, 0],
+      agents: ['Fanny Roxana Rodriguez Lagos', 'Cinthia Carolina Alcantara Padilla', 'Odilson Arturo Mendoza Fletes', 'Belky Carolina Valladares Medina', 'Jessy Carolina Burgos Fiallos', 'Jeniffer Estefania Herrera Montalban', 'Mario Alejandro Garcia Salgado', 'Samir Ivan Hernandez Lopez', 'Allison Maria Oyuela Flores', 'Blanca Vanessa Sanders Barrera'],
+      terms: {
+        installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
+        payment: 'Periodo maximo de pago de 30 dias credito. Nuestras políticas de facturación aplican a pago de servicios de manera anticipada.',
+        validity: 'La presente propuesta de productos y servicios tiene una validez de 30 días calendario.',
+        warranty: 'Los equipos Detektor GPS tienen una garantía de 1 año a partir de la fecha de instalación, no aplica por daños ocasionados por manipulación de los equipos.',
+        extra: 'SERVICIOS DE MANTENIMIENTO: Se establecen 2 tipos de mantenimiento los cuales son preventivos y correctivos. El preventivo se hace una vez cada 12 meses y consiste en revisar todas las unidades que sean requeridas para descartar fallas en el futuro. Correctivos son aquellas revisiones que se realizan en caso de fallas técnicas, por no transmisión o errores de datos dentro de la plataforma.\nSERVICIO DE DESMONTE Y REINSTALACION: El costo de revisión preventiva de los equipos después de los primeros 12 meses de servicio por El Cazador es de $25, GPS $25 y Plus $35 más impuesto por cada servicio.\nCAPACITACIÓN: Se brindará capacitación a través de nuestros expertos en temas de plataforma, aplicativo, y reportes gerenciales a personal designado por la empresa.\nCONTRATO: El contrato de servicio comprenderá un período de 10 meses, de conformidad a la oferta económica, modalidad y aceptación por parte del cliente.'
+      }
+    },
+    'El Salvador': {
+      currency: ['USD'],
+      taxName: 'IVA',
+      taxRates: [13, 0],
+      agents: ['Patricia Veronica Cazun Vasquez', 'Gerber Edgardo Navarro Ramirez', 'Brenda Elizabeth Palacios Ruiz', 'Javier Aaron Valdez Zelaya', 'Milagro del Carmen Ferrufino de Duque', 'Guillermo Ernesto Aquino Galan', 'Nathaly Isela Sosa Guzman', 'Jimmy Osmin Erazo Martinez', 'Nestor Josue Guzman Salmeron', 'Rene Arturo Lazo Velasquez'],
+      terms: {
+        installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
+        payment: 'Periodo maximo de pago de 30 dias credito. Nuestras políticas de facturación aplican a pago de servicios de manera anticipada.',
+        validity: 'La presente propuesta de productos y servicios tiene una validez de 30 días calendario.',
+        warranty: 'Los equipos Detektor GPS tienen una garantía de 1 año a partir de la fecha de instalación, no aplica por daños ocasionados por manipulación de los equipos.',
+        extra: 'SERVICIOS DE MANTENIMIENTO: Se establecen 2 tipos de mantenimiento los cuales son preventivos y correctivos. El preventivo se hace una vez cada 12 meses y consiste en revisar todas las unidades que sean requeridas para descartar fallas en el futuro. Correctivos son aquellas revisiones que se realizan en caso de fallas técnicas, por no transmisión o errores de datos dentro de la plataforma.\nSERVICIO DE DESMONTE Y REINSTALACION: El costo de revisión preventiva de los equipos después de los primeros 12 meses de servicio por El Cazador es de $25, GPS $25 y Plus $35 más impuesto por cada servicio.\nCAPACITACIÓN: Se brindará capacitación a través de nuestros expertos en temas de plataforma, aplicativo, y reportes gerenciales a personal designado por la empresa.\nCONTRATO: El contrato de servicio comprenderá un período de 10 meses, de conformidad a la oferta económica, modalidad y aceptación por parte del cliente.'
+      }
+    },
+    'Nicaragua': {
+      currency: ['NIO', 'USD'],
+      taxName: 'IVA',
+      taxRates: [15, 0],
+      agents: ['Madeling Martinez', 'Manuel Toruño', 'Xochil Moreno', 'Amy Ramirez'],
+      terms: {
+        installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
+        payment: 'Periodo maximo de pago de 30 dias credito. Nuestras políticas de facturación aplican a pago de servicios de manera anticipada.',
+        validity: 'La presente propuesta de productos y servicios tiene una validez de 30 días calendario.',
+        warranty: 'Los equipos Detektor GPS tienen una garantía de 1 año a partir de la fecha de instalación, no aplica por daños ocasionados por manipulación de los equipos.',
+        extra: 'SERVICIOS DE MANTENIMIENTO: Se establecen 2 tipos de mantenimiento los cuales son preventivos y correctivos. El preventivo se hace una vez cada 12 meses y consiste en revisar todas las unidades que sean requeridas para descartar fallas en el futuro. Correctivos son aquellas revisiones que se realizan en caso de fallas técnicas, por no transmisión o errores de datos dentro de la plataforma.\nSERVICIO DE DESMONTE Y REINSTALACION: El costo de revisión preventiva de los equipos después de los primeros 12 meses de servicio por El Cazador es de $25, GPS $25 y Plus $35 más impuesto por cada servicio.\nCAPACITACIÓN: Se brindará capacitación a través de nuestros expertos en temas de plataforma, aplicativo, y reportes gerenciales a personal designado por la empresa.\nCONTRATO: El contrato de servicio comprenderá un período de 10 meses, de conformidad a la oferta económica, modalidad y aceptación por parte del cliente.'
+      }
+    }
+  };
+
+  const defaultValues = {
+    'client-name': '',
+    'client-company': '',
+    'client-role': '',
+    'client-email': '',
+    'client-phone': '',
+    'client-city': '',
+    'quote-date': new Date().toISOString().split('T')[0],
+    'quote-number': 'DET-' + new Date().getFullYear() + '-0001',
+    'quote-country': '',
+    'quote-advisor': '',
+    'quote-advisor-phone': '',
+    'quote-advisor-email': '',
+    'quote-obs': 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.'
+  };
+
+  let notifTimeout;
+  const showNotification = (msg, type = 'error') => {
+    const notifBar = document.getElementById('dtk-notif-bar');
+    notifBar.innerText = msg;
+    notifBar.className = `dtk-notification-msg ${type}`;
+    clearTimeout(notifTimeout);
+    notifTimeout = setTimeout(() => { notifBar.className = 'dtk-notification-msg'; }, 4500);
+  };
+
+  const formatCurrency = (num) => {
+    const currency = currencySelect.value;
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + ' ' + currency;
+  };
+
+  const parseNum = (str) => {
+    let val = String(str).replace(/[^\d.,-]/g, ''); 
+    const lastComma = val.lastIndexOf(',');
+    const lastDot = val.lastIndexOf('.');
+    if (lastComma > lastDot) val = val.replace(/\./g, '').replace(',', '.');
+    else if (lastDot > lastComma) val = val.replace(/,/g, '');
+    return parseFloat(val) || 0;
+  };
+
+  const calculateAll = () => {
+    let rawSubtotal = 0;
+    tbody.querySelectorAll('tr').forEach(row => {
+      const qty = parseNum(row.querySelector('.dtk-qty').value);
+      const price = parseNum(row.querySelector('.dtk-price').value);
+      const desc = parseNum(row.querySelector('.dtk-desc').value);
+      const rowSub = (qty * price) * (1 - (desc / 100));
+      row.querySelector('.dtk-row-subtotal').innerText = formatCurrency(rowSub);
+      rawSubtotal += rowSub;
+    });
+
+    const subMode = valSubtotal.getAttribute('data-mode');
+    const ivaMode = valIva.getAttribute('data-mode');
+    const totalMode = valTotal.getAttribute('data-mode');
+
+    let finalSubtotal = subMode === 'auto' ? rawSubtotal : parseNum(valSubtotal.innerText);
+    if(subMode === 'auto') valSubtotal.innerText = formatCurrency(rawSubtotal);
+
+    let finalIva = 0;
+    if(ivaMode === 'auto') {
+      finalIva = finalSubtotal * (parseNum(selectIva.value) / 100);
+      valIva.innerText = formatCurrency(finalIva);
+    } else { finalIva = parseNum(valIva.innerText); }
+
+    let finalTotal = totalMode === 'auto' ? (finalSubtotal + finalIva) : parseNum(valTotal.innerText);
+    if(totalMode === 'auto') valTotal.innerText = formatCurrency(finalTotal);
+
+    saveState();
+  };
+
+  // ==========================================
+  // EVENTO DE CAMBIO DE PAÍS
+  // ==========================================
+  document.getElementById('quote-country').addEventListener('change', function(e) {
+    const c = e.target.value;
+    const data = countryData[c];
+    if(!data) return;
+
+    // 1. Llenar Asesores
+    const advSelect = document.getElementById('quote-advisor');
+    advSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor</option>';
+    data.agents.forEach(agent => {
+      advSelect.innerHTML += `<option value="${agent}">${agent}</option>`;
+    });
+
+    // 2. Llenar Moneda
+    const curSelect = document.getElementById('currency-select');
+    curSelect.innerHTML = '';
+    data.currency.forEach(cur => {
+      curSelect.innerHTML += `<option value="${cur}">${cur}</option>`;
+    });
+
+    // 3. Configurar Impuesto (IVA/ITBMS/ISV)
+    document.getElementById('iva-label-text').innerText = data.taxName;
+    document.getElementById('prev-iva-label').innerText = data.taxName;
+    const taxSelect = document.getElementById('select-iva');
+    taxSelect.innerHTML = '';
+    data.taxRates.forEach(rate => {
+      taxSelect.innerHTML += `<option value="${rate}">${rate}%</option>`;
+    });
+
+    // 4. Inyectar Términos Legales
+    document.getElementById('terms-installation').value = data.terms.installation;
+    document.getElementById('terms-payment').value = data.terms.payment;
+    document.getElementById('terms-validity').value = data.terms.validity;
+    document.getElementById('terms-warranty').value = data.terms.warranty;
+    document.getElementById('terms-extra').value = data.terms.extra;
+
+    // Actualizar correlativo de país
+    const baseCode = c === 'Colombia' ? 'CO' : c === 'Panamá' ? 'PA' : c === 'Costa Rica' ? 'CR' : c === 'Guatemala' ? 'GT' : c === 'Honduras' ? 'HN' : c === 'El Salvador' ? 'SV' : 'NI';
+    document.getElementById('quote-number').value = `DET-${baseCode}-${new Date().getFullYear()}-0001`;
+
+    calculateAll();
+  });
+
+  const appendRow = (name, price, qty = 1, desc = 0) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="dtk-input dtk-prod-name dtk-required" value="${name}"></td>
+      <td><input type="number" class="dtk-input dtk-qty" value="${qty}" min="0" step="any"></td>
+      <td><input type="number" class="dtk-input dtk-price" value="${price}" step="any"></td>
+      <td><input type="number" class="dtk-input dtk-desc" value="${desc}" min="0" max="100" step="any"></td>
+      <td style="text-align:right; font-weight:700;" class="dtk-row-subtotal">0</td>
+      <td style="text-align:right;"><button class="dtk-remove-item">×</button></td>
+    `;
+    tr.querySelector('.dtk-prod-name').addEventListener('input', function() { this.classList.remove('dtk-error'); });
+    tbody.appendChild(tr);
+  };
+
+  const saveState = () => {
+    const formData = {};
+    document.querySelectorAll('.dtk-persist').forEach(input => { formData[input.id] = input.value; });
+    localStorage.setItem(STORAGE_KEY_FORM, JSON.stringify(formData));
+
+    const rowsData = [];
+    tbody.querySelectorAll('tr').forEach(row => {
+      rowsData.push({
+        name: row.querySelector('.dtk-prod-name').value,
+        qty: row.querySelector('.dtk-qty').value,
+        price: row.querySelector('.dtk-price').value,
+        desc: row.querySelector('.dtk-desc').value
+      });
+    });
+    localStorage.setItem(STORAGE_KEY_ROWS, JSON.stringify(rowsData));
+  };
+
+  const loadState = () => {
+    const savedForm = localStorage.getItem(STORAGE_KEY_FORM);
+    if(savedForm) {
+      const parsedForm = JSON.parse(savedForm);
+      
+      // Si hay país, disparar evento para poblar las listas primero
+      if(parsedForm['quote-country']) {
+        const cSelect = document.getElementById('quote-country');
+        cSelect.value = parsedForm['quote-country'];
+        cSelect.dispatchEvent(new Event('change'));
+      }
+
+      setTimeout(() => {
+        Object.keys(parsedForm).forEach(id => {
+          const el = document.getElementById(id);
+          if(el) el.value = parsedForm[id];
+        });
+        calculateAll();
+      }, 50);
+
+    } else {
+      Object.keys(defaultValues).forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = defaultValues[id];
+      });
+    }
+
+    const savedRows = localStorage.getItem(STORAGE_KEY_ROWS);
+    tbody.innerHTML = '';
+    if(savedRows) {
+      const parsedRows = JSON.parse(savedRows);
+      if(parsedRows.length > 0) {
+        parsedRows.forEach(item => { appendRow(item.name, item.price, item.qty, item.desc); });
+      } else { appendRow('Recovery Response', 0); }
+    } else { appendRow('Recovery Response', 0); }
+
+    calculateAll();
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+    document.querySelectorAll('.dtk-required').forEach(field => {
+      if (!field.value.trim()) { field.classList.add('dtk-error'); isValid = false; } 
+      else { field.classList.remove('dtk-error'); }
+    });
+    if (tbody.querySelectorAll('tr').length === 0) { showNotification("Debes agregar al menos un producto a la cotización.", "error"); return false; }
+    if (!isValid) {
+      showNotification("Revisa los campos en rojo. Falta información obligatoria (*).", "error");
+      const firstError = document.querySelector('.dtk-error');
+      if(firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return isValid;
+  };
+
+  document.querySelectorAll('.dtk-required').forEach(input => { input.addEventListener('input', function() { this.classList.remove('dtk-error'); }); });
+  document.querySelectorAll('.dtk-btn-add').forEach(btn => { btn.addEventListener('click', (e) => { appendRow(e.target.getAttribute('data-name'), e.target.getAttribute('data-price')); calculateAll(); }); });
+  document.getElementById('btn-add-custom').addEventListener('click', () => { appendRow('', '0'); calculateAll(); });
+  tbody.addEventListener('input', (e) => { if(e.target.classList.contains('dtk-input')) calculateAll(); });
+  tbody.addEventListener('click', (e) => { if(e.target.classList.contains('dtk-remove-item')) { e.target.closest('tr').remove(); calculateAll(); } });
+  document.querySelectorAll('.dtk-persist').forEach(input => { input.addEventListener('input', saveState); input.addEventListener('change', () => calculateAll()); });
+
+  const toggleGroups = document.querySelectorAll('.dtk-toggle-group');
+  toggleGroups.forEach(group => {
+    group.addEventListener('click', (e) => {
+      if(e.target.classList.contains('dtk-toggle-btn')) {
+        group.querySelectorAll('.dtk-toggle-btn').forEach(b => { b.classList.remove('active'); b.classList.add('inactive'); });
+        e.target.classList.remove('inactive'); e.target.classList.add('active');
+        const targetId = group.getAttribute('data-target');
+        const valElement = document.getElementById(`val-${targetId}`);
+        const mode = e.target.getAttribute('data-mode');
+        valElement.setAttribute('data-mode', mode);
+        if (targetId === 'iva') { document.getElementById('select-iva').style.display = mode === 'manual' ? 'none' : 'inline-block'; }
+        if(mode === 'manual') { valElement.contentEditable = "true"; valElement.focus(); } else { valElement.contentEditable = "false"; calculateAll(); }
+      }
+    });
+  });
+
+  [valSubtotal, valIva, valTotal].forEach(el => {
+    el.addEventListener('input', calculateAll);
+    el.addEventListener('blur', function() { if (this.getAttribute('data-mode') === 'manual') { this.innerText = formatCurrency(parseNum(this.innerText)); calculateAll(); } });
+  });
+
+  selectIva.addEventListener('change', calculateAll);
+  currencySelect.addEventListener('change', calculateAll);
+
+  const mainBtnRow = document.getElementById('main-btn-row');
+  const confirmBtnRow = document.getElementById('confirm-btn-row');
+  document.getElementById('btn-clear-form').addEventListener('click', () => { mainBtnRow.style.display = 'none'; confirmBtnRow.style.display = 'flex'; });
+  document.getElementById('btn-confirm-no').addEventListener('click', () => { confirmBtnRow.style.display = 'none'; mainBtnRow.style.display = 'flex'; });
+  
+  document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY_FORM); localStorage.removeItem(STORAGE_KEY_ROWS);
+    document.querySelectorAll('.dtk-persist').forEach(input => {
+      if (input.tagName === 'SELECT') input.selectedIndex = 0;
+      else input.value = defaultValues[input.id] !== undefined ? defaultValues[input.id] : '';
+      input.classList.remove('dtk-error');
+    });
+    tbody.innerHTML = ''; appendRow('Recovery Response', 0); calculateAll();
+    confirmBtnRow.style.display = 'none'; mainBtnRow.style.display = 'flex';
+    showNotification("El formulario se restauró a su estado original.", "success");
+  });
+
+  // ==========================================
+  // MODAL Y GENERACIÓN PDF (html2pdf)
+  // ==========================================
+  const modal = document.getElementById('dtk-preview-modal');
+  
+  const populateModal = () => {
+    document.getElementById('prev-client-name').innerText = document.getElementById('client-name').value;
+    document.getElementById('prev-client-company').innerText = document.getElementById('client-company').value || '-';
+    document.getElementById('prev-client-role').innerText = document.getElementById('client-role').value || '-';
+    document.getElementById('prev-client-email').innerText = document.getElementById('client-email').value;
+    document.getElementById('prev-client-phone').innerText = document.getElementById('client-phone').value;
+    document.getElementById('prev-client-city').innerText = document.getElementById('client-city').value || '-';
+    document.getElementById('prev-quote-date').innerText = document.getElementById('quote-date').value;
+    document.getElementById('prev-quote-number').innerText = document.getElementById('quote-number').value;
+    document.getElementById('prev-quote-advisor').innerText = document.getElementById('quote-advisor').value;
+
+    const prevTbody = document.getElementById('prev-calc-tbody');
+    prevTbody.innerHTML = '';
+    const currency = document.getElementById('currency-select').value;
+    const isIvaAuto = document.getElementById('val-iva').getAttribute('data-mode') === 'auto';
+    
+    // Obtener el nombre del impuesto dinámico
+    const countrySelected = document.getElementById('quote-country').value;
+    const taxNameStr = countrySelected ? countryData[countrySelected].taxName : 'IVA';
+    
+    const ivaValue = isIvaAuto ? document.getElementById('select-iva').value + '%' : 'Manual';
+
+    document.querySelectorAll('#dtk-calc-tbody tr').forEach(row => {
+      const name = row.querySelector('.dtk-prod-name').value;
+      const qty = row.querySelector('.dtk-qty').value;
+      const price = parseFloat(row.querySelector('.dtk-price').value || 0).toLocaleString('es-CO');
+      const subtotal = row.querySelector('.dtk-row-subtotal').innerText;
+      prevTbody.innerHTML += `<tr><td>• ${name}</td><td>${qty}</td><td>$ ${price} ${currency}</td><td>${ivaValue === '0%' ? 'NA' : ivaValue}</td><td style="text-align:right; font-weight:700;">${subtotal}</td></tr>`;
+    });
+
+    document.getElementById('prev-adv-name-box').innerText = document.getElementById('quote-advisor').value;
+    document.getElementById('prev-adv-mail-box').innerText = document.getElementById('quote-advisor-email').value;
+    document.getElementById('prev-adv-phone-box').innerText = document.getElementById('quote-advisor-phone').value;
+    document.getElementById('prev-subtotal').innerText = document.getElementById('val-subtotal').innerText;
+    document.getElementById('prev-iva-percent').innerText = isIvaAuto ? `(${document.getElementById('select-iva').value}%)` : '';
+    document.getElementById('prev-iva').innerText = document.getElementById('val-iva').innerText;
+    document.getElementById('prev-total').innerText = document.getElementById('val-total').innerText;
+    document.getElementById('prev-obs').innerText = document.getElementById('quote-obs').value;
+
+    // Formateo de términos legales respetando saltos de línea
+    const extraTermsFormat = document.getElementById('terms-extra').value.replace(/\n/g, '<br>');
+    const termsHtml = `<strong>Condiciones de pago:</strong> ${document.getElementById('terms-payment').value}.<br><strong>Instalación y entrega:</strong> ${document.getElementById('terms-installation').value}.<br><strong>Vigencia:</strong> ${document.getElementById('terms-validity').value}.<br><strong>Garantía:</strong> ${document.getElementById('terms-warranty').value}.<br><br><strong>Consideraciones adicionales:</strong><br>${extraTermsFormat}`;
+    document.getElementById('prev-terms-merged').innerHTML = termsHtml;
+  };
+
+  document.getElementById('btn-preview-pdf').addEventListener('click', (e) => {
+    if(!validateForm()) return;
+    populateModal();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  });
+
+  document.getElementById('btn-close-modal').addEventListener('click', () => {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  });
+
+  document.querySelectorAll('.dtk-page-dot').forEach(dot => {
+    dot.addEventListener('click', function(e) {
+      document.querySelectorAll('.dtk-page-dot').forEach(d => d.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  const downloadPDF = () => {
+    if(!validateForm()) return;
+    populateModal();
+    showNotification("Generando PDF, por favor espere...", "success");
+    
+    const element = document.getElementById('dtk-pdf-export-content');
+    const opt = {
+      margin:       0,
+      filename:     `Cotizacion_${document.getElementById('quote-number').value.replace(/[^a-zA-Z0-9-]/g, '')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
+  document.getElementById('btn-generate-pdf-direct').addEventListener('click', downloadPDF);
+  document.getElementById('btn-modal-generate').addEventListener('click', downloadPDF);
+
+  loadState();
+});
