@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cotizador Manual | Detektor LATAM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/cotizador.css">
+</head>
+<body>
+<div class="dtk-app" id="dtk-app">
+  <div class="dtk-shell">
+    <header class="dtk-topbar">
+      <div class="dtk-brand">detektor</div>
+      <nav class="dtk-top-actions" aria-label="Acciones del cotizador"><a href="#" id="top-clear">Limpiar</a><strong>Nueva cotización</strong><a href="#" onclick="return false">Cerrar sesión</a></nav>
+    </header>
+    <section class="dtk-intro">
+      <h1>Cotizador Manual</h1>
+      <div class="dtk-alert"><span>🛡️</span><div>Esta herramienta es de <b>uso interno</b>. Los datos del cliente no se guardan en el navegador.<br>Los <b>campos marcados con asterisco (*) son obligatorios</b>.</div></div>
+    </section>
+
+    <section class="dtk-card">
+      <h2 class="dtk-card-title">Cliente</h2>
+      <div class="dtk-grid">
+        <div class="dtk-field"><label>Nombre del cliente*</label><input id="client-name" class="dtk-input dtk-required" placeholder="Ej. Juan Pérez"></div>
+        <div class="dtk-field"><label>Empresa</label><input id="client-company" class="dtk-input" placeholder="Ej. Transportes Andina S.A."></div>
+        <div class="dtk-field"><label>Cargo</label><input id="client-role" class="dtk-input" placeholder="Ej. Gerente de Flota"></div>
+        <div class="dtk-field"><label>Correo*</label><input id="client-email" type="email" class="dtk-input dtk-required" placeholder="Ej. juan.perez@empresa.com"></div>
+        <div class="dtk-field"><label>Teléfono*</label><input id="client-phone" class="dtk-input dtk-required" placeholder="Ej. +57 300 000 0000"></div>
+        <div class="dtk-field"><label>Ciudad</label><input id="client-city" class="dtk-input" placeholder="Ej. Bogotá"></div>
+      </div>
+    </section>
+
+    <section class="dtk-card">
+      <h2 class="dtk-card-title">Cotización</h2>
+      <div class="dtk-grid">
+        <div class="dtk-field"><label>Fecha*</label><input id="quote-date" type="date" class="dtk-input dtk-required"><small>Se carga automáticamente y puede modificarse.</small></div>
+        <div class="dtk-field"><label>Propuesta N°*</label><input id="quote-number" class="dtk-input dtk-required" readonly placeholder="Se genera al definir país y asesor"><small>Incluye país, año, identificador del asesor y consecutivo.</small></div>
+        <div class="dtk-field"><label>País del cotizante*</label><select id="quote-country" class="dtk-select dtk-required"><option value="">Seleccione un país</option></select></div>
+        <div class="dtk-field" id="advisor-select-wrap"><label>Asesor Comercial*</label><select id="quote-advisor-select" class="dtk-select"><option value="">Seleccione el país primero</option></select></div>
+        <div class="dtk-field dtk-hidden" id="advisor-manual-wrap"><label>Asesor Comercial*</label><input id="quote-advisor-manual" class="dtk-input" placeholder="Ej. María Gómez"></div>
+        <div class="dtk-field"><label>Identificador del asesor*</label><input id="quote-advisor-code" class="dtk-input dtk-required" placeholder="Ej. MGOMEZ o EMP543"><small>En países con lista se completa automáticamente.</small></div>
+        <div class="dtk-field"><label>Celular</label><input id="quote-advisor-phone" class="dtk-input" placeholder="Ej. +502 5555 5555"></div>
+        <div class="dtk-field"><label>Correo</label><input id="quote-advisor-email" type="email" class="dtk-input" placeholder="Ej. asesor@detektor.com"></div>
+        <div class="dtk-field dtk-full"><label>Observaciones generales</label><textarea id="quote-obs" class="dtk-textarea" placeholder="Ej. Condiciones especiales, alcance o notas para el cliente.">Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.</textarea></div>
+      </div>
+    </section>
+
+    <section class="dtk-card">
+      <h2 class="dtk-card-title">Términos y condiciones</h2>
+      <div class="dtk-grid">
+        <div class="dtk-field"><label>Instalación y entrega*</label><input id="terms-installation" class="dtk-input dtk-required" placeholder="Ej. En coordinación con el cliente"></div>
+        <div class="dtk-field"><label>Condiciones de pago*</label><input id="terms-payment" class="dtk-input dtk-required" placeholder="Ej. 30 días crédito"></div>
+        <div class="dtk-field"><label>Vigencia*</label><input id="terms-validity" class="dtk-input dtk-required" placeholder="Ej. 30 días calendario"></div>
+        <div class="dtk-field"><label>Garantía*</label><input id="terms-warranty" class="dtk-input dtk-required" placeholder="Ej. 1 año por defectos de fábrica"></div>
+        <div class="dtk-field dtk-full"><label>Consideraciones adicionales</label><textarea id="terms-extra" class="dtk-textarea" placeholder="Ej. Políticas de mantenimiento, revisiones, contrato, confidencialidad y demás condiciones aplicables."></textarea></div>
+      </div>
+    </section>
+
+    <section class="dtk-card">
+      <h2 class="dtk-card-title" style="margin-bottom:8px">Productos*</h2>
+      <p class="dtk-card-subtitle">Selecciona los productos a incluir en la propuesta. Ningún producto viene con precio precargado.</p>
+      <div class="dtk-products" id="dtk-products-catalog"></div>
+    </section>
+
+    <section class="dtk-card">
+      <div class="dtk-econ-head"><h2 class="dtk-card-title">Propuesta económica*</h2><div class="dtk-currency"><span>Moneda</span><select id="currency-select" class="dtk-select"></select></div></div>
+      <div class="dtk-table-wrap"><table class="dtk-table"><thead><tr><th style="width:42%">PRODUCTO</th><th style="width:10%">CANT.</th><th style="width:17%">VALOR UNITARIO</th><th style="width:10%">DESC. %</th><th style="width:16%">SUBTOTAL</th><th></th></tr></thead><tbody id="dtk-calc-tbody"></tbody></table></div>
+      <div class="dtk-totals">
+        <div class="dtk-total-row"><div class="dtk-toggle" data-target="subtotal"><button class="active" data-mode="auto">Auto</button><button data-mode="manual">Manual</button></div><span>Subtotal</span><span id="val-subtotal" class="dtk-money" data-mode="auto">0</span></div>
+        <div class="dtk-total-row"><div class="dtk-toggle" data-target="tax"><button class="active" data-mode="auto">Lista</button><button data-mode="manual">Manual</button></div><span><span id="tax-label">IVA</span> <select id="select-tax" class="dtk-tax-select"></select></span><span id="val-tax" class="dtk-money" data-mode="auto">0</span></div>
+        <div class="dtk-total-row final"><div class="dtk-toggle" data-target="total"><button class="active" data-mode="auto">Auto</button><button data-mode="manual">Manual</button></div><span>Total final</span><span id="val-total" class="dtk-money red" data-mode="auto">0</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="dtk-footer">
+    <div class="dtk-footer-row" id="main-actions"><button class="dtk-action clear" id="btn-clear">LIMPIAR FORMULARIO</button><button class="dtk-action preview" id="btn-preview">VER VISTA PREVIA PDF</button><button class="dtk-action download" id="btn-download">GENERAR Y DESCARGAR PDF</button></div>
+    <div class="dtk-footer-row dtk-hidden" id="confirm-actions"><span class="dtk-confirm-copy">¿Seguro que deseas limpiar todos los datos?</span><button class="dtk-action clear" id="btn-clear-cancel">CANCELAR</button><button class="dtk-action download" id="btn-clear-confirm" style="background:#261d1a;border-color:#261d1a">SÍ, LIMPIAR</button></div>
+    <div id="dtk-notice" class="dtk-notice"></div>
+  </div>
+</div>
+
+<div class="dtk-modal" id="dtk-preview-modal" role="dialog" aria-modal="true" aria-label="Vista previa PDF">
+  <div class="dtk-modal-head">
+    <div class="dtk-modal-left"><span class="dtk-modal-title">Vista Previa PDF</span><button class="dtk-modal-download" id="btn-modal-download">GENERAR Y DESCARGAR PDF</button></div>
+    <div class="dtk-pages-nav"><span>PÁGINAS</span><div class="dtk-page-dots"><button class="dtk-nav-dot active" data-target="pdf-page-1">1</button><button class="dtk-nav-dot" data-target="pdf-page-2">2</button><button class="dtk-nav-dot" data-target="pdf-page-3">3</button></div></div>
+    <button class="dtk-modal-close" id="btn-modal-close">CERRAR VISTA PREVIA ✕</button>
+  </div>
+  <div class="dtk-modal-body" id="modal-scroll-area">
+    <div class="dtk-pdf-document" id="dtk-pdf-export-content">
+      <section class="dtk-pdf-page" id="pdf-page-1">
+        <div class="pdf-cover-top">
+          <div class="pdf-hero"></div>
+          <div class="pdf-stats"><div class="pdf-stat"><b>+33 <span>años</span></b><small>Experiencia en Latinoamérica</small></div><div class="pdf-stat"><b>9 <span>países</span></b><small>Cobertura y soporte local</small></div><div class="pdf-stat"><b>+500.000 <span>usuarios</span></b><small>Conectados en Latinoamérica</small></div></div>
+          <div class="pdf-capabilities"><div class="pdf-capability"><div class="pdf-cap-icon">⌖</div><strong>Monitoreo GPS</strong>Ubicación, recorridos y alertas.</div><div class="pdf-capability"><div class="pdf-cap-icon">⌁</div><strong>Localización vehicular</strong>En caso de robo.</div><div class="pdf-capability"><div class="pdf-cap-icon">▦</div><strong>Gestión de flotas</strong>Visibilidad y control operativo.</div><div class="pdf-capability"><div class="pdf-cap-icon">24/7</div><strong>Seguridad 24/7</strong>Respaldo permanente.</div></div>
+        </div>
+        <div class="pdf-info-zone"><div class="pdf-info-box"><div class="pdf-info-title">Información de la propuesta</div><div class="pdf-info-grid"><div class="pdf-info-col"><h5>Datos del cliente</h5><div class="pdf-info-row"><span>Nombre del cliente:</span><span id="prev-client-name"></span></div><div class="pdf-info-row"><span>Empresa:</span><span id="prev-client-company"></span></div><div class="pdf-info-row"><span>Cargo:</span><span id="prev-client-role"></span></div><div class="pdf-info-row"><span>Correo:</span><span id="prev-client-email"></span></div><div class="pdf-info-row"><span>Teléfono:</span><span id="prev-client-phone"></span></div><div class="pdf-info-row"><span>Ciudad:</span><span id="prev-client-city"></span></div></div><div class="pdf-info-col"><h5>Datos de la cotización</h5><div class="pdf-info-row"><span>Fecha:</span><span id="prev-quote-date"></span></div><div class="pdf-info-row"><span>Propuesta N°:</span><span id="prev-quote-number"></span></div><div class="pdf-info-row"><span>País:</span><span id="prev-country"></span></div><div class="pdf-info-row"><span>Asesor Comercial:</span><span id="prev-advisor"></span></div><div class="pdf-info-row"><span>Identificador:</span><span id="prev-advisor-code"></span></div></div></div></div></div>
+      </section>
+
+      <section class="dtk-pdf-page" id="pdf-page-2"><div class="pdf-inner"><h3 class="pdf-section-title">NUESTRAS SOLUCIONES TECNOLÓGICAS</h3><div class="pdf-solutions" id="prev-solutions"></div><h3 class="pdf-section-title">PROPUESTA <span class="red">ECONÓMICA</span></h3><table class="pdf-table"><thead><tr><th style="width:40%">DESCRIPCIÓN</th><th>CANT.</th><th>PRECIO/U</th><th>IMPUESTO</th><th style="text-align:right">TOTAL</th></tr></thead><tbody id="prev-calc-tbody"></tbody></table><div class="pdf-econ-bottom"><div class="pdf-advisor-box"><h4 id="prev-adv-name-box"></h4><div class="role">Asesor Comercial Corporativo</div><p id="prev-adv-mail-box"></p><p id="prev-adv-phone-box"></p></div><div class="pdf-totals"><div class="pdf-total-row"><span>Subtotal</span><b id="prev-subtotal"></b></div><div class="pdf-total-row"><span><span id="prev-tax-label">I.V.A.</span> <span id="prev-tax-percent"></span></span><b id="prev-tax"></b></div><div class="pdf-total-row final"><span>TOTAL CON IMPUESTO</span><b id="prev-total"></b></div></div></div><div class="pdf-observation"><b>Observaciones generales:</b><span id="prev-obs"></span></div></div></section>
+
+      <section class="dtk-pdf-page pdf-page3" id="pdf-page-3"><div class="pdf-inner" style="padding-bottom:0"><div class="pdf-terms-box" id="prev-terms"></div><p class="pdf-confidential">Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización. Comprometidos con la sostenibilidad, presentamos este documento en formato digital. Antes de imprimirlo, considere si es realmente necesario.</p><h3 class="pdf-section-title">DESCUBRA MÁS SOLUCIONES PARA SU OPERACIÓN</h3><div class="pdf-more-grid"><div class="pdf-more-card"><div class="pdf-more-icon">⌖</div><strong>GPS</strong><p>Monitorea ubicación, recorridos, alertas y geocercas en tiempo real.</p></div><div class="pdf-more-card"><div class="pdf-more-icon">⌁</div><strong>EL CAZADOR</strong><p>Tecnología especializada para localizar su vehículo en caso de hurto.</p></div><div class="pdf-more-card"><div class="pdf-more-icon">◈</div><strong>PLUS</strong><p>Combina GPS + El Cazador para control y localización especializada.</p></div><div class="pdf-more-card"><div class="pdf-more-icon">▣</div><strong>ROADVIEW IA</strong><p>Cámara con inteligencia artificial para prevenir riesgos y mejorar conducción.</p></div></div><div class="pdf-social">Síguenos en nuestras redes · detektorlatam.com</div><div class="pdf-page3-spacer"></div><div class="pdf-page3-claim">SOLUCIONES PARA TU TRANQUILIDAD</div></div><div class="pdf-footer-banner"><div><b>33</b><span>años de experiencia</span></div><div><b>9</b><span>países en Latinoamérica</span></div><div><b>500.000</b><span>usuarios activos</span></div><div><b style="font-size:17px">detektor</b><span>ROADVIEW IA</span></div></div><div class="pdf-countries">Colombia | Guatemala | El Salvador | Honduras | Nicaragua | Costa Rica | Panamá | Venezuela | Brasil</div></section>
+    </div>
+  </div>
+</div>
+<div id="dtk-render-host" class="dtk-pdf-render-host"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="js/config.js"></script><script src="js/data.js"></script><script src="js/app.js"></script>
+</body></html>
