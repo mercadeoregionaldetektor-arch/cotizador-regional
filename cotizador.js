@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v7-placeholders-pais';
+window.DTK_BUILD_VERSION = 'v8-iva-manual';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -263,7 +263,7 @@ window.DTK_DATA = {
   function initRefs() {
     [
       'quote-date','quote-number','quote-country','quote-advisor-select','quote-advisor-manual','quote-advisor-code',
-      'quote-advisor-phone','quote-advisor-email','currency-select','select-tax','tax-label','dtk-calc-tbody',
+      'quote-advisor-phone','quote-advisor-email','currency-select','select-tax','input-tax-manual','tax-manual-wrap','tax-label','dtk-calc-tbody',
       'val-subtotal','val-tax','val-total','advisor-select-wrap','advisor-manual-wrap','dtk-products-catalog',
       'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice'
     ].forEach(k => els[k] = $(k));
@@ -314,6 +314,16 @@ window.DTK_DATA = {
 
   function currentCurrency() {
     return els['currency-select']?.value || '';
+  }
+
+  function currentTaxRate() {
+    const mode = els['val-tax']?.dataset?.mode || 'auto';
+
+    const rate = mode === 'manual'
+      ? parseNum(els['input-tax-manual']?.value)
+      : parseNum(els['select-tax']?.value);
+
+    return Math.min(100, Math.max(0, rate));
   }
 
   function formatMoney(value) {
@@ -573,6 +583,11 @@ window.DTK_DATA = {
     els['currency-select'].innerHTML = country.currency.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
     els['tax-label'].textContent = country.taxName;
     els['select-tax'].innerHTML = country.taxRates.map(r => `<option value="${r}">${r}%</option>`).join('');
+
+    if (els['input-tax-manual']) {
+      els['input-tax-manual'].value = String(country.taxRates?.[0] ?? 0);
+    }
+
     $('terms-installation').value = country.terms.installation || '';
     $('terms-payment').value = country.terms.payment || '';
     $('terms-validity').value = country.terms.validity || '';
@@ -657,27 +672,70 @@ window.DTK_DATA = {
     if (els['val-subtotal'].dataset.mode === 'auto') els['val-subtotal'].textContent = formatMoney(rawSubtotal);
     else subtotal = parseNum(els['val-subtotal'].textContent);
 
-    let tax = 0;
-    if (els['val-tax'].dataset.mode === 'auto') {
-      tax = subtotal * (parseNum(els['select-tax'].value) / 100);
-      els['val-tax'].textContent = formatMoney(tax);
-    } else tax = parseNum(els['val-tax'].textContent);
+    const taxRate = currentTaxRate();
+    const tax = subtotal * (taxRate / 100);
 
-    if (els['val-total'].dataset.mode === 'auto') els['val-total'].textContent = formatMoney(subtotal + tax);
+    els['val-tax'].textContent = formatMoney(tax);
+
+    if (els['val-total'].dataset.mode === 'auto') {
+      els['val-total'].textContent = formatMoney(subtotal + tax);
+    }
     renderEmptyRow();
   }
 
   function setMode(target, mode) {
-    const valEl = target === 'tax' ? els['val-tax'] : target === 'subtotal' ? els['val-subtotal'] : els['val-total'];
+    const valEl =
+      target === 'tax'
+        ? els['val-tax']
+        : target === 'subtotal'
+        ? els['val-subtotal']
+        : els['val-total'];
+
     if (!valEl) return;
+
     valEl.dataset.mode = mode;
+
+    // IMPUESTO:
+    // "Lista" usa la tasa configurada por país.
+    // "Manual" permite escribir una tasa porcentual personalizada.
+    if (target === 'tax') {
+      valEl.contentEditable = 'false';
+      valEl.classList.remove('manual');
+
+      if (mode === 'manual') {
+        const listRate = parseNum(els['select-tax']?.value);
+
+        if (!String(els['input-tax-manual']?.value || '').trim()) {
+          els['input-tax-manual'].value = String(listRate);
+        }
+
+        els['select-tax'].classList.add('dtk-hidden');
+        els['tax-manual-wrap'].classList.remove('dtk-hidden');
+
+        setTimeout(() => {
+          els['input-tax-manual']?.focus();
+          els['input-tax-manual']?.select?.();
+        }, 0);
+      } else {
+        els['select-tax'].classList.remove('dtk-hidden');
+        els['tax-manual-wrap'].classList.add('dtk-hidden');
+      }
+
+      calculateAll();
+      return;
+    }
+
+    // SUBTOTAL Y TOTAL FINAL:
+    // Se mantienen como valor monetario editable cuando se usa Manual.
     valEl.contentEditable = mode === 'manual' ? 'true' : 'false';
     valEl.classList.toggle('manual', mode === 'manual');
-    if (target === 'tax') els['select-tax'].style.display = mode === 'manual' ? 'none' : '';
+
     if (mode === 'manual') {
       valEl.textContent = formatMoney(parseNum(valEl.textContent));
       valEl.focus();
-    } else calculateAll();
+    } else {
+      calculateAll();
+    }
   }
 
   function clearErrors() {
@@ -766,13 +824,15 @@ window.DTK_DATA = {
 
     const country = getCountry();
     setText('prev-tax-label', country?.taxName || 'IVA');
-    const taxPct = els['val-tax'].dataset.mode === 'auto' ? `(${els['select-tax'].value}%)` : '(Manual)';
+    const taxRate = currentTaxRate();
+    const taxPct = `(${taxRate}%)`;
     setText('prev-tax-percent', taxPct, '');
 
     const rows = rowData();
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
-      const taxLabel = els['val-tax'].dataset.mode === 'auto' ? (parseNum(els['select-tax'].value) === 0 ? 'NA' : `${els['select-tax'].value}%`) : 'Manual';
+      const taxRate = currentTaxRate();
+      const taxLabel = taxRate === 0 ? 'NA' : `${taxRate}%`;
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td>${escapeHtml(taxLabel)}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
@@ -881,9 +941,21 @@ window.DTK_DATA = {
   function resetModes() {
     document.querySelectorAll('.dtk-toggle').forEach(group => {
       const target = group.dataset.target;
-      group.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === 'auto'));
+
+      group.querySelectorAll('button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === 'auto');
+      });
+
       setMode(target, 'auto');
     });
+
+    if (els['tax-manual-wrap']) {
+      els['tax-manual-wrap'].classList.add('dtk-hidden');
+    }
+
+    if (els['select-tax']) {
+      els['select-tax'].classList.remove('dtk-hidden');
+    }
   }
 
   function clearForm() {
@@ -937,6 +1009,20 @@ window.DTK_DATA = {
     els['currency-select'].addEventListener('change', calculateAll);
     els['select-tax'].addEventListener('change', calculateAll);
 
+    els['input-tax-manual']?.addEventListener('input', () => {
+      if (els['val-tax'].dataset.mode === 'manual') {
+        calculateAll();
+      }
+    });
+
+    els['input-tax-manual']?.addEventListener('blur', () => {
+      if (els['val-tax'].dataset.mode === 'manual') {
+        const safeRate = currentTaxRate();
+        els['input-tax-manual'].value = String(safeRate);
+        calculateAll();
+      }
+    });
+
     els['dtk-products-catalog'].addEventListener('click', e => {
       const add = e.target.closest('.dtk-btn-add');
       if (add) addCatalogProduct(add.dataset.productId);
@@ -964,7 +1050,7 @@ window.DTK_DATA = {
       setMode(group.dataset.target, btn.dataset.mode);
     }));
 
-    [els['val-subtotal'], els['val-tax'], els['val-total']].forEach(el => {
+    [els['val-subtotal'], els['val-total']].forEach(el => {
       el.addEventListener('input', () => { if (el.dataset.mode === 'manual') calculateAll(); });
       el.addEventListener('blur', () => {
         if (el.dataset.mode === 'manual') {
