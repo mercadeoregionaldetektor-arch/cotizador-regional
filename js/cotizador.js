@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(el) el.value = parsedForm[id];
           });
           calculateAll();
-        }, 100); // Aumentado el tiempo de espera para evitar condiciones de carrera en el DOM
+        }, 100); 
       } catch (e) {
         console.error("Error parsing saved form", e);
       }
@@ -508,7 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const modal = document.getElementById('dtk-preview-modal');
-  const modalScrollArea = document.getElementById('modal-scroll-area');
   
   const populateModal = () => {
     const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
@@ -577,6 +576,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ==========================================
+  // LÓGICA DEL SCROLL MEJORADA PARA MODALES
+  // ==========================================
   document.querySelectorAll('.dtk-nav-dot').forEach(dot => {
     dot.addEventListener('click', function(e) {
       e.preventDefault();
@@ -586,9 +588,18 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const targetId = this.getAttribute('data-target');
       const targetPage = document.getElementById(targetId);
+      const modalScrollArea = document.getElementById('modal-scroll-area');
       
-      if (targetPage) {
-        targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (targetPage && modalScrollArea) {
+        const containerRect = modalScrollArea.getBoundingClientRect();
+        const targetRect = targetPage.getBoundingClientRect();
+        
+        const scrollTopPos = targetRect.top - containerRect.top + modalScrollArea.scrollTop;
+        
+        modalScrollArea.scrollTo({
+          top: scrollTopPos,
+          behavior: 'smooth'
+        });
       }
     });
   });
