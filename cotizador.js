@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v5-asesores-6-paises';
+window.DTK_BUILD_VERSION = 'v6-listas-forzadas';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -326,10 +326,16 @@ window.DTK_DATA = {
     return DATA.countries[els['quote-country']?.value] || null;
   }
 
+  // La presencia de asesores manda sobre advisorMode.
+  // Esto evita que una configuración antigua deje un país en modo manual.
+  function countryHasAdvisorList(country) {
+    return !!country && Array.isArray(country.agents) && country.agents.length > 0;
+  }
+
   function getAdvisorName() {
     const c = getCountry();
     if (!c) return '';
-    if (c.advisorMode === 'list') {
+    if (countryHasAdvisorList(c)) {
       const option = els['quote-advisor-select']?.selectedOptions?.[0];
       return option?.dataset?.name || '';
     }
@@ -358,7 +364,7 @@ window.DTK_DATA = {
 
   function syncManualAdvisorCode() {
     const country = getCountry();
-    if (!country || country.advisorMode === 'list') return;
+    if (!country || countryHasAdvisorList(country)) return;
 
     const code = buildManualAdvisorCode(els['quote-advisor-manual']?.value || '');
     els['quote-advisor-code'].value = code;
@@ -514,12 +520,17 @@ window.DTK_DATA = {
       return;
     }
 
-    if (country.advisorMode === 'list') {
+    if (countryHasAdvisorList(country)) {
       els['advisor-select-wrap'].classList.remove('dtk-hidden');
       els['advisor-manual-wrap'].classList.add('dtk-hidden');
       els['quote-advisor-manual'].value = '';
       els['quote-advisor-code'].readOnly = true;
-      els['quote-advisor-select'].innerHTML = '<option value="">Seleccione un asesor</option>' + country.agents.map(a => `<option value="${escapeHtml(a.code)}" data-name="${escapeHtml(a.name)}">${escapeHtml(a.code)} - ${escapeHtml(a.name)}</option>`).join('');
+      els['quote-advisor-select'].innerHTML =
+        '<option value="">Seleccione un asesor</option>' +
+        country.agents.map(a =>
+          `<option value="${escapeHtml(a.code)}" data-name="${escapeHtml(a.name)}">${escapeHtml(a.code)} - ${escapeHtml(a.name)}</option>`
+        ).join('');
+      els['quote-advisor-select'].value = '';
     } else {
       els['advisor-select-wrap'].classList.add('dtk-hidden');
       els['advisor-manual-wrap'].classList.remove('dtk-hidden');
@@ -541,7 +552,7 @@ window.DTK_DATA = {
 
   function onAdvisorSelect() {
     const country = getCountry();
-    if (!country || country.advisorMode !== 'list') return;
+    if (!country || !countryHasAdvisorList(country)) return;
     const option = els['quote-advisor-select'].selectedOptions?.[0];
     els['quote-advisor-code'].value = option?.value || '';
     els['quote-advisor-code'].classList.remove('dtk-error');
@@ -644,7 +655,7 @@ window.DTK_DATA = {
 
   async function validateForm({ requireFinalNumber = false } = {}) {
     clearErrors();
-    if (getCountry()?.advisorMode !== 'list') syncManualAdvisorCode();
+    if (!countryHasAdvisorList(getCountry())) syncManualAdvisorCode();
     let valid = true;
     const requiredIds = ['client-name','client-email','client-phone','quote-date','quote-country','quote-advisor-code','terms-installation','terms-payment','terms-validity','terms-warranty'];
     for (const id of requiredIds) {
@@ -653,7 +664,7 @@ window.DTK_DATA = {
     }
 
     const country = getCountry();
-    if (country?.advisorMode === 'list') {
+    if (countryHasAdvisorList(country)) {
       if (!els['quote-advisor-select'].value) { els['quote-advisor-select'].classList.add('dtk-error'); valid = false; }
     } else if (country) {
       if (!els['quote-advisor-manual'].value.trim()) { els['quote-advisor-manual'].classList.add('dtk-error'); valid = false; }
@@ -866,13 +877,23 @@ window.DTK_DATA = {
   }
 
   function wireEvents() {
-    els['quote-country'].addEventListener('change', applyCountry);
-    els['quote-advisor-select'].addEventListener('change', onAdvisorSelect);
+    // Se usa fase capture + stopImmediatePropagation para impedir que
+    // una versión antigua del cotizador, si quedó cargada por error en Webflow,
+    // vuelva a cambiar Panamá u otro país a modo manual.
+    els['quote-country'].addEventListener('change', (event) => {
+      event.stopImmediatePropagation();
+      applyCountry();
+    }, true);
+
+    els['quote-advisor-select'].addEventListener('change', (event) => {
+      event.stopImmediatePropagation();
+      onAdvisorSelect();
+    }, true);
     els['quote-advisor-manual'].addEventListener('input', () => {
       syncManualAdvisorCode();
     });
     els['quote-advisor-code'].addEventListener('input', e => {
-      if (getCountry()?.advisorMode !== 'list') {
+      if (!countryHasAdvisorList(getCountry())) {
         const clean = sanitizeCode(e.target.value);
         if (clean !== e.target.value) e.target.value = clean;
         reservedKey = '';
@@ -943,13 +964,24 @@ window.DTK_DATA = {
       $('confirm-actions').classList.remove('dtk-hidden');
     };
     $('btn-clear').addEventListener('click', askClear);
-    $('top-clear').addEventListener('click', askClear);
+    $('top-clear')?.addEventListener('click', askClear);
     $('btn-clear-cancel').addEventListener('click', () => {
       $('confirm-actions').classList.add('dtk-hidden');
       $('main-actions').classList.remove('dtk-hidden');
     });
     $('btn-clear-confirm').addEventListener('click', clearForm);
   }
+
+  window.DTK_DEBUG_ADVISORS = function() {
+    const names = ['Costa Rica','Panamá','Guatemala','Honduras','El Salvador','Nicaragua'];
+    return Object.fromEntries(names.map(name => {
+      const c = DATA.countries[name];
+      return [name, {
+        mode: countryHasAdvisorList(c) ? 'list' : 'manual',
+        advisors: c?.agents?.length || 0
+      }];
+    }));
+  };
 
   function init() {
     initRefs();
