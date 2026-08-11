@@ -196,12 +196,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let counters = JSON.parse(localStorage.getItem(STORAGE_KEY_COUNTERS)) || { CO: 1, CR: 1, PA: 1, GT: 1, HN: 1, SV: 1, NI: 1 };
     const numStr = String(counters[baseCode] || 1).padStart(4, '0');
     const year = new Date().getFullYear();
-    document.getElementById('quote-number').value = `DET-${baseCode}-${year}-${numStr}`;
+    const quoteNumberEl = document.getElementById('quote-number');
+    if (quoteNumberEl) quoteNumberEl.value = `DET-${baseCode}-${year}-${numStr}`;
   };
 
   let notifTimeout;
   const showNotification = (msg, type = 'error') => {
     const notifBar = document.getElementById('dtk-notif-bar');
+    if (!notifBar) return;
     notifBar.innerText = msg;
     notifBar.className = `dtk-notification-msg ${type}`;
     clearTimeout(notifTimeout);
@@ -209,11 +211,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const formatCurrency = (num) => {
-    const currency = currencySelect.value;
+    const currency = currencySelect?.value || '';
     return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + ' ' + currency;
   };
 
   const parseNum = (str) => {
+    if (!str) return 0;
     let val = String(str).replace(/[^\d.,-]/g, ''); 
     const lastComma = val.lastIndexOf(',');
     const lastDot = val.lastIndexOf('.');
@@ -223,28 +226,38 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const calculateAll = () => {
+    if (!tbody || !valSubtotal || !valIva || !valTotal) return;
     let rawSubtotal = 0;
+    
     tbody.querySelectorAll('tr').forEach(row => {
-      const qty = parseNum(row.querySelector('.dtk-qty').value);
-      const price = parseNum(row.querySelector('.dtk-price').value);
-      const desc = parseNum(row.querySelector('.dtk-desc').value);
+      const qtyEl = row.querySelector('.dtk-qty');
+      const priceEl = row.querySelector('.dtk-price');
+      const descEl = row.querySelector('.dtk-desc');
+      const subtotalEl = row.querySelector('.dtk-row-subtotal');
+      
+      const qty = qtyEl ? parseNum(qtyEl.value) : 0;
+      const price = priceEl ? parseNum(priceEl.value) : 0;
+      const desc = descEl ? parseNum(descEl.value) : 0;
+      
       const rowSub = (qty * price) * (1 - (desc / 100));
-      row.querySelector('.dtk-row-subtotal').innerText = formatCurrency(rowSub);
+      if (subtotalEl) subtotalEl.innerText = formatCurrency(rowSub);
       rawSubtotal += rowSub;
     });
 
-    const subMode = valSubtotal.getAttribute('data-mode');
-    const ivaMode = valIva.getAttribute('data-mode');
-    const totalMode = valTotal.getAttribute('data-mode');
+    const subMode = valSubtotal.getAttribute('data-mode') || 'auto';
+    const ivaMode = valIva.getAttribute('data-mode') || 'auto';
+    const totalMode = valTotal.getAttribute('data-mode') || 'auto';
 
     let finalSubtotal = subMode === 'auto' ? rawSubtotal : parseNum(valSubtotal.innerText);
     if(subMode === 'auto') valSubtotal.innerText = formatCurrency(rawSubtotal);
 
     let finalIva = 0;
-    if(ivaMode === 'auto') {
+    if(ivaMode === 'auto' && selectIva) {
       finalIva = finalSubtotal * (parseNum(selectIva.value) / 100);
       valIva.innerText = formatCurrency(finalIva);
-    } else { finalIva = parseNum(valIva.innerText); }
+    } else { 
+      finalIva = parseNum(valIva.innerText); 
+    }
 
     let finalTotal = totalMode === 'auto' ? (finalSubtotal + finalIva) : parseNum(valTotal.innerText);
     if(totalMode === 'auto') valTotal.innerText = formatCurrency(finalTotal);
@@ -252,42 +265,54 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
   };
 
-  document.getElementById('quote-country').addEventListener('change', function(e) {
+  document.getElementById('quote-country')?.addEventListener('change', function(e) {
     const c = e.target.value;
     const data = countryData[c];
     if(!data) return;
 
     const advSelect = document.getElementById('quote-advisor');
-    advSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor</option>';
-    data.agents.forEach(agent => {
-      advSelect.innerHTML += `<option value="${agent.name}">${agent.code} - ${agent.name}</option>`;
-    });
+    if (advSelect) {
+      advSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor</option>';
+      data.agents.forEach(agent => {
+        advSelect.innerHTML += `<option value="${agent.name}">${agent.code} - ${agent.name}</option>`;
+      });
+    }
 
     const curSelect = document.getElementById('currency-select');
-    curSelect.innerHTML = '';
-    data.currency.forEach(cur => {
-      curSelect.innerHTML += `<option value="${cur}">${cur}</option>`;
-    });
+    if (curSelect) {
+      curSelect.innerHTML = '';
+      data.currency.forEach(cur => {
+        curSelect.innerHTML += `<option value="${cur}">${cur}</option>`;
+      });
+    }
 
-    document.getElementById('iva-label-text').innerText = data.taxName;
-    document.getElementById('prev-iva-label').innerText = data.taxName;
+    const ivaLabelText = document.getElementById('iva-label-text');
+    const prevIvaLabel = document.getElementById('prev-iva-label');
     const taxSelect = document.getElementById('select-iva');
-    taxSelect.innerHTML = '';
-    data.taxRates.forEach(rate => {
-      taxSelect.innerHTML += `<option value="${rate}">${rate}%</option>`;
-    });
+    
+    if (ivaLabelText) ivaLabelText.innerText = data.taxName;
+    if (prevIvaLabel) prevIvaLabel.innerText = data.taxName;
+    
+    if (taxSelect) {
+      taxSelect.innerHTML = '';
+      data.taxRates.forEach(rate => {
+        taxSelect.innerHTML += `<option value="${rate}">${rate}%</option>`;
+      });
+    }
 
-    document.getElementById('terms-installation').value = data.terms.installation;
-    document.getElementById('terms-payment').value = data.terms.payment;
-    document.getElementById('terms-validity').value = data.terms.validity;
-    document.getElementById('terms-warranty').value = data.terms.warranty;
-    document.getElementById('terms-extra').value = data.terms.extra;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    setVal('terms-installation', data.terms.installation);
+    setVal('terms-payment', data.terms.payment);
+    setVal('terms-validity', data.terms.validity);
+    setVal('terms-warranty', data.terms.warranty);
+    setVal('terms-extra', data.terms.extra);
 
     updateQuoteNumber(c);
     calculateAll();
   });
 
   const appendRow = (name, price, qty = 1, desc = 0) => {
+    if (!tbody) return;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="text" class="dtk-input dtk-prod-name dtk-required" value="${name}"></td>
@@ -297,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <td style="text-align:right; font-weight:700;" class="dtk-row-subtotal">0</td>
       <td style="text-align:right;"><button class="dtk-remove-item">×</button></td>
     `;
-    tr.querySelector('.dtk-prod-name').addEventListener('input', function() { this.classList.remove('dtk-error'); });
+    tr.querySelector('.dtk-prod-name')?.addEventListener('input', function() { this.classList.remove('dtk-error'); });
     tbody.appendChild(tr);
   };
 
@@ -307,33 +332,41 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(STORAGE_KEY_FORM, JSON.stringify(formData));
 
     const rowsData = [];
-    tbody.querySelectorAll('tr').forEach(row => {
-      rowsData.push({
-        name: row.querySelector('.dtk-prod-name').value,
-        qty: row.querySelector('.dtk-qty').value,
-        price: row.querySelector('.dtk-price').value,
-        desc: row.querySelector('.dtk-desc').value
+    if (tbody) {
+      tbody.querySelectorAll('tr').forEach(row => {
+        rowsData.push({
+          name: row.querySelector('.dtk-prod-name')?.value || '',
+          qty: row.querySelector('.dtk-qty')?.value || 0,
+          price: row.querySelector('.dtk-price')?.value || 0,
+          desc: row.querySelector('.dtk-desc')?.value || 0
+        });
       });
-    });
+    }
     localStorage.setItem(STORAGE_KEY_ROWS, JSON.stringify(rowsData));
   };
 
   const loadState = () => {
     const savedForm = localStorage.getItem(STORAGE_KEY_FORM);
     if(savedForm) {
-      const parsedForm = JSON.parse(savedForm);
-      if(parsedForm['quote-country']) {
-        const cSelect = document.getElementById('quote-country');
-        cSelect.value = parsedForm['quote-country'];
-        cSelect.dispatchEvent(new Event('change'));
+      try {
+        const parsedForm = JSON.parse(savedForm);
+        if(parsedForm['quote-country']) {
+          const cSelect = document.getElementById('quote-country');
+          if (cSelect) {
+            cSelect.value = parsedForm['quote-country'];
+            cSelect.dispatchEvent(new Event('change'));
+          }
+        }
+        setTimeout(() => {
+          Object.keys(parsedForm).forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = parsedForm[id];
+          });
+          calculateAll();
+        }, 100); // Aumentado el tiempo de espera para evitar condiciones de carrera en el DOM
+      } catch (e) {
+        console.error("Error parsing saved form", e);
       }
-      setTimeout(() => {
-        Object.keys(parsedForm).forEach(id => {
-          const el = document.getElementById(id);
-          if(el) el.value = parsedForm[id];
-        });
-        calculateAll();
-      }, 50);
     } else {
       Object.keys(defaultValues).forEach(id => {
         const el = document.getElementById(id);
@@ -342,15 +375,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const savedRows = localStorage.getItem(STORAGE_KEY_ROWS);
-    tbody.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
     if(savedRows) {
-      const parsedRows = JSON.parse(savedRows);
-      if(parsedRows.length > 0) {
-        parsedRows.forEach(item => { appendRow(item.name, item.price, item.qty, item.desc); });
-      } else { appendRow('Recovery Response', 0); }
-    } else { appendRow('Recovery Response', 0); }
+      try {
+        const parsedRows = JSON.parse(savedRows);
+        if(parsedRows.length > 0) {
+          parsedRows.forEach(item => { appendRow(item.name, item.price, item.qty, item.desc); });
+        } else { appendRow('Recovery Response', 0); }
+      } catch (e) {
+        appendRow('Recovery Response', 0);
+      }
+    } else { 
+      appendRow('Recovery Response', 0); 
+    }
 
-    calculateAll();
+    setTimeout(calculateAll, 150);
   };
 
   const validateForm = () => {
@@ -359,7 +398,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!field.value.trim()) { field.classList.add('dtk-error'); isValid = false; } 
       else { field.classList.remove('dtk-error'); }
     });
-    if (tbody.querySelectorAll('tr').length === 0) { showNotification("Debes agregar al menos un producto a la cotización.", "error"); return false; }
+    if (tbody && tbody.querySelectorAll('tr').length === 0) { 
+      showNotification("Debes agregar al menos un producto a la cotización.", "error"); 
+      return false; 
+    }
     if (!isValid) {
       showNotification("Revisa los campos en rojo. Falta información obligatoria (*).", "error");
       const firstError = document.querySelector('.dtk-error');
@@ -370,10 +412,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.dtk-required').forEach(input => { input.addEventListener('input', function() { this.classList.remove('dtk-error'); }); });
   document.querySelectorAll('.dtk-btn-add').forEach(btn => { btn.addEventListener('click', (e) => { appendRow(e.target.getAttribute('data-name'), e.target.getAttribute('data-price')); calculateAll(); }); });
-  document.getElementById('btn-add-custom').addEventListener('click', () => { appendRow('', '0'); calculateAll(); });
-  tbody.addEventListener('input', (e) => { if(e.target.classList.contains('dtk-input')) calculateAll(); });
-  tbody.addEventListener('click', (e) => { if(e.target.classList.contains('dtk-remove-item')) { e.target.closest('tr').remove(); calculateAll(); } });
-  document.querySelectorAll('.dtk-persist').forEach(input => { input.addEventListener('input', saveState); input.addEventListener('change', () => calculateAll()); });
+  
+  document.getElementById('btn-add-custom')?.addEventListener('click', () => { appendRow('', '0'); calculateAll(); });
+  
+  tbody?.addEventListener('input', (e) => { if(e.target.classList.contains('dtk-input')) calculateAll(); });
+  tbody?.addEventListener('click', (e) => { if(e.target.classList.contains('dtk-remove-item')) { e.target.closest('tr').remove(); calculateAll(); } });
+  
+  document.querySelectorAll('.dtk-persist').forEach(input => { 
+    input.addEventListener('input', saveState); 
+    input.addEventListener('change', () => calculateAll()); 
+  });
 
   const toggleGroups = document.querySelectorAll('.dtk-toggle-group');
   toggleGroups.forEach(group => {
@@ -383,29 +431,55 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.classList.remove('inactive'); e.target.classList.add('active');
         const targetId = group.getAttribute('data-target');
         const valElement = document.getElementById(`val-${targetId}`);
+        if (!valElement) return;
+
         const mode = e.target.getAttribute('data-mode');
         valElement.setAttribute('data-mode', mode);
-        if (targetId === 'iva') { document.getElementById('select-iva').style.display = mode === 'manual' ? 'none' : 'inline-block'; }
-        if(mode === 'manual') { valElement.contentEditable = "true"; valElement.focus(); } else { valElement.contentEditable = "false"; calculateAll(); }
+        
+        if (targetId === 'iva' && selectIva) { 
+          selectIva.style.display = mode === 'manual' ? 'none' : 'inline-block'; 
+        }
+        
+        if(mode === 'manual') { 
+          valElement.contentEditable = "true"; 
+          valElement.focus(); 
+        } else { 
+          valElement.contentEditable = "false"; 
+          calculateAll(); 
+        }
       }
     });
   });
 
   [valSubtotal, valIva, valTotal].forEach(el => {
+    if (!el) return;
     el.addEventListener('input', calculateAll);
-    el.addEventListener('blur', function() { if (this.getAttribute('data-mode') === 'manual') { this.innerText = formatCurrency(parseNum(this.innerText)); calculateAll(); } });
+    el.addEventListener('blur', function() { 
+      if (this.getAttribute('data-mode') === 'manual') { 
+        this.innerText = formatCurrency(parseNum(this.innerText)); 
+        calculateAll(); 
+      } 
+    });
   });
 
-  selectIva.addEventListener('change', calculateAll);
-  currencySelect.addEventListener('change', calculateAll);
+  selectIva?.addEventListener('change', calculateAll);
+  currencySelect?.addEventListener('change', calculateAll);
 
   const mainBtnRow = document.getElementById('main-btn-row');
   const confirmBtnRow = document.getElementById('confirm-btn-row');
-  document.getElementById('btn-clear-form').addEventListener('click', () => { mainBtnRow.style.display = 'none'; confirmBtnRow.style.display = 'flex'; });
-  document.getElementById('btn-confirm-no').addEventListener('click', () => { confirmBtnRow.style.display = 'none'; mainBtnRow.style.display = 'flex'; });
   
-  document.getElementById('btn-confirm-yes').addEventListener('click', () => {
-    const currentCountry = document.getElementById('quote-country').value;
+  document.getElementById('btn-clear-form')?.addEventListener('click', () => { 
+    if (mainBtnRow) mainBtnRow.style.display = 'none'; 
+    if (confirmBtnRow) confirmBtnRow.style.display = 'flex'; 
+  });
+  
+  document.getElementById('btn-confirm-no')?.addEventListener('click', () => { 
+    if (confirmBtnRow) confirmBtnRow.style.display = 'none'; 
+    if (mainBtnRow) mainBtnRow.style.display = 'flex'; 
+  });
+  
+  document.getElementById('btn-confirm-yes')?.addEventListener('click', () => {
+    const currentCountry = document.getElementById('quote-country')?.value;
     if(currentCountry) {
       const baseCode = getBaseCode(currentCountry);
       let counters = JSON.parse(localStorage.getItem(STORAGE_KEY_COUNTERS)) || { CO: 1, CR: 1, PA: 1, GT: 1, HN: 1, SV: 1, NI: 1 };
@@ -422,76 +496,87 @@ document.addEventListener('DOMContentLoaded', () => {
       input.classList.remove('dtk-error');
     });
 
-    tbody.innerHTML = ''; 
-    appendRow('Recovery Response', 0); 
+    if (tbody) {
+      tbody.innerHTML = ''; 
+      appendRow('Recovery Response', 0); 
+    }
     calculateAll();
 
-    confirmBtnRow.style.display = 'none'; 
-    mainBtnRow.style.display = 'flex';
+    if (confirmBtnRow) confirmBtnRow.style.display = 'none'; 
+    if (mainBtnRow) mainBtnRow.style.display = 'flex';
     showNotification("Cotización guardada. Nuevo lienzo listo.", "success");
   });
 
-  // ==========================================
-  // MODAL, PDF Y SCROLL NATIVO CON BOTONES
-  // ==========================================
   const modal = document.getElementById('dtk-preview-modal');
   const modalScrollArea = document.getElementById('modal-scroll-area');
   
   const populateModal = () => {
-    document.getElementById('prev-client-name').innerText = document.getElementById('client-name').value;
-    document.getElementById('prev-client-company').innerText = document.getElementById('client-company').value || '-';
-    document.getElementById('prev-client-role').innerText = document.getElementById('client-role').value || '-';
-    document.getElementById('prev-client-email').innerText = document.getElementById('client-email').value;
-    document.getElementById('prev-client-phone').innerText = document.getElementById('client-phone').value;
-    document.getElementById('prev-client-city').innerText = document.getElementById('client-city').value || '-';
-    document.getElementById('prev-quote-date').innerText = document.getElementById('quote-date').value;
-    document.getElementById('prev-quote-number').innerText = document.getElementById('quote-number').value;
-    document.getElementById('prev-quote-advisor').innerText = document.getElementById('quote-advisor').options[document.getElementById('quote-advisor').selectedIndex] ? document.getElementById('quote-advisor').options[document.getElementById('quote-advisor').selectedIndex].text : '';
+    const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    const getVal = (id) => document.getElementById(id)?.value || '';
+
+    setText('prev-client-name', getVal('client-name'));
+    setText('prev-client-company', getVal('client-company') || '-');
+    setText('prev-client-role', getVal('client-role') || '-');
+    setText('prev-client-email', getVal('client-email'));
+    setText('prev-client-phone', getVal('client-phone'));
+    setText('prev-client-city', getVal('client-city') || '-');
+    setText('prev-quote-date', getVal('quote-date'));
+    setText('prev-quote-number', getVal('quote-number'));
+
+    const advSelect = document.getElementById('quote-advisor');
+    const selectedAdvText = advSelect && advSelect.selectedIndex >= 0 ? advSelect.options[advSelect.selectedIndex].text : '';
+    setText('prev-quote-advisor', selectedAdvText);
 
     const prevTbody = document.getElementById('prev-calc-tbody');
-    prevTbody.innerHTML = '';
-    const currency = document.getElementById('currency-select').value;
-    const isIvaAuto = document.getElementById('val-iva').getAttribute('data-mode') === 'auto';
-    
-    const countrySelected = document.getElementById('quote-country').value;
-    const taxNameStr = countrySelected ? countryData[countrySelected].taxName : 'IVA';
-    const ivaValue = isIvaAuto ? document.getElementById('select-iva').value + '%' : 'Manual';
+    if (prevTbody) {
+      prevTbody.innerHTML = '';
+      const currency = getVal('currency-select');
+      const isIvaAuto = valIva?.getAttribute('data-mode') === 'auto';
+      
+      const countrySelected = getVal('quote-country');
+      const taxNameStr = countrySelected ? countryData[countrySelected].taxName : 'IVA';
+      const ivaValue = isIvaAuto ? getVal('select-iva') + '%' : 'Manual';
 
-    document.querySelectorAll('#dtk-calc-tbody tr').forEach(row => {
-      const name = row.querySelector('.dtk-prod-name').value;
-      const qty = row.querySelector('.dtk-qty').value;
-      const price = parseFloat(row.querySelector('.dtk-price').value || 0).toLocaleString('es-CO');
-      const subtotal = row.querySelector('.dtk-row-subtotal').innerText;
-      prevTbody.innerHTML += `<tr><td>• ${name}</td><td>${qty}</td><td>$ ${price} ${currency}</td><td>${ivaValue === '0%' ? 'NA' : ivaValue}</td><td style="text-align:right; font-weight:700;">${subtotal}</td></tr>`;
-    });
+      document.querySelectorAll('#dtk-calc-tbody tr').forEach(row => {
+        const name = row.querySelector('.dtk-prod-name')?.value || '';
+        const qty = row.querySelector('.dtk-qty')?.value || '';
+        const price = parseFloat(row.querySelector('.dtk-price')?.value || 0).toLocaleString('es-CO');
+        const subtotal = row.querySelector('.dtk-row-subtotal')?.innerText || '0';
+        prevTbody.innerHTML += `<tr><td>• ${name}</td><td>${qty}</td><td>$ ${price} ${currency}</td><td>${ivaValue === '0%' ? 'NA' : ivaValue}</td><td style="text-align:right; font-weight:700;">${subtotal}</td></tr>`;
+      });
+    }
 
-    document.getElementById('prev-adv-name-box').innerText = document.getElementById('quote-advisor').value;
-    document.getElementById('prev-adv-mail-box').innerText = document.getElementById('quote-advisor-email').value;
-    document.getElementById('prev-adv-phone-box').innerText = document.getElementById('quote-advisor-phone').value;
-    document.getElementById('prev-subtotal').innerText = document.getElementById('val-subtotal').innerText;
-    document.getElementById('prev-iva-percent').innerText = isIvaAuto ? `(${document.getElementById('select-iva').value}%)` : '';
-    document.getElementById('prev-iva').innerText = document.getElementById('val-iva').innerText;
-    document.getElementById('prev-total').innerText = document.getElementById('val-total').innerText;
-    document.getElementById('prev-obs').innerText = document.getElementById('quote-obs').value;
+    setText('prev-adv-name-box', getVal('quote-advisor'));
+    setText('prev-adv-mail-box', getVal('quote-advisor-email'));
+    setText('prev-adv-phone-box', getVal('quote-advisor-phone'));
+    setText('prev-subtotal', valSubtotal?.innerText || '0');
+    setText('prev-iva-percent', valIva?.getAttribute('data-mode') === 'auto' ? `(${getVal('select-iva')}%)` : '');
+    setText('prev-iva', valIva?.innerText || '0');
+    setText('prev-total', valTotal?.innerText || '0');
+    setText('prev-obs', getVal('quote-obs'));
 
-    const extraTermsFormat = document.getElementById('terms-extra').value.replace(/\n/g, '<br>');
-    const termsHtml = `<strong>Condiciones de pago:</strong> ${document.getElementById('terms-payment').value}.<br><strong>Instalación y entrega:</strong> ${document.getElementById('terms-installation').value}.<br><strong>Vigencia:</strong> ${document.getElementById('terms-validity').value}.<br><strong>Garantía:</strong> ${document.getElementById('terms-warranty').value}.<br><br><strong>Consideraciones adicionales:</strong><br>${extraTermsFormat}`;
-    document.getElementById('prev-terms-merged').innerHTML = termsHtml;
+    const extraTermsFormat = getVal('terms-extra').replace(/\n/g, '<br>');
+    const termsHtml = `<strong>Condiciones de pago:</strong> ${getVal('terms-payment')}.<br><strong>Instalación y entrega:</strong> ${getVal('terms-installation')}.<br><strong>Vigencia:</strong> ${getVal('terms-validity')}.<br><strong>Garantía:</strong> ${getVal('terms-warranty')}.<br><br><strong>Consideraciones adicionales:</strong><br>${extraTermsFormat}`;
+    setHtml('prev-terms-merged', termsHtml);
   };
 
-  document.getElementById('btn-preview-pdf').addEventListener('click', (e) => {
+  document.getElementById('btn-preview-pdf')?.addEventListener('click', (e) => {
     if(!validateForm()) return;
     populateModal();
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
   });
 
-  document.getElementById('btn-close-modal').addEventListener('click', () => {
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
+  document.getElementById('btn-close-modal')?.addEventListener('click', () => {
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
   });
 
-  // LOGICA DEL SCROLL MEJORADA
   document.querySelectorAll('.dtk-nav-dot').forEach(dot => {
     dot.addEventListener('click', function(e) {
       e.preventDefault();
@@ -502,37 +587,43 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetId = this.getAttribute('data-target');
       const targetPage = document.getElementById(targetId);
       
-      if (targetPage && modalScrollArea) {
-        // Obtenemos la posición de la hoja respecto al fondo general
-        const topPos = targetPage.offsetTop - modalScrollArea.offsetTop;
-        
-        // Hacemos que el scroll baje hasta ese punto
-        modalScrollArea.scrollTo({
-          top: topPos,
-          behavior: 'smooth'
-        });
+      if (targetPage) {
+        targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   });
 
   const downloadPDF = () => {
+    if (typeof html2pdf === 'undefined') {
+      showNotification("La librería de generación de PDF aún no se ha cargado en la web.", "error");
+      return;
+    }
+
     if(!validateForm()) return;
     populateModal();
     showNotification("Generando PDF, por favor espere...", "success");
     
     const element = document.getElementById('dtk-pdf-export-content');
+    if (!element) {
+      showNotification("Error: No se encontró el contenedor del PDF.", "error");
+      return;
+    }
+
+    const docName = document.getElementById('quote-number')?.value || 'Documento';
+    
     const opt = {
       margin:       0,
-      filename:     `Cotizacion_${document.getElementById('quote-number').value.replace(/[^a-zA-Z0-9-]/g, '')}.pdf`,
+      filename:     `Cotizacion_${docName.replace(/[^a-zA-Z0-9-]/g, '')}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
+    
     html2pdf().set(opt).from(element).save();
   };
 
-  document.getElementById('btn-generate-pdf-direct').addEventListener('click', downloadPDF);
-  document.getElementById('btn-modal-generate').addEventListener('click', downloadPDF);
+  document.getElementById('btn-generate-pdf-direct')?.addEventListener('click', downloadPDF);
+  document.getElementById('btn-modal-generate')?.addEventListener('click', downloadPDF);
 
   loadState();
 });
