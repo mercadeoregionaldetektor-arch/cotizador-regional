@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v12-pdf-compacto-redes';
+window.DTK_BUILD_VERSION = 'v14-pdf-paginacion-automatica';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -349,6 +349,7 @@ window.DTK_DATA = {
   let reservedNumber = '';
   let quoteTimer = null;
   let noticeTimer = null;
+  let pdfPage2BaseHtml = '';
 
   function initRefs() {
     [
@@ -1032,8 +1033,7 @@ window.DTK_DATA = {
     // En "NUESTRAS SOLUCIONES TECNOLÓGICAS" solo aparecen productos del catálogo.
     // Los productos personalizados permanecen únicamente en la PROPUESTA ECONÓMICA.
     const chosen = rows
-      .filter(item => item.productId && DATA.products.some(p => p.id === item.productId))
-      .slice(0, 2);
+      .filter(item => item.productId && DATA.products.some(p => p.id === item.productId));
 
     const solutions = $('prev-solutions');
     if (solutions) {
@@ -1108,13 +1108,369 @@ window.DTK_DATA = {
     }
   }
 
+  function restorePdfDynamicLayout() {
+    const doc = els['dtk-pdf-export-content'];
+    if (!doc) return;
+
+    doc.querySelectorAll('.pdf-generated-page').forEach(page => page.remove());
+
+    const page2 = $('pdf-page-2');
+    const inner = page2?.querySelector('.pdf-inner');
+
+    if (inner && pdfPage2BaseHtml) {
+      inner.innerHTML = pdfPage2BaseHtml;
+    }
+  }
+
+  function createPdfContinuationPage(index) {
+    const doc = els['dtk-pdf-export-content'];
+    const page = document.createElement('section');
+
+    page.className = 'dtk-pdf-page pdf-page2 pdf-generated-page';
+    page.id = `pdf-page-${index}`;
+    page.innerHTML = '<div class="pdf-inner"></div>';
+
+    doc.appendChild(page);
+    return page;
+  }
+
+  function currentPageFits(page, safety = 12) {
+    const inner = page?.querySelector('.pdf-inner');
+    if (!page || !inner) return true;
+
+    return inner.scrollHeight <= ((page.clientHeight || 1123) - safety);
+  }
+
+  function continuationTitle(titleEl, suffix = 'CONT.') {
+    const clone = titleEl.cloneNode(true);
+    clone.classList.add('pdf-flow-continuation-title');
+
+    const text = document.createElement('span');
+    text.style.fontSize = '70%';
+    text.style.fontWeight = '600';
+    text.textContent = ` (${suffix})`;
+    clone.appendChild(text);
+
+    return clone;
+  }
+
+  function startNewPdfPage(state) {
+    state.page = createPdfContinuationPage(++state.pageIndex);
+    state.inner = state.page.querySelector('.pdf-inner');
+  }
+
+  function splitSolutionsGroup(group, state) {
+    const title = group.querySelector('.pdf-section-title');
+    const list = group.querySelector('.pdf-solutions');
+    const items = [...(list?.children || [])];
+
+    if (!title || !list || !items.length) {
+      state.inner.appendChild(group);
+      return;
+    }
+
+    let firstChunk = true;
+    let chunk = null;
+    let chunkList = null;
+
+    const newChunk = () => {
+      chunk = document.createElement('div');
+      chunk.className = 'pdf-flow-group pdf-flow-solutions';
+
+      chunk.appendChild(
+        firstChunk ? title.cloneNode(true) : continuationTitle(title)
+      );
+
+      chunkList = document.createElement('div');
+      chunkList.className = 'pdf-solutions';
+      chunk.appendChild(chunkList);
+
+      state.inner.appendChild(chunk);
+      firstChunk = false;
+    };
+
+    newChunk();
+
+    items.forEach(item => {
+      chunkList.appendChild(item);
+
+      if (!currentPageFits(state.page)) {
+        chunkList.removeChild(item);
+
+        if (!chunkList.children.length) {
+          // Protección: un solo elemento nunca debe generar un bucle infinito.
+          chunkList.appendChild(item);
+          return;
+        }
+
+        startNewPdfPage(state);
+        newChunk();
+        chunkList.appendChild(item);
+      }
+    });
+  }
+
+  function createEconomicTable(originalTable) {
+    const table = originalTable.cloneNode(false);
+    table.removeAttribute('id');
+
+    const thead = originalTable.querySelector('thead')?.cloneNode(true);
+    const tbody = document.createElement('tbody');
+
+    if (thead) table.appendChild(thead);
+    table.appendChild(tbody);
+
+    return { table, tbody };
+  }
+
+  function splitEconomicGroup(group, state) {
+    const title = group.querySelector('.pdf-section-title');
+    const sourceTable = group.querySelector('.pdf-table');
+    const rows = [...(sourceTable?.querySelectorAll('tbody tr') || [])];
+    const bottom = group.querySelector('.pdf-econ-bottom');
+    const observation = group.querySelector('.pdf-observation');
+
+    if (!title || !sourceTable) {
+      state.inner.appendChild(group);
+      return;
+    }
+
+    let firstChunk = true;
+    let chunk = null;
+    let shell = null;
+
+    const newChunk = () => {
+      chunk = document.createElement('div');
+      chunk.className = 'pdf-flow-group pdf-flow-economic';
+
+      chunk.appendChild(
+        firstChunk ? title.cloneNode(true) : continuationTitle(title)
+      );
+
+      shell = createEconomicTable(sourceTable);
+      chunk.appendChild(shell.table);
+
+      state.inner.appendChild(chunk);
+      firstChunk = false;
+    };
+
+    newChunk();
+
+    rows.forEach(row => {
+      shell.tbody.appendChild(row);
+
+      if (!currentPageFits(state.page)) {
+        shell.tbody.removeChild(row);
+
+        if (!shell.tbody.children.length) {
+          shell.tbody.appendChild(row);
+          return;
+        }
+
+        startNewPdfPage(state);
+        newChunk();
+        shell.tbody.appendChild(row);
+      }
+    });
+
+    // Asesor + totales van una sola vez, después de la última fila.
+    if (bottom) {
+      chunk.appendChild(bottom);
+
+      if (!currentPageFits(state.page)) {
+        chunk.removeChild(bottom);
+        startNewPdfPage(state);
+
+        const totalsGroup = document.createElement('div');
+        totalsGroup.className = 'pdf-flow-group pdf-flow-economic';
+        totalsGroup.appendChild(continuationTitle(title, 'TOTALES'));
+        totalsGroup.appendChild(bottom);
+        state.inner.appendChild(totalsGroup);
+
+        chunk = totalsGroup;
+      }
+    }
+
+    // Observaciones permanecen inmediatamente después de los totales.
+    if (observation && observation.style.display !== 'none') {
+      chunk.appendChild(observation);
+
+      if (!currentPageFits(state.page)) {
+        chunk.removeChild(observation);
+        startNewPdfPage(state);
+
+        const obsGroup = document.createElement('div');
+        obsGroup.className = 'pdf-flow-group pdf-flow-economic';
+        obsGroup.appendChild(observation);
+        state.inner.appendChild(obsGroup);
+      }
+    }
+  }
+
+  function moveWholeGroup(group, state) {
+    state.inner.appendChild(group);
+
+    if (!currentPageFits(state.page) && state.inner.children.length > 1) {
+      state.inner.removeChild(group);
+      startNewPdfPage(state);
+      state.inner.appendChild(group);
+    }
+  }
+
+  function rebuildPageNavigation() {
+    const pages = [
+      ...document.querySelectorAll('#dtk-pdf-export-content > .dtk-pdf-page')
+    ];
+
+    const dots = document.querySelector('.dtk-page-dots');
+    if (!dots) return;
+
+    dots.innerHTML = pages.map((page, index) => `
+      <button
+        class="dtk-nav-dot ${index === 0 ? 'active' : ''}"
+        data-target="${page.id}"
+      >${index + 1}</button>
+    `).join('');
+
+    dots.querySelectorAll('.dtk-nav-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        scrollToPage(dot.dataset.target, dot);
+      });
+    });
+  }
+
+  function paginatePdfDynamically() {
+    const page2 = $('pdf-page-2');
+    const sourceInner = page2?.querySelector('.pdf-inner');
+    if (!page2 || !sourceInner) return;
+
+    const groups = [
+      ...sourceInner.querySelectorAll(':scope > .pdf-flow-group')
+    ];
+
+    sourceInner.innerHTML = '';
+
+    const state = {
+      page: page2,
+      inner: sourceInner,
+      pageIndex: 2
+    };
+
+    groups.forEach(group => {
+      const type = group.dataset.flowGroup;
+
+      // Si no hay productos de catálogo, esta sección se omite por completo.
+      if (
+        type === 'solutions' &&
+        group.querySelector('.pdf-solutions')?.style.display === 'none'
+      ) {
+        return;
+      }
+
+      if (type === 'solutions') {
+        state.inner.appendChild(group);
+
+        if (!currentPageFits(state.page)) {
+          state.inner.removeChild(group);
+
+          if (state.inner.children.length) {
+            startNewPdfPage(state);
+          }
+
+          // Probar primero el bloque entero en la página nueva.
+          state.inner.appendChild(group);
+
+          if (!currentPageFits(state.page)) {
+            state.inner.removeChild(group);
+            splitSolutionsGroup(group, state);
+          }
+        }
+
+        return;
+      }
+
+      if (type === 'economic') {
+        state.inner.appendChild(group);
+
+        if (!currentPageFits(state.page)) {
+          state.inner.removeChild(group);
+
+          if (state.inner.children.length) {
+            startNewPdfPage(state);
+          }
+
+          state.inner.appendChild(group);
+
+          if (!currentPageFits(state.page)) {
+            state.inner.removeChild(group);
+            splitEconomicGroup(group, state);
+          }
+        }
+
+        return;
+      }
+
+      // Términos, más soluciones y footer se mantienen unidos.
+      // Si no caben, pasan completos a la siguiente hoja.
+      moveWholeGroup(group, state);
+    });
+
+    // Nunca dejar una última hoja vacía.
+    [...document.querySelectorAll('.pdf-generated-page')].forEach(page => {
+      const pageInner = page.querySelector('.pdf-inner');
+      if (pageInner && !pageInner.children.length) {
+        page.remove();
+      }
+    });
+
+    rebuildPageNavigation();
+  }
+
+  async function ensurePdfMeasurable(callback) {
+    const modal = els['dtk-preview-modal'];
+
+    if (!modal) {
+      callback();
+      return;
+    }
+
+    const wasOpen = modal.classList.contains('open');
+    const previousVisibility = modal.style.visibility;
+
+    if (!wasOpen) {
+      modal.style.visibility = 'hidden';
+      modal.classList.add('open');
+    }
+
+    await new Promise(resolve =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve))
+    );
+
+    callback();
+
+    if (!wasOpen) {
+      modal.classList.remove('open');
+      modal.style.visibility = previousVisibility;
+    }
+  }
+
   async function openPreview() {
     if (!(await validateForm({ requireFinalNumber: false }))) return;
+
+    restorePdfDynamicLayout();
     calculateAll();
     populatePreview();
+
     els['dtk-preview-modal'].classList.add('open');
-    waitForImages(els['dtk-pdf-export-content']).catch(() => {});
     document.body.style.overflow = 'hidden';
+
+    await new Promise(resolve =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve))
+    );
+
+    await waitForImages(els['dtk-pdf-export-content']);
+    paginatePdfDynamically();
+
     requestAnimationFrame(() => {
       els['modal-scroll-area'].scrollTop = 0;
       updateActiveDot();
@@ -1129,7 +1485,7 @@ window.DTK_DATA = {
   function updateActiveDot() {
     const area = els['modal-scroll-area'];
     if (!area) return;
-    const pages = [1,2,3].map(n => $(`pdf-page-${n}`));
+    const pages = [...document.querySelectorAll('#dtk-pdf-export-content > .dtk-pdf-page')];
     const areaTop = area.getBoundingClientRect().top;
     let bestIndex = 0, bestDistance = Infinity;
     pages.forEach((page, i) => {
@@ -1153,8 +1509,15 @@ window.DTK_DATA = {
 
   async function downloadPDF() {
     if (!(await validateForm({ requireFinalNumber: true }))) return;
+
+    restorePdfDynamicLayout();
     calculateAll();
     populatePreview();
+
+    await ensurePdfMeasurable(() => {
+      paginatePdfDynamically();
+    });
+
     if (typeof window.html2pdf === 'undefined') {
       showNotice('No se pudo cargar la librería PDF. Verifica la conexión a internet.', 'error');
       return;
@@ -1363,6 +1726,12 @@ window.DTK_DATA = {
 
     populateCountries();
     populateProducts();
+
+    const page2Inner = $('pdf-page-2')?.querySelector('.pdf-inner');
+    if (page2Inner) {
+      pdfPage2BaseHtml = page2Inner.innerHTML;
+    }
+
     els['quote-date'].value = todayLocal();
     els['dtk-calc-tbody'].innerHTML = '';
     renderEmptyRow();
