@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v18-productos-seleccionados-centrados';
+window.DTK_BUILD_VERSION = 'v17-barra-final-abajo';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -792,21 +792,6 @@ window.DTK_DATA = {
     });
   }
 
-  function selectedCatalogProducts() {
-    const catalogIds = new Set(DATA.products.map(product => product.id));
-    const seen = new Set();
-
-    return rowData()
-      .filter(item => {
-        const id = (item.productId || '').trim();
-        if (!id || !catalogIds.has(id) || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      })
-      .map(item => DATA.products.find(product => product.id === item.productId))
-      .filter(Boolean);
-  }
-
   function calculateAll() {
     const rows = rowData();
     let rawSubtotal = 0;
@@ -1045,33 +1030,36 @@ window.DTK_DATA = {
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td>${escapeHtml(taxLabel)}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
-    // En "NUESTRAS SOLUCIONES TECNOLÓGICAS" deben aparecer
-    // únicamente los productos del catálogo que realmente fueron
-    // agregados a la cotización. Los productos personalizados NO van aquí.
-    const chosenProducts = selectedCatalogProducts();
+    // "NUESTRAS SOLUCIONES TECNOLÓGICAS" funciona como bloque corporativo fijo.
+    // Siempre muestra los 5 productos principales del catálogo, centrados y en el mismo orden.
+    // Los productos personalizados siguen apareciendo únicamente en PROPUESTA ECONÓMICA.
+    const chosen = DATA.products.map(product => ({
+      productId: product.id,
+      name: product.name
+    }));
 
     const solutions = $('prev-solutions');
     if (solutions) {
-      const solutionsGroup = solutions.closest('.pdf-flow-solutions');
       const solutionsTitle = solutions.previousElementSibling;
 
-      if (!chosenProducts.length) {
+      if (!chosen.length) {
         solutions.innerHTML = '';
         solutions.style.display = 'none';
-        if (solutionsGroup) solutionsGroup.style.display = 'none';
 
         if (solutionsTitle?.classList?.contains('pdf-section-title')) {
           solutionsTitle.style.display = 'none';
         }
       } else {
         solutions.style.display = '';
-        if (solutionsGroup) solutionsGroup.style.display = '';
 
         if (solutionsTitle?.classList?.contains('pdf-section-title')) {
           solutionsTitle.style.display = '';
         }
 
-        solutions.innerHTML = chosenProducts.map(product => {
+        solutions.innerHTML = chosen.map((item, i) => {
+          const product = DATA.products.find(p => p.id === item.productId);
+          if (!product) return '';
+
           const title = product.name;
           const description = product.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
           const bullets =
