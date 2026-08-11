@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v10-product-images';
+window.DTK_BUILD_VERSION = 'v11-custom-solo-economica';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -893,26 +893,55 @@ window.DTK_DATA = {
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td>${escapeHtml(taxLabel)}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
-    const chosen = rows.slice(0, 2);
+    // En "NUESTRAS SOLUCIONES TECNOLÓGICAS" solo aparecen productos del catálogo.
+    // Los productos personalizados permanecen únicamente en la PROPUESTA ECONÓMICA.
+    const chosen = rows
+      .filter(item => item.productId && DATA.products.some(p => p.id === item.productId))
+      .slice(0, 2);
+
     const solutions = $('prev-solutions');
     if (solutions) {
-      const display = chosen.length ? chosen : [{ name:'Detektor GPS', productId:'gps' }, { name:'Detektor Smart Track', productId:'smart-track' }];
-      solutions.innerHTML = display.map((item, i) => {
-        const product = productForRow(item) || DATA.products.find(p => p.id === item.productId);
-        const title = item.name || product?.name || 'Solución Detektor';
-        const description = product?.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
-        const bullets = product?.id === 'gps' ? ['● Monitoreo y recorridos', '● Geocercas y alertas', '● Reportes de operación'] : product?.id === 'smart-track' ? ['● Administración centralizada', '● Reportes personalizables', '● Alertas y app móvil'] : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
-        return `<div class="pdf-solution ${i % 2 ? 'reverse' : ''}">
-          <div class="pdf-solution-img" style="overflow:hidden;">
-            ${product ? productImageHtml(product, 'pdf') : ''}
-          </div>
-          <div class="pdf-solution-copy">
-            <h4>${escapeHtml(title)}</h4>
-            <p>${escapeHtml(description)}</p>
-            <div class="pdf-bullets">${bullets.map(b => `<span>${escapeHtml(b)}</span>`).join('')}</div>
-          </div>
-        </div>`;
-      }).join('');
+      const solutionsTitle = solutions.previousElementSibling;
+
+      if (!chosen.length) {
+        solutions.innerHTML = '';
+        solutions.style.display = 'none';
+
+        if (solutionsTitle?.classList?.contains('pdf-section-title')) {
+          solutionsTitle.style.display = 'none';
+        }
+      } else {
+        solutions.style.display = '';
+
+        if (solutionsTitle?.classList?.contains('pdf-section-title')) {
+          solutionsTitle.style.display = '';
+        }
+
+        solutions.innerHTML = chosen.map((item, i) => {
+          const product = DATA.products.find(p => p.id === item.productId);
+          if (!product) return '';
+
+          const title = product.name;
+          const description = product.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
+          const bullets =
+            product.id === 'gps'
+              ? ['● Monitoreo y recorridos', '● Geocercas y alertas', '● Reportes de operación']
+              : product.id === 'smart-track'
+              ? ['● Administración centralizada', '● Reportes personalizables', '● Alertas y app móvil']
+              : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
+
+          return `<div class="pdf-solution ${i % 2 ? 'reverse' : ''}">
+            <div class="pdf-solution-img" style="overflow:hidden;">
+              ${productImageHtml(product, 'pdf')}
+            </div>
+            <div class="pdf-solution-copy">
+              <h4>${escapeHtml(title)}</h4>
+              <p>${escapeHtml(description)}</p>
+              <div class="pdf-bullets">${bullets.map(b => `<span>${escapeHtml(b)}</span>`).join('')}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
     }
 
     const termsText = [
