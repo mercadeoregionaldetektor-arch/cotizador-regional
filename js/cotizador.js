@@ -6,12 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectIva = document.getElementById('select-iva');
   const currencySelect = document.getElementById('currency-select');
   
-  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v8';
-  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v8';
-  const STORAGE_KEY_COUNTERS = 'dtk_quote_counters'; // Memoria para los contadores +1
+  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v10';
+  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v10';
+  const STORAGE_KEY_COUNTERS = 'dtk_quote_counters'; 
 
   // ==========================================
-  // BASE DE DATOS POR PAÍS CON CÓDIGOS DE ASESORES
+  // BASE DE DATOS POR PAÍS
   // ==========================================
   const countryData = {
     'Colombia': {
@@ -182,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
     'quote-obs': 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.'
   };
 
-  // Función para obtener el código base del país
   const getBaseCode = (countryStr) => {
     if(countryStr === 'Colombia') return 'CO';
     if(countryStr === 'Panamá') return 'PA';
@@ -194,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'XX';
   };
 
-  // Actualiza el número de cotización leyendo el contador
   const updateQuoteNumber = (countryStr) => {
     if(!countryStr) return;
     const baseCode = getBaseCode(countryStr);
@@ -257,29 +255,23 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
   };
 
-  // ==========================================
-  // EVENTO DE CAMBIO DE PAÍS
-  // ==========================================
   document.getElementById('quote-country').addEventListener('change', function(e) {
     const c = e.target.value;
     const data = countryData[c];
     if(!data) return;
 
-    // 1. Llenar Asesores (Incluyendo Código)
     const advSelect = document.getElementById('quote-advisor');
     advSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor</option>';
     data.agents.forEach(agent => {
       advSelect.innerHTML += `<option value="${agent.name}">${agent.code} - ${agent.name}</option>`;
     });
 
-    // 2. Llenar Moneda
     const curSelect = document.getElementById('currency-select');
     curSelect.innerHTML = '';
     data.currency.forEach(cur => {
       curSelect.innerHTML += `<option value="${cur}">${cur}</option>`;
     });
 
-    // 3. Configurar Impuesto (IVA/ITBMS/ISV)
     document.getElementById('iva-label-text').innerText = data.taxName;
     document.getElementById('prev-iva-label').innerText = data.taxName;
     const taxSelect = document.getElementById('select-iva');
@@ -288,16 +280,13 @@ document.addEventListener('DOMContentLoaded', () => {
       taxSelect.innerHTML += `<option value="${rate}">${rate}%</option>`;
     });
 
-    // 4. Inyectar Términos Legales
     document.getElementById('terms-installation').value = data.terms.installation;
     document.getElementById('terms-payment').value = data.terms.payment;
     document.getElementById('terms-validity').value = data.terms.validity;
     document.getElementById('terms-warranty').value = data.terms.warranty;
     document.getElementById('terms-extra').value = data.terms.extra;
 
-    // 5. Actualizar el Número de Propuesta Auto-Incremental
     updateQuoteNumber(c);
-
     calculateAll();
   });
 
@@ -336,14 +325,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedForm = localStorage.getItem(STORAGE_KEY_FORM);
     if(savedForm) {
       const parsedForm = JSON.parse(savedForm);
-      
-      // Si hay país, disparar evento para poblar listas y contadores
       if(parsedForm['quote-country']) {
         const cSelect = document.getElementById('quote-country');
         cSelect.value = parsedForm['quote-country'];
         cSelect.dispatchEvent(new Event('change'));
       }
-
       setTimeout(() => {
         Object.keys(parsedForm).forEach(id => {
           const el = document.getElementById(id);
@@ -351,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         calculateAll();
       }, 50);
-
     } else {
       Object.keys(defaultValues).forEach(id => {
         const el = document.getElementById(id);
@@ -422,11 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-clear-form').addEventListener('click', () => { mainBtnRow.style.display = 'none'; confirmBtnRow.style.display = 'flex'; });
   document.getElementById('btn-confirm-no').addEventListener('click', () => { confirmBtnRow.style.display = 'none'; mainBtnRow.style.display = 'flex'; });
   
-  // ==========================================
-  // LÓGICA DE LIMPIAR Y AUMENTAR CONTADOR +1
-  // ==========================================
   document.getElementById('btn-confirm-yes').addEventListener('click', () => {
-    // 1. Aumentamos el contador del país que estaba seleccionado antes de borrar
     const currentCountry = document.getElementById('quote-country').value;
     if(currentCountry) {
       const baseCode = getBaseCode(currentCountry);
@@ -435,17 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(STORAGE_KEY_COUNTERS, JSON.stringify(counters));
     }
 
-    // 2. Limpiamos la memoria general
     localStorage.removeItem(STORAGE_KEY_FORM); 
     localStorage.removeItem(STORAGE_KEY_ROWS);
 
-    // 3. Restauramos a los valores POR DEFECTO ORIGINALES
     document.querySelectorAll('.dtk-persist').forEach(input => {
-      if (input.tagName === 'SELECT') {
-        input.selectedIndex = 0;
-      } else {
-        input.value = defaultValues[input.id] !== undefined ? defaultValues[input.id] : '';
-      }
+      if (input.tagName === 'SELECT') { input.selectedIndex = 0; } 
+      else { input.value = defaultValues[input.id] !== undefined ? defaultValues[input.id] : ''; }
       input.classList.remove('dtk-error');
     });
 
@@ -453,14 +429,13 @@ document.addEventListener('DOMContentLoaded', () => {
     appendRow('Recovery Response', 0); 
     calculateAll();
 
-    // 4. Volver a estado normal y mostrar confirmación
     confirmBtnRow.style.display = 'none'; 
     mainBtnRow.style.display = 'flex';
     showNotification("Cotización guardada. Nuevo lienzo listo.", "success");
   });
 
   // ==========================================
-  // MODAL Y GENERACIÓN PDF (html2pdf)
+  // MODAL, PDF Y SCROLL NATIVO
   // ==========================================
   const modal = document.getElementById('dtk-preview-modal');
   
@@ -473,17 +448,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-client-city').innerText = document.getElementById('client-city').value || '-';
     document.getElementById('prev-quote-date').innerText = document.getElementById('quote-date').value;
     document.getElementById('prev-quote-number').innerText = document.getElementById('quote-number').value;
-    document.getElementById('prev-quote-advisor').innerText = document.getElementById('quote-advisor').value;
+    document.getElementById('prev-quote-advisor').innerText = document.getElementById('quote-advisor').options[document.getElementById('quote-advisor').selectedIndex] ? document.getElementById('quote-advisor').options[document.getElementById('quote-advisor').selectedIndex].text : '';
 
     const prevTbody = document.getElementById('prev-calc-tbody');
     prevTbody.innerHTML = '';
     const currency = document.getElementById('currency-select').value;
     const isIvaAuto = document.getElementById('val-iva').getAttribute('data-mode') === 'auto';
     
-    // Obtener el nombre del impuesto dinámico
     const countrySelected = document.getElementById('quote-country').value;
     const taxNameStr = countrySelected ? countryData[countrySelected].taxName : 'IVA';
-    
     const ivaValue = isIvaAuto ? document.getElementById('select-iva').value + '%' : 'Manual';
 
     document.querySelectorAll('#dtk-calc-tbody tr').forEach(row => {
@@ -503,7 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-total').innerText = document.getElementById('val-total').innerText;
     document.getElementById('prev-obs').innerText = document.getElementById('quote-obs').value;
 
-    // Formateo de términos legales respetando saltos de línea
     const extraTermsFormat = document.getElementById('terms-extra').value.replace(/\n/g, '<br>');
     const termsHtml = `<strong>Condiciones de pago:</strong> ${document.getElementById('terms-payment').value}.<br><strong>Instalación y entrega:</strong> ${document.getElementById('terms-installation').value}.<br><strong>Vigencia:</strong> ${document.getElementById('terms-validity').value}.<br><strong>Garantía:</strong> ${document.getElementById('terms-warranty').value}.<br><br><strong>Consideraciones adicionales:</strong><br>${extraTermsFormat}`;
     document.getElementById('prev-terms-merged').innerHTML = termsHtml;
@@ -521,10 +493,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.overflow = 'auto';
   });
 
+  // ==========================================
+  // SCROLL NATIVO MEJORADO PARA EL MODAL
+  // ==========================================
   document.querySelectorAll('.dtk-page-dot').forEach(dot => {
     dot.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Quitar clase activa a todos y ponerla al presionado
       document.querySelectorAll('.dtk-page-dot').forEach(d => d.classList.remove('active'));
       this.classList.add('active');
+      
+      // Buscar la página destino
+      const targetId = this.getAttribute('href').replace('#', '');
+      const targetPage = document.getElementById(targetId);
+      
+      // Hacer scroll nativo y directo hacia esa hoja
+      if (targetPage) {
+        targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
   });
 
