@@ -6,13 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectIva = document.getElementById('select-iva');
   const currencySelect = document.getElementById('currency-select');
   
-  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v10';
-  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v10';
+  const STORAGE_KEY_FORM = 'dtk_quote_form_data_v11';
+  const STORAGE_KEY_ROWS = 'dtk_quote_table_rows_v11';
   const STORAGE_KEY_COUNTERS = 'dtk_quote_counters'; 
 
-  // ==========================================
-  // BASE DE DATOS POR PAÍS
-  // ==========================================
   const countryData = {
     'Colombia': {
       currency: ['COP', 'USD'],
@@ -435,9 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // MODAL, PDF Y SCROLL NATIVO
+  // MODAL, PDF Y SCROLL NATIVO CON BOTONES
   // ==========================================
   const modal = document.getElementById('dtk-preview-modal');
+  const modalScrollArea = document.getElementById('modal-scroll-area');
   
   const populateModal = () => {
     document.getElementById('prev-client-name').innerText = document.getElementById('client-name').value;
@@ -493,24 +491,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.style.overflow = 'auto';
   });
 
-  // ==========================================
-  // SCROLL NATIVO MEJORADO PARA EL MODAL
-  // ==========================================
-  document.querySelectorAll('.dtk-page-dot').forEach(dot => {
+  // LOGICA DEL SCROLL MEJORADA
+  document.querySelectorAll('.dtk-nav-dot').forEach(dot => {
     dot.addEventListener('click', function(e) {
       e.preventDefault();
       
-      // Quitar clase activa a todos y ponerla al presionado
-      document.querySelectorAll('.dtk-page-dot').forEach(d => d.classList.remove('active'));
+      document.querySelectorAll('.dtk-nav-dot').forEach(d => d.classList.remove('active'));
       this.classList.add('active');
       
-      // Buscar la página destino
-      const targetId = this.getAttribute('href').replace('#', '');
+      const targetId = this.getAttribute('data-target');
       const targetPage = document.getElementById(targetId);
       
-      // Hacer scroll nativo y directo hacia esa hoja
-      if (targetPage) {
-        targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (targetPage && modalScrollArea) {
+        // Obtenemos la posición de la hoja respecto al fondo general
+        const topPos = targetPage.offsetTop - modalScrollArea.offsetTop;
+        
+        // Hacemos que el scroll baje hasta ese punto
+        modalScrollArea.scrollTo({
+          top: topPos,
+          behavior: 'smooth'
+        });
       }
     });
   });
