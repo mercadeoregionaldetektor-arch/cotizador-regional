@@ -61,7 +61,7 @@ window.DTK_DATA = {
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
         validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
-        extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
+        extra: 'Consulte con su asesor comercial las soluciones complementarias que Detektor pone a su disposición para fortalecer la seguridad, el monitoreo y la gestión integral de su operación, acompañando el crecimiento de su negocio a futuro.'
       }
     },
     'Panamá': {
@@ -78,7 +78,7 @@ window.DTK_DATA = {
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
         validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
-        extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
+        extra: 'Consulte con su asesor comercial las soluciones complementarias que Detektor pone a su disposición para fortalecer la seguridad, el monitoreo y la gestión integral de su operación, acompañando el crecimiento de su negocio a futuro.'
       }
     },
     'Guatemala': {
