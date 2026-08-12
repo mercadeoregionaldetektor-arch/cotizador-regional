@@ -580,12 +580,16 @@ async function generateAndDownload(data){
   host.innerHTML='';
 
   const renderDocument=buildRenderDocument(data);
+  // Fijamos el ancho para mantener el layout pero permitimos altura dinámica
   renderDocument.style.width=`${CFG.pageWidth}px`;
   renderDocument.style.margin='0';
 
   host.appendChild(renderDocument);
 
   await waitForAssets(renderDocument);
+
+  // Margen de gracia para asegurar que las tipografías y CSS terminen de renderizar
+  await new Promise(resolve => setTimeout(resolve, 300));
 
   const pages=$$('.dtk-pdf-page',renderDocument);
 
@@ -595,47 +599,49 @@ async function generateAndDownload(data){
 
   const {jsPDF}=window.jspdf;
 
+  // Cambiamos a formato estándar A4 con unidades en milímetros para evitar desajustes
   const pdf=new jsPDF({
     orientation:'portrait',
-    unit:'px',
-    format:[CFG.pageWidth,CFG.pageHeight],
-    compress:true,
-    hotfixes:['px_scaling']
+    unit:'mm',
+    format:'a4',
+    compress:true
   });
+
+  const pdfWidth = pdf.internal.pageSize.getWidth();
 
   for(let i=0;i<pages.length;i++){
     const page=pages[i];
 
+    // Permitimos que la captura se adapte a las dimensiones fluidas de altura
     const canvas=await window.html2canvas(page,{
-      scale:CFG.renderScale,
+      scale:CFG.renderScale || 2, 
       useCORS:true,
       allowTaint:false,
       backgroundColor:'#ffffff',
       logging:false,
       width:CFG.pageWidth,
-      height:CFG.pageHeight,
       windowWidth:CFG.pageWidth,
-      windowHeight:CFG.pageHeight,
       scrollX:0,
       scrollY:0
     });
 
     if(i>0){
-      pdf.addPage(
-        [CFG.pageWidth,CFG.pageHeight],
-        'portrait'
-      );
+      pdf.addPage('a4', 'portrait');
     }
 
-    const image=canvas.toDataURL('image/jpeg',0.96);
+    const image=canvas.toDataURL('image/jpeg',0.98); // Aumentamos calidad al 98%
+
+    // Calculamos proporción real del layout para evitar efecto "estirado/aplastado"
+    const canvasRatio = canvas.height / canvas.width;
+    const renderHeight = pdfWidth * canvasRatio;
 
     pdf.addImage(
       image,
       'JPEG',
       0,
       0,
-      CFG.pageWidth,
-      CFG.pageHeight,
+      pdfWidth,
+      renderHeight,
       undefined,
       'FAST'
     );
