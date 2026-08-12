@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + UICONS · 2026-08-12
+ * Build VECTOR-TEXT + UICONS + SPACING · 2026-08-12
  * ------------------------------------------------------------
  * PDF nativo con:
  * - texto real, seleccionable y buscable
@@ -16,7 +16,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + UICONS 2026-08-12 cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + UICONS + SPACING 2026-08-12 cargado.');
 
 const CFG={
   pageWidth:794,
@@ -775,19 +775,14 @@ function productBullets(product){
   return ['Tecnología especializada','Configuración según operación','Respaldo Detektor'];
 }
 
-function drawSolutionCard(doc,product,y,assets,cardH=168){
+function drawSolutionCard(doc,product,y,assets,cardH=176){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   const selected=!!product.selected;
 
-  roundedBox(
-    doc,x,y,w,cardH,
-    selected?CFG.red:CFG.white,
-    selected?CFG.red:CFG.line,
-    10
-  );
+  roundedBox(doc,x,y,w,cardH,selected?CFG.red:CFG.white,selected?CFG.red:CFG.line,10);
 
-  const imgSize=Math.min(122,cardH-32);
+  const imgSize=Math.min(122,cardH-34);
   const imgX=x+16;
   const imgY=y+(cardH-imgSize)/2;
   const dataUrl=assets.get(product.image);
@@ -801,28 +796,37 @@ function drawSolutionCard(doc,product,y,assets,cardH=168){
 
   const copyX=imgX+imgSize+20;
   const copyW=w-(copyX-x)-18;
+  const titleSize=17.5;
+  const titleLineHeight=1.12;
+  const titleY=y+32;
 
-  drawText(doc,product.name,copyX,y+34,copyW,{
-    size:18,
-    style:'bold',
-    color:selected?CFG.white:CFG.red
-  });
+  setFont(doc,titleSize,'bold',selected?CFG.white:CFG.red);
+  const titleLines=textLines(doc,product.name,copyW);
+  doc.text(titleLines,copyX,titleY,{lineHeightFactor:titleLineHeight});
 
-  let copyY=y+58;
+  const titleStep=titleSize*titleLineHeight;
+  let copyY=titleY+(Math.max(titleLines.length,1)-1)*titleStep+27;
   const desc=String(product.description||'').trim();
 
   if(desc){
-    setFont(doc,10.4,'normal',selected?[250,250,250]:CFG.text);
+    const descSize=10.4;
+    const descLineHeight=1.32;
+    const descStep=descSize*descLineHeight;
+    setFont(doc,descSize,'normal',selected?[250,250,250]:CFG.text);
     const lines=textLines(doc,desc,copyW);
-    doc.text(lines,copyX,copyY,{lineHeightFactor:1.22});
-    copyY+=lines.length*12.7+5;
+    doc.text(lines,copyX,copyY,{lineHeightFactor:descLineHeight});
+    copyY+=(Math.max(lines.length,1)-1)*descStep+20;
   }
 
-  setFont(doc,9.6,'normal',selected?[245,245,245]:CFG.text);
+  const bulletSize=9.7;
+  const bulletLineHeight=1.28;
+  const bulletStep=bulletSize*bulletLineHeight;
+  setFont(doc,bulletSize,'normal',selected?[245,245,245]:CFG.text);
 
   productBullets(product).forEach(item=>{
-    doc.text(`- ${item}`,copyX,copyY);
-    copyY+=13;
+    const lines=textLines(doc,`- ${item}`,copyW);
+    doc.text(lines,copyX,copyY,{lineHeightFactor:bulletLineHeight});
+    copyY+=(Math.max(lines.length,1)-1)*bulletStep+16;
   });
 
   return y+cardH;
@@ -832,24 +836,17 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
   let y=55;
   const suffix=pageIndex>0?' · CONT.':'';
 
-  y=sectionTitle(
-    doc,
-    `NUESTRAS SOLUCIONES TECNOLÓGICAS${suffix}`,
-    '',
-    y
-  );
+  y=sectionTitle(doc,`NUESTRAS SOLUCIONES TECNOLÓGICAS${suffix}`,'',y);
 
   const count=Math.max(products.length,1);
   const gap=12;
-  const available=1000-y;
-  const cardH=Math.min(180,Math.max(150,(available-(count-1)*gap)/count));
+  const available=1015-y;
+  const cardH=Math.min(188,Math.max(168,(available-(count-1)*gap)/count));
 
   if(!products.length){
     roundedBox(doc,CFG.marginX,y,CFG.pageWidth-CFG.marginX*2,90,[250,250,250],CFG.line,10);
     drawText(doc,'Sin soluciones del catálogo.',CFG.pageWidth/2,y+48,400,{
-      size:12,
-      color:CFG.muted,
-      align:'center'
+      size:12,color:CFG.muted,align:'center'
     });
     return;
   }
@@ -938,30 +935,22 @@ function drawTotals(doc,data,y){
   const boxW=320;
   const x=CFG.pageWidth-CFG.marginX-boxW;
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
-
   const rows=[
-    ['Subtotal',money(data.totals.subtotal,data.totals.currency),false],
-    [`${data.totals.taxLabel}${taxPct}`,money(data.totals.tax,data.totals.currency),false],
-    ['TOTAL CON IMPUESTO',money(data.totals.total,data.totals.currency),true]
+    {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
+    {label:`${data.totals.taxLabel}${taxPct}`,value:money(data.totals.tax,data.totals.currency),final:false,height:26},
+    {label:'TOTAL CON IMPUESTO',value:money(data.totals.total,data.totals.currency),final:true,height:38}
   ];
 
-  rows.forEach(([label,val,final])=>{
-    setFont(
-      doc,
-      final?14:10.5,
-      final?'bold':'normal',
-      final?CFG.red:CFG.text
-    );
-
-    doc.text(label,x,y);
-    doc.text(val,x+boxW,y,{align:'right'});
-
-    if(!final){
+  rows.forEach(row=>{
+    const baseline=y+(row.final?25:18);
+    setFont(doc,row.final?14:10.5,row.final?'bold':'normal',row.final?CFG.red:CFG.text);
+    doc.text(row.label,x,baseline);
+    doc.text(row.value,x+boxW,baseline,{align:'right'});
+    if(!row.final){
       stroke(doc,CFG.line);
-      doc.line(x,y+7,x+boxW,y+7);
+      doc.line(x,y+row.height-2,x+boxW,y+row.height-2);
     }
-
-    y+=final?28:22;
+    y+=row.height;
   });
 
   return y;
@@ -974,66 +963,44 @@ function drawAdvisor(doc,data,y){
 
   setFont(doc,14.5,'bold',CFG.dark);
   const nameLines=textLines(doc,name,w-34);
+  const contacts=[data.advisor.email,data.advisor.phone].filter(Boolean);
 
-  const contacts=[
-    data.advisor.email,
-    data.advisor.phone
-  ].filter(Boolean);
-
-  const h=
-    18+
-    nameLines.length*17+
-    20+
-    contacts.length*14+
-    15;
+  const h=22+nameLines.length*18+24+contacts.length*16+16;
 
   stroke(doc,CFG.red);
   doc.setLineDashPattern([3,3],0);
   doc.roundedRect(x,y,w,h,9,9,'S');
   doc.setLineDashPattern([],0);
 
-  let yy=y+24;
-
+  let yy=y+27;
   setFont(doc,14.5,'bold',CFG.dark);
-  doc.text(nameLines,x+w/2,yy,{
-    align:'center',
-    lineHeightFactor:1.14
-  });
+  doc.text(nameLines,x+w/2,yy,{align:'center',lineHeightFactor:1.18});
 
-  yy+=nameLines.length*17+2;
-
+  yy+=nameLines.length*18+3;
   setFont(doc,10.5,'bold',CFG.red);
   doc.text('Asesor Comercial Corporativo',x+w/2,yy,{align:'center'});
-  yy+=18;
+  yy+=21;
 
   contacts.forEach(value=>{
     setFont(doc,9.1,'normal',CFG.text);
     const lines=textLines(doc,value,w-30);
-    doc.text(lines,x+w/2,yy,{
-      align:'center',
-      lineHeightFactor:1.12
-    });
-    yy+=Math.max(14,lines.length*10);
+    doc.text(lines,x+w/2,yy,{align:'center',lineHeightFactor:1.18});
+    yy+=Math.max(16,lines.length*11);
   });
 
   return y+h;
 }
 
 function drawLabeledBox(doc,label,text,x,y,w,opts={}){
-  const {
-    fontSize=7.7,
-    minH=45,
-    maxH=112
-  }=opts;
-
+  const {fontSize=7.7,minH=58,maxH=128}=opts;
   const clean=String(text||'').trim()||'-';
+  const bodyLineHeight=1.30;
+  const bodyStep=fontSize*bodyLineHeight;
 
   setFont(doc,fontSize,'normal',CFG.text);
-  const lines=textLines(doc,clean,w-22);
-  const h=Math.min(
-    maxH,
-    Math.max(minH,26+lines.length*(fontSize*1.18))
-  );
+  const lines=textLines(doc,clean,w-24);
+  const desired=38+(Math.max(lines.length,1)-1)*bodyStep+fontSize+12;
+  const h=Math.min(maxH,Math.max(minH,desired));
 
   fill(doc,CFG.soft);
   doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1041,12 +1008,12 @@ function drawLabeledBox(doc,label,text,x,y,w,opts={}){
   fill(doc,CFG.red);
   doc.rect(x,y,3,h,'F');
 
-  setFont(doc,8.2,'bold',CFG.dark);
-  doc.text(label,x+10,y+14);
+  setFont(doc,8.3,'bold',CFG.dark);
+  doc.text(label,x+11,y+18);
 
   setFont(doc,fontSize,'normal',CFG.text);
-  doc.text(lines,x+10,y+27,{
-    lineHeightFactor:1.16
+  doc.text(lines,x+11,y+37,{
+    lineHeightFactor:bodyLineHeight
   });
 
   return h;
@@ -1057,24 +1024,24 @@ function drawObservation(doc,text,y){
 
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
+  const fontSize=8;
+  const lineHeight=1.30;
+  const lineStep=fontSize*lineHeight;
 
-  setFont(doc,8,'normal',CFG.text);
-  const lines=textLines(doc,text,w-24);
-  const h=Math.max(42,24+lines.length*9.3);
+  setFont(doc,fontSize,'normal',CFG.text);
+  const lines=textLines(doc,text,w-26);
+  const h=Math.max(52,34+(Math.max(lines.length,1)-1)*lineStep+fontSize+12);
 
   fill(doc,CFG.soft);
   doc.roundedRect(x,y,w,h,5,5,'F');
-
   fill(doc,CFG.red);
   doc.rect(x,y,4,h,'F');
 
-  setFont(doc,8.5,'bold',CFG.dark);
-  doc.text('Observaciones generales:',x+12,y+15);
+  setFont(doc,8.6,'bold',CFG.dark);
+  doc.text('Observaciones generales:',x+12,y+17);
 
-  setFont(doc,8,'normal',CFG.text);
-  doc.text(lines,x+12,y+29,{
-    lineHeightFactor:1.15
-  });
+  setFont(doc,fontSize,'normal',CFG.text);
+  doc.text(lines,x+12,y+33,{lineHeightFactor:lineHeight});
 
   return y+h;
 }
@@ -1082,12 +1049,12 @@ function drawObservation(doc,text,y){
 function drawTermsSection(doc,data,y,maxBottom){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const gap=10;
+  const gap=12;
   const colW=(w-gap)/2;
 
-  setFont(doc,10,'bold',CFG.dark);
+  setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
-  y+=12;
+  y+=24;
 
   const leftItems=[
     ['Condiciones de pago',data.terms.payment],
@@ -1099,73 +1066,69 @@ function drawTermsSection(doc,data,y,maxBottom){
     ['Garantía',data.terms.warranty]
   ];
 
+  function measureBox(text){
+    const fontSize=7.6;
+    const lineHeight=1.30;
+    const lineStep=fontSize*lineHeight;
+    setFont(doc,fontSize,'normal',CFG.text);
+    const lines=textLines(doc,text||'-',colW-24);
+    return Math.min(128,Math.max(
+      58,
+      38+(Math.max(lines.length,1)-1)*lineStep+fontSize+12
+    ));
+  }
+
   function measureColumn(items){
     let total=0;
     items.forEach((item,index)=>{
-      setFont(doc,7.4,'normal',CFG.text);
-      const lines=textLines(doc,item[1]||'-',colW-22);
-      const h=Math.min(108,Math.max(44,26+lines.length*8.6));
-      total+=h+(index<items.length-1?8:0);
+      total+=measureBox(item[1]);
+      if(index<items.length-1) total+=12;
     });
     return total;
   }
 
-  const target=Math.max(
-    measureColumn(leftItems),
-    measureColumn(rightItems)
-  );
+  const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
 
   function drawColumn(items,cx){
     let cy=y;
-
     items.forEach((item,index)=>{
-      const h=drawLabeledBox(
-        doc,
-        item[0],
-        item[1],
-        cx,
-        cy,
-        colW,
-        {
-          fontSize:7.4,
-          minH:44,
-          maxH:108
-        }
-      );
-
-      cy+=h+(index<items.length-1?8:0);
+      const h=drawLabeledBox(doc,item[0],item[1],cx,cy,colW,{
+        fontSize:7.6,minH:58,maxH:128
+      });
+      cy+=h;
+      if(index<items.length-1) cy+=12;
     });
   }
 
   drawColumn(leftItems,x);
   drawColumn(rightItems,x+colW+gap);
-
-  y+=target+9;
+  y+=target+14;
 
   const extra=String(data.terms.extra||'').trim();
 
   if(extra){
-    const available=Math.max(54,maxBottom-y);
-    const fontSize=available<90?6.8:7.2;
+    const available=Math.max(66,maxBottom-y);
+    const fontSize=available<95?6.9:7.3;
+    const lineHeight=1.27;
+    const lineStep=fontSize*lineHeight;
 
     setFont(doc,fontSize,'normal',CFG.text);
-    const lines=textLines(doc,extra,w-22);
-    const desired=28+lines.length*(fontSize*1.18);
-    const h=Math.min(available,Math.max(54,desired));
+    const lines=textLines(doc,extra,w-24);
+    const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
+    const h=Math.min(available,Math.max(66,desired));
 
     fill(doc,CFG.soft);
     doc.roundedRect(x,y,w,h,5,5,'F');
-
     fill(doc,CFG.red);
     doc.rect(x,y,3,h,'F');
 
-    setFont(doc,8.1,'bold',CFG.dark);
-    doc.text('Consideraciones adicionales',x+10,y+14);
+    setFont(doc,8.3,'bold',CFG.dark);
+    doc.text('Consideraciones adicionales',x+11,y+18);
 
     setFont(doc,fontSize,'normal',CFG.text);
-    doc.text(lines,x+10,y+27,{
-      lineHeightFactor:1.14,
-      maxWidth:w-22
+    doc.text(lines,x+11,y+38,{
+      lineHeightFactor:lineHeight,
+      maxWidth:w-24
     });
 
     y+=h;
@@ -1200,24 +1163,17 @@ function drawConfidentiality(doc,y){
 
 function drawContact(doc,data,assets,y){
   const contact=data.countryContact;
+  if(!contact?.web&&!contact?.socials?.length) return y;
 
-  if(!contact?.web&&!contact?.socials?.length) return;
-
-  setFont(doc,9.2,'bold',CFG.text);
-  doc.text(
-    'Síguenos en nuestras redes',
-    CFG.pageWidth/2,
-    y,
-    {align:'center'}
-  );
-
-  y+=14;
+  setFont(doc,9.4,'bold',CFG.text);
+  doc.text('Síguenos en nuestras redes',CFG.pageWidth/2,y,{align:'center'});
+  y+=20;
 
   const socials=contact.socials||[];
 
   if(socials.length){
     const size=23;
-    const gap=9;
+    const gap=10;
     const total=socials.length*size+(socials.length-1)*gap;
     let x=(CFG.pageWidth-total)/2;
 
@@ -1239,43 +1195,31 @@ function drawContact(doc,data,assets,y){
       x+=size+gap;
     });
 
-    y+=size+11;
+    y+=size+15;
   }
 
   if(contact.web){
-    const label=String(contact.web)
-      .replace(/^https?:\/\//i,'')
-      .replace(/\/$/,'');
-
+    const label=String(contact.web).replace(/^https?:\/\//i,'').replace(/\/$/,'');
     setFont(doc,9.5,'bold',CFG.red);
-
-    doc.textWithLink(
-      label,
-      CFG.pageWidth/2,
-      y,
-      {
-        align:'center',
-        url:contact.web
-      }
-    );
+    doc.textWithLink(label,CFG.pageWidth/2,y,{
+      align:'center',
+      url:contact.web
+    });
+    y+=18;
   }
+
+  return y;
 }
 
 function drawFooter(doc,assets){
-  const claimY=983;
+  const claimY=986;
 
   setFont(doc,17,'bold',CFG.dark);
-  doc.text(
-    'SOLUCIONES PARA TU TRANQUILIDAD',
-    CFG.pageWidth/2,
-    claimY,
-    {align:'center'}
-  );
+  doc.text('SOLUCIONES PARA TU TRANQUILIDAD',CFG.pageWidth/2,claimY,{align:'center'});
 
-  const bannerY=1000;
-
+  const bannerY=1008;
   fill(doc,[5,5,5]);
-  doc.rect(0,bannerY,CFG.pageWidth,72,'F');
+  doc.rect(0,bannerY,CFG.pageWidth,70,'F');
 
   const cells=[
     ['33','años de experiencia'],
@@ -1287,26 +1231,22 @@ function drawFooter(doc,assets){
 
   cells.forEach((cell,i)=>{
     const cx=70+i*cellW+cellW/2;
-
-    setFont(doc,22,'bold',CFG.red);
-    doc.text(cell[0],cx,bannerY+33,{align:'center'});
-
-    setFont(doc,8,'normal',[220,220,220]);
-    doc.text(cell[1],cx,bannerY+49,{align:'center'});
+    setFont(doc,21,'bold',CFG.red);
+    doc.text(cell[0],cx,bannerY+31,{align:'center'});
+    setFont(doc,7.8,'normal',[220,220,220]);
+    doc.text(cell[1],cx,bannerY+47,{align:'center'});
   });
 
   const logo=assets.get(CFG.footerLogo);
-
   if(logo){
-    fitImage(doc,logo,570,bannerY+19,150,34,'contain');
+    fitImage(doc,logo,570,bannerY+18,150,34,'contain');
   }
 
-  setFont(doc,8.4,'bold',CFG.text);
-
+  setFont(doc,8.2,'bold',CFG.text);
   doc.text(
     'Colombia | Guatemala | El Salvador | Honduras | Nicaragua | Costa Rica | Panamá | Venezuela | Brasil',
     CFG.pageWidth/2,
-    1095,
+    1100,
     {align:'center'}
   );
 }
@@ -1315,28 +1255,19 @@ function drawFinalPage(doc,data,assets){
   let y=52;
 
   y=sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
+  y=drawEconomicTable(doc,data,y)+18;
+  y=drawTotals(doc,data,y)+10;
+  y=drawAdvisor(doc,data,y)+16;
+  y=drawObservation(doc,data.quote.observations,y)+18;
 
-  y=drawEconomicTable(doc,data,y)+15;
-  y=drawTotals(doc,data,y)+2;
-  y=drawAdvisor(doc,data,y)+12;
-  y=drawObservation(doc,data.quote.observations,y)+9;
-
-  /*
-   * Reservamos el área inferior para:
-   * - redes
-   * - claim
-   * - banner
-   * - países
-   */
-  const termsBottom=875;
-
+  const termsBottom=850;
   y=drawTermsSection(doc,data,y,termsBottom);
 
   if(shouldAddConfidentiality(data.terms.extra)){
-    drawConfidentiality(doc,Math.min(y+12,898));
+    drawConfidentiality(doc,Math.min(y+14,865));
   }
 
-  drawContact(doc,data,assets,920);
+  drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
 
