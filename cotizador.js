@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v17-barra-final-abajo-resaltado-productos';
+window.DTK_BUILD_VERSION = 'v18-resaltado-rojo-y-redes-pequenas';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -954,15 +954,19 @@ window.DTK_DATA = {
 
     links.innerHTML = (contact.socials || [])
       .filter(item => item?.url)
-      .map(item => `
+      .map(item => {
+        let iconName = item.type;
+        if (iconName === 'x') iconName = 'twitter-alt';
+        
+        return `
         <a
           class="pdf-country-social-link ${escapeHtml(item.type || '')}"
           href="${escapeHtml(item.url)}"
           target="_blank"
           rel="noopener"
           title="${escapeHtml(item.type || 'Red social')}"
-        >${escapeHtml(item.label || '•')}</a>
-      `).join('');
+        ><i class="fi fi-brands-${escapeHtml(iconName)}"></i></a>
+      `}).join('');
 
     web.href = contact.web;
     web.textContent = contact.web
@@ -1039,7 +1043,6 @@ window.DTK_DATA = {
           solutionsTitle.style.display = '';
         }
 
-        // NUEVO: Obtenemos los IDs de los productos agregados a la tabla (carrito)
         const selectedProductIds = rows.map(r => r.productId).filter(Boolean);
 
         solutions.innerHTML = chosen.map((item, i) => {
@@ -1055,10 +1058,8 @@ window.DTK_DATA = {
               ? ['● Administración centralizada', '● Reportes personalizables', '● Alertas y app móvil']
               : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
 
-          // NUEVO: Validamos si el producto está en la cotización
           const isSelected = selectedProductIds.includes(product.id);
 
-          // NUEVO: Inyectamos la clase 'is-selected' dinámicamente
           return `<div class="pdf-solution ${isSelected ? 'is-selected' : ''}">
             <div class="pdf-solution-img" style="overflow:hidden;">
               ${productImageHtml(product, 'pdf')}
@@ -1738,3 +1739,4 @@ window.DTK_DATA = {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+</script>
