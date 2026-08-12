@@ -1,7 +1,7 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Lee datos del cotizador y descarga el PDF.
- * Soluciona superposición de fuentes (kerning bugs) y aplastamiento de imagen.
+ * Incluye CSS Reset Agresivo para solucionar kerning en Webflow y layout aplastado.
  */
 (function(){
 'use strict';
@@ -450,20 +450,56 @@ function buildRenderDocument(data){
   const clone=source.cloneNode(true);
   clone.id='dtk-pdf-download-document';
 
-  // FIX: Reset crítico de CSS para evitar que html2canvas devore los espacios en entornos Webflow
+  // NUEVO: Bloque CSS ultra agresivo para desarmar los comportamientos que rompen html2canvas
   const fixStyles = document.createElement('style');
   fixStyles.innerHTML = `
+    #dtk-pdf-download-document, 
     #dtk-pdf-download-document * {
-      text-rendering: auto !important;
+      /* Reset de Kerning y espaciado (soluciona letras pegadas) */
+      text-rendering: geometricPrecision !important;
       font-variant-ligatures: none !important;
-      letter-spacing: normal !important;
+      font-kerning: none !important;
+      letter-spacing: 0.2px !important;
+      word-spacing: 0px !important;
+      -webkit-font-smoothing: antialiased !important;
+      -moz-osx-font-smoothing: grayscale !important;
+      box-sizing: border-box !important;
     }
+    
     .dtk-pdf-page {
+      /* Estabilizar contenedor para evitar aplastamientos */
       width: ${CFG.pageWidth}px !important;
       min-height: ${CFG.pageHeight}px !important;
       background-color: #ffffff !important;
+      position: relative !important;
+      display: block !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: hidden !important;
-      box-sizing: border-box !important;
+    }
+
+    /* Forzar tablas a respetar anchos y no colapsar texto */
+    .pdf-table {
+      width: 100% !important;
+      table-layout: fixed !important;
+      border-collapse: collapse !important;
+    }
+    
+    .pdf-table th, .pdf-table td {
+      word-wrap: break-word !important;
+      white-space: normal !important;
+    }
+
+    /* Asegurar que las imágenes no se distorsionen */
+    .dtk-pdf-page img {
+      max-width: 100% !important;
+      object-fit: contain !important;
+      display: block !important;
+    }
+
+    /* Forzar estructuras de bloque si Flexbox está fallando en el canvas */
+    .pdf-flow-group {
+      width: 100% !important;
     }
   `;
   clone.prepend(fixStyles);
@@ -577,8 +613,7 @@ function ensureRenderHost(){
   host=document.createElement('div');
   host.id='dtk-render-host';
   
-  // FIX: En lugar de esconderlo a -10000px, lo mantenemos en el viewport pero con opacidad nula. 
-  // Esto obliga al navegador a medir correctamente fuentes y textos para evitar superposiciones.
+  // Mantenemos opacidad nula para que el DOM calcule espacios reales
   host.style.position='absolute';
   host.style.top='0';
   host.style.left='0';
@@ -609,8 +644,7 @@ async function generateAndDownload(data){
 
   await waitForAssets(renderDocument);
 
-  // FIX: Ampliamos el tiempo de espera (800ms) para garantizar que las tipografías corporativas se carguen 
-  // en el DOM clonado antes de tomar la captura.
+  // Margen de gracia para fuentes custom
   await new Promise(resolve => setTimeout(resolve, 800));
 
   const pages=$$('.dtk-pdf-page',renderDocument);
@@ -632,17 +666,21 @@ async function generateAndDownload(data){
       backgroundColor:'#ffffff',
       logging:false,
       width:CFG.pageWidth,
-      windowWidth:CFG.pageWidth
+      windowWidth:CFG.pageWidth,
+      // NUEVO: Forzar reseteo de renderización de fuentes justo en el momento del clon de html2canvas
+      onclone: function(clonedDoc) {
+        const cloneStyle = clonedDoc.createElement('style');
+        cloneStyle.innerHTML = '* { text-rendering: geometricPrecision !important; letter-spacing: 0.2px !important; font-kerning: none !important; }';
+        clonedDoc.head.appendChild(cloneStyle);
+      }
     });
 
     const imgData=canvas.toDataURL('image/jpeg',0.98);
 
-    // FIX: Adaptación de aspecto exacta. Obtenemos las dimensiones físicas en pixeles que arrojó el canvas.
     const pdfPageWidth = canvas.width / (CFG.renderScale || 2);
     const pdfPageHeight = canvas.height / (CFG.renderScale || 2);
 
     if(i===0){
-      // Inicializamos el PDF configurando la página exactamente al tamaño de la imagen generada, cero distorsión.
       pdf=new jsPDF({
         orientation:'portrait',
         unit:'px',
@@ -651,7 +689,6 @@ async function generateAndDownload(data){
         hotfixes:['px_scaling']
       });
     }else{
-      // Agregamos hojas adicionales respetando la proporción exacta de esa hoja en específico.
       pdf.addPage([pdfPageWidth, pdfPageHeight], 'portrait');
     }
 
