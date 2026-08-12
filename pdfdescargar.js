@@ -1,7 +1,7 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Lee datos del cotizador y descarga el PDF.
- * Incluye CSS Reset Agresivo para solucionar kerning en Webflow y layout aplastado.
+ * Versión corregida: layout A4 estable, menos espacio en blanco y texto sin superposición.
  */
 (function(){
 'use strict';
@@ -450,56 +450,419 @@ function buildRenderDocument(data){
   const clone=source.cloneNode(true);
   clone.id='dtk-pdf-download-document';
 
-  // NUEVO: Bloque CSS ultra agresivo para desarmar los comportamientos que rompen html2canvas
-  const fixStyles = document.createElement('style');
-  fixStyles.innerHTML = `
-    #dtk-pdf-download-document, 
-    #dtk-pdf-download-document * {
-      /* Reset de Kerning y espaciado (soluciona letras pegadas) */
-      text-rendering: geometricPrecision !important;
-      font-variant-ligatures: none !important;
-      font-kerning: none !important;
-      letter-spacing: 0.2px !important;
-      word-spacing: 0px !important;
-      -webkit-font-smoothing: antialiased !important;
-      -moz-osx-font-smoothing: grayscale !important;
-      box-sizing: border-box !important;
-    }
-    
-    .dtk-pdf-page {
-      /* Estabilizar contenedor para evitar aplastamientos */
-      width: ${CFG.pageWidth}px !important;
-      min-height: ${CFG.pageHeight}px !important;
-      background-color: #ffffff !important;
-      position: relative !important;
-      display: block !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: hidden !important;
+  // CSS exclusivo para la exportación PDF.
+  // Se inyecta dentro del clon para no alterar el diseño normal de Webflow.
+  const fixStyles=document.createElement('style');
+  fixStyles.innerHTML=`
+    #dtk-pdf-download-document,
+    #dtk-pdf-download-document *{
+      box-sizing:border-box !important;
+      text-rendering:auto !important;
+      font-kerning:auto !important;
+      font-variant-ligatures:none !important;
+      letter-spacing:normal !important;
+      word-spacing:normal !important;
+      -webkit-font-smoothing:antialiased !important;
+      -moz-osx-font-smoothing:grayscale !important;
     }
 
-    /* Forzar tablas a respetar anchos y no colapsar texto */
-    .pdf-table {
-      width: 100% !important;
-      table-layout: fixed !important;
-      border-collapse: collapse !important;
-    }
-    
-    .pdf-table th, .pdf-table td {
-      word-wrap: break-word !important;
-      white-space: normal !important;
+    /* Fuente estable para html2canvas. Evita superposición de caracteres. */
+    #dtk-pdf-download-document,
+    #dtk-pdf-download-document *{
+      font-family:Arial,Helvetica,sans-serif !important;
     }
 
-    /* Asegurar que las imágenes no se distorsionen */
-    .dtk-pdf-page img {
-      max-width: 100% !important;
-      object-fit: contain !important;
-      display: block !important;
+    #dtk-pdf-download-document .dtk-pdf-page{
+      width:${CFG.pageWidth}px !important;
+      height:${CFG.pageHeight}px !important;
+      min-height:${CFG.pageHeight}px !important;
+      max-height:${CFG.pageHeight}px !important;
+      position:relative !important;
+      display:block !important;
+      margin:0 !important;
+      padding:0 !important;
+      overflow:hidden !important;
+      background:#fff !important;
+      transform:none !important;
+      zoom:1 !important;
     }
 
-    /* Forzar estructuras de bloque si Flexbox está fallando en el canvas */
-    .pdf-flow-group {
-      width: 100% !important;
+    #dtk-pdf-download-document .pdf-generated-page .pdf-inner{
+      width:100% !important;
+      height:100% !important;
+      padding:34px 34px 28px !important;
+      display:flex !important;
+      flex-direction:column !important;
+    }
+
+    #dtk-pdf-download-document h1,
+    #dtk-pdf-download-document h2,
+    #dtk-pdf-download-document h3,
+    #dtk-pdf-download-document h4,
+    #dtk-pdf-download-document p,
+    #dtk-pdf-download-document span,
+    #dtk-pdf-download-document td,
+    #dtk-pdf-download-document th,
+    #dtk-pdf-download-document div{
+      text-overflow:clip !important;
+    }
+
+    #dtk-pdf-download-document p,
+    #dtk-pdf-download-document td,
+    #dtk-pdf-download-document span{
+      overflow-wrap:break-word !important;
+      word-break:normal !important;
+    }
+
+    #dtk-pdf-download-document .pdf-section-title{
+      margin:0 0 22px !important;
+      padding:0 !important;
+      font-size:23px !important;
+      line-height:1.1 !important;
+      font-weight:800 !important;
+      text-align:center !important;
+      color:#151515 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-section-title .red{
+      color:#d00012 !important;
+    }
+
+    /* SOLUCIONES */
+    #dtk-pdf-download-document .pdf-flow-solutions{
+      width:100% !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solutions{
+      width:100% !important;
+      display:flex !important;
+      flex-direction:column !important;
+      gap:13px !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution{
+      width:100% !important;
+      min-height:164px !important;
+      height:164px !important;
+      display:grid !important;
+      grid-template-columns:128px minmax(0,1fr) !important;
+      align-items:center !important;
+      column-gap:18px !important;
+      padding:14px 17px !important;
+      border:1px solid #e1e1e1 !important;
+      border-radius:13px !important;
+      background:#fff !important;
+      color:#252525 !important;
+      overflow:hidden !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution.is-selected{
+      background:#ce0014 !important;
+      border-color:#ce0014 !important;
+      color:#fff !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution-img{
+      width:112px !important;
+      height:112px !important;
+      border-radius:9px !important;
+      overflow:hidden !important;
+      background:#f2f2f2 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution-img img{
+      width:100% !important;
+      height:100% !important;
+      display:block !important;
+      object-fit:cover !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution-copy{
+      min-width:0 !important;
+      width:100% !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution-copy h4{
+      margin:0 0 5px !important;
+      font-size:21px !important;
+      line-height:1.08 !important;
+      font-weight:800 !important;
+      white-space:normal !important;
+    }
+
+    #dtk-pdf-download-document .pdf-solution-copy p{
+      margin:0 0 7px !important;
+      font-size:12px !important;
+      line-height:1.28 !important;
+      white-space:normal !important;
+    }
+
+    #dtk-pdf-download-document .pdf-bullets{
+      display:flex !important;
+      flex-direction:column !important;
+      gap:2px !important;
+    }
+
+    #dtk-pdf-download-document .pdf-bullets span{
+      display:block !important;
+      font-size:11.5px !important;
+      line-height:1.25 !important;
+      white-space:normal !important;
+    }
+
+    /* TABLA ECONÓMICA */
+    #dtk-pdf-download-document .pdf-table{
+      width:100% !important;
+      table-layout:fixed !important;
+      border-collapse:collapse !important;
+      margin:0 0 19px !important;
+    }
+
+    #dtk-pdf-download-document .pdf-table th{
+      height:35px !important;
+      padding:8px 10px !important;
+      background:#080808 !important;
+      color:#fff !important;
+      font-size:11px !important;
+      line-height:1.1 !important;
+      font-weight:700 !important;
+      white-space:normal !important;
+    }
+
+    #dtk-pdf-download-document .pdf-table td{
+      min-height:34px !important;
+      padding:9px 10px !important;
+      border-bottom:1px solid #e3e3e3 !important;
+      font-size:11.5px !important;
+      line-height:1.2 !important;
+      white-space:normal !important;
+    }
+
+    /* TOTALES */
+    #dtk-pdf-download-document .pdf-econ-bottom{
+      display:flex !important;
+      flex-direction:column !important;
+      align-items:flex-end !important;
+      width:100% !important;
+    }
+
+    #dtk-pdf-download-document .pdf-totals{
+      width:320px !important;
+      margin:0 0 18px auto !important;
+    }
+
+    #dtk-pdf-download-document .pdf-total-row{
+      display:flex !important;
+      justify-content:space-between !important;
+      align-items:center !important;
+      min-height:31px !important;
+      gap:18px !important;
+      border-bottom:1px solid #ddd !important;
+      font-size:12px !important;
+      line-height:1.15 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-total-row span{
+      flex:1 1 auto !important;
+    }
+
+    #dtk-pdf-download-document .pdf-total-row b{
+      flex:0 0 auto !important;
+      white-space:nowrap !important;
+    }
+
+    #dtk-pdf-download-document .pdf-total-row.final{
+      min-height:40px !important;
+      border-bottom:0 !important;
+      color:#c90016 !important;
+      font-size:16px !important;
+      font-weight:800 !important;
+    }
+
+    /* ASESOR */
+    #dtk-pdf-download-document .pdf-advisor-box{
+      width:315px !important;
+      min-height:118px !important;
+      margin:0 auto 18px !important;
+      padding:18px 20px !important;
+      border:1px dashed #ba0014 !important;
+      border-radius:12px !important;
+      text-align:center !important;
+    }
+
+    #dtk-pdf-download-document .pdf-advisor-box h4{
+      margin:0 0 5px !important;
+      font-size:18px !important;
+      line-height:1.15 !important;
+      font-weight:800 !important;
+      white-space:normal !important;
+      overflow-wrap:anywhere !important;
+    }
+
+    #dtk-pdf-download-document .pdf-advisor-box .role{
+      margin-bottom:6px !important;
+      color:#c50016 !important;
+      font-size:12px !important;
+      font-weight:700 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-advisor-box p{
+      margin:2px 0 !important;
+      font-size:11px !important;
+      line-height:1.2 !important;
+      white-space:normal !important;
+      overflow-wrap:anywhere !important;
+    }
+
+    /* OBSERVACIONES */
+    #dtk-pdf-download-document .pdf-observation{
+      width:100% !important;
+      margin-top:4px !important;
+      padding:10px 12px !important;
+      display:block !important;
+      border-left:4px solid #cb0017 !important;
+      background:#fff4f4 !important;
+      font-size:9.5px !important;
+      line-height:1.35 !important;
+      white-space:normal !important;
+    }
+
+    #dtk-pdf-download-document .pdf-observation b{
+      display:block !important;
+      margin-bottom:4px !important;
+    }
+
+    /* TÉRMINOS */
+    #dtk-pdf-download-document .pdf-flow-terms{
+      width:100% !important;
+      margin-top:10px !important;
+    }
+
+    #dtk-pdf-download-document .pdf-terms-box{
+      width:100% !important;
+      padding:11px 12px !important;
+      border-left:4px solid #cb0017 !important;
+      background:#fffafa !important;
+      font-size:8.8px !important;
+      line-height:1.32 !important;
+      white-space:pre-line !important;
+      overflow-wrap:anywhere !important;
+    }
+
+    #dtk-pdf-download-document .pdf-confidential{
+      margin:9px 15px 0 !important;
+      text-align:center !important;
+      color:#777 !important;
+      font-size:8px !important;
+      line-height:1.25 !important;
+    }
+
+    /* CONTACTO + FOOTER */
+    #dtk-pdf-download-document .pdf-flow-more{
+      width:100% !important;
+      margin-top:auto !important;
+    }
+
+    #dtk-pdf-download-document .pdf-country-contact{
+      margin:8px auto 14px !important;
+      text-align:center !important;
+    }
+
+    #dtk-pdf-download-document .pdf-country-contact-title{
+      margin-bottom:7px !important;
+      font-size:11px !important;
+      font-weight:700 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-country-social-links{
+      display:flex !important;
+      justify-content:center !important;
+      align-items:center !important;
+      gap:12px !important;
+      margin-bottom:6px !important;
+    }
+
+    #dtk-pdf-download-document .pdf-country-web{
+      color:#c80018 !important;
+      font-size:11px !important;
+      font-weight:700 !important;
+      text-decoration:none !important;
+    }
+
+    #dtk-pdf-download-document .pdf-final-footer{
+      width:calc(100% + 68px) !important;
+      margin-left:-34px !important;
+      margin-right:-34px !important;
+      margin-bottom:-28px !important;
+    }
+
+    #dtk-pdf-download-document .pdf-page3-claim{
+      margin-bottom:6px !important;
+      text-align:center !important;
+      font-size:19px !important;
+      line-height:1.1 !important;
+      font-weight:800 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-footer-banner{
+      min-height:72px !important;
+      padding:9px 30px !important;
+      display:grid !important;
+      grid-template-columns:1fr 1fr 1.25fr 1.35fr !important;
+      align-items:center !important;
+      background:#050505 !important;
+      color:#fff !important;
+    }
+
+    #dtk-pdf-download-document .pdf-footer-banner > div{
+      min-width:0 !important;
+      text-align:center !important;
+    }
+
+    #dtk-pdf-download-document .pdf-footer-banner b{
+      display:block !important;
+      margin-bottom:1px !important;
+      color:#dc0018 !important;
+      font-size:24px !important;
+      line-height:1 !important;
+      font-weight:800 !important;
+    }
+
+    #dtk-pdf-download-document .pdf-footer-banner span{
+      display:block !important;
+      font-size:8px !important;
+      line-height:1.15 !important;
+      white-space:normal !important;
+    }
+
+    #dtk-pdf-download-document .pdf-countries{
+      padding:8px 15px !important;
+      text-align:center !important;
+      color:#333 !important;
+      font-size:8.5px !important;
+      line-height:1.2 !important;
+      white-space:nowrap !important;
+    }
+
+    /* PORTADA */
+    #dtk-pdf-download-document #pdf-download-page-1 [id^="prev-"]{
+      min-width:0 !important;
+      max-width:100% !important;
+      font-family:Arial,Helvetica,sans-serif !important;
+      letter-spacing:normal !important;
+      word-spacing:normal !important;
+      white-space:normal !important;
+      overflow-wrap:anywhere !important;
+      line-height:1.25 !important;
+      transform:none !important;
+    }
+
+    #dtk-pdf-download-document #pdf-download-page-1 .pdf-info-row{
+      min-width:0 !important;
+    }
+
+    #dtk-pdf-download-document img{
+      max-width:100% !important;
     }
   `;
   clone.prepend(fixStyles);
@@ -605,23 +968,32 @@ async function waitForAssets(root){
 
 function ensureRenderHost(){
   let host=$('#dtk-render-host');
-  if(host) {
+
+  if(host){
     host.innerHTML='';
+    host.style.position='fixed';
+    host.style.top='0';
+    host.style.left='-10000px';
+    host.style.width=`${CFG.pageWidth}px`;
+    host.style.opacity='1';
+    host.style.visibility='visible';
+    host.style.zIndex='-1';
+    host.style.pointerEvents='none';
+    host.style.overflow='visible';
     return host;
   }
 
   host=document.createElement('div');
   host.id='dtk-render-host';
-  
-  // Mantenemos opacidad nula para que el DOM calcule espacios reales
-  host.style.position='absolute';
+  host.style.position='fixed';
   host.style.top='0';
-  host.style.left='0';
+  host.style.left='-10000px';
   host.style.width=`${CFG.pageWidth}px`;
-  host.style.zIndex='-9999';
-  host.style.opacity='0.001';
+  host.style.opacity='1';
+  host.style.visibility='visible';
+  host.style.zIndex='-1';
   host.style.pointerEvents='none';
-  host.style.overflow='hidden';
+  host.style.overflow='visible';
 
   document.body.appendChild(host);
   return host;
@@ -638,14 +1010,13 @@ async function generateAndDownload(data){
   await ensureLibraries();
 
   const host=ensureRenderHost();
-
   const renderDocument=buildRenderDocument(data);
   host.appendChild(renderDocument);
 
   await waitForAssets(renderDocument);
 
-  // Margen de gracia para fuentes custom
-  await new Promise(resolve => setTimeout(resolve, 800));
+  // Tiempo breve para que Webflow termine de calcular fuentes, imágenes y layout.
+  await new Promise(resolve=>setTimeout(resolve,500));
 
   const pages=$$('.dtk-pdf-page',renderDocument);
 
@@ -654,42 +1025,83 @@ async function generateAndDownload(data){
   }
 
   const {jsPDF}=window.jspdf;
-  let pdf = null;
+  let pdf=null;
 
   for(let i=0;i<pages.length;i++){
     const page=pages[i];
 
+    // Todas las páginas mantienen exactamente el mismo tamaño A4 en píxeles.
+    page.style.width=`${CFG.pageWidth}px`;
+    page.style.height=`${CFG.pageHeight}px`;
+    page.style.minHeight=`${CFG.pageHeight}px`;
+    page.style.maxHeight=`${CFG.pageHeight}px`;
+
+    await new Promise(resolve=>
+      requestAnimationFrame(()=>
+        requestAnimationFrame(resolve)
+      )
+    );
+
     const canvas=await window.html2canvas(page,{
-      scale:CFG.renderScale || 2,
+      scale:CFG.renderScale,
       useCORS:true,
       allowTaint:false,
       backgroundColor:'#ffffff',
       logging:false,
       width:CFG.pageWidth,
+      height:CFG.pageHeight,
       windowWidth:CFG.pageWidth,
-      // NUEVO: Forzar reseteo de renderización de fuentes justo en el momento del clon de html2canvas
-      onclone: function(clonedDoc) {
-        const cloneStyle = clonedDoc.createElement('style');
-        cloneStyle.innerHTML = '* { text-rendering: geometricPrecision !important; letter-spacing: 0.2px !important; font-kerning: none !important; }';
-        clonedDoc.head.appendChild(cloneStyle);
+      windowHeight:CFG.pageHeight,
+      scrollX:0,
+      scrollY:0,
+      removeContainer:true,
+      imageTimeout:15000,
+      onclone(clonedDoc){
+        const style=clonedDoc.createElement('style');
+        style.textContent=`
+          html,
+          body{
+            margin:0 !important;
+            padding:0 !important;
+          }
+
+          #dtk-pdf-download-document{
+            width:${CFG.pageWidth}px !important;
+          }
+
+          #dtk-pdf-download-document .dtk-pdf-page{
+            width:${CFG.pageWidth}px !important;
+            height:${CFG.pageHeight}px !important;
+            min-height:${CFG.pageHeight}px !important;
+            max-height:${CFG.pageHeight}px !important;
+            transform:none !important;
+            zoom:1 !important;
+          }
+
+          #dtk-pdf-download-document *,
+          #dtk-pdf-download-document *::before,
+          #dtk-pdf-download-document *::after{
+            animation:none !important;
+            transition:none !important;
+            caret-color:transparent !important;
+          }
+        `;
+        clonedDoc.head.appendChild(style);
       }
     });
 
-    const imgData=canvas.toDataURL('image/jpeg',0.98);
-
-    const pdfPageWidth = canvas.width / (CFG.renderScale || 2);
-    const pdfPageHeight = canvas.height / (CFG.renderScale || 2);
+    const imgData=canvas.toDataURL('image/jpeg',0.95);
 
     if(i===0){
       pdf=new jsPDF({
         orientation:'portrait',
         unit:'px',
-        format:[pdfPageWidth, pdfPageHeight],
+        format:[CFG.pageWidth,CFG.pageHeight],
         compress:true,
         hotfixes:['px_scaling']
       });
     }else{
-      pdf.addPage([pdfPageWidth, pdfPageHeight], 'portrait');
+      pdf.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
     }
 
     pdf.addImage(
@@ -697,8 +1109,8 @@ async function generateAndDownload(data){
       'JPEG',
       0,
       0,
-      pdfPageWidth,
-      pdfPageHeight,
+      CFG.pageWidth,
+      CFG.pageHeight,
       undefined,
       'FAST'
     );
