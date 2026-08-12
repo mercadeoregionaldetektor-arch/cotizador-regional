@@ -1,13 +1,21 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Lee datos del cotizador y descarga el PDF.
- * Versión corregida: layout A4 estable, menos espacio en blanco y texto sin superposición.
+ * Build CLEAN-CSS · 2026-08-12
+ * ------------------------------------------------------------
+ * Diseñado para trabajar con el embed Webflow aislado:
+ *   - #dtk-pdf-export-content = vista previa
+ *   - #dtk-pdf-download-document = descarga
+ *
+ * El CSS específico del descargable está encapsulado bajo
+ * #dtk-pdf-download-document para evitar conflictos con Webflow.
+ * ------------------------------------------------------------
  */
 (function(){
 'use strict';
 
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
+console.info('[DTK PDF] Build CLEAN-CSS 2026-08-12 cargado.');
 
 const CFG={
   pageWidth:794,
@@ -490,7 +498,7 @@ function buildRenderDocument(data){
     #dtk-pdf-download-document .pdf-generated-page .pdf-inner{
       width:100% !important;
       height:100% !important;
-      padding:34px 34px 28px !important;
+      padding:28px 32px 22px !important;
       display:flex !important;
       flex-direction:column !important;
     }
@@ -515,9 +523,9 @@ function buildRenderDocument(data){
     }
 
     #dtk-pdf-download-document .pdf-section-title{
-      margin:0 0 22px !important;
+      margin:0 0 16px !important;
       padding:0 !important;
-      font-size:23px !important;
+      font-size:21px !important;
       line-height:1.1 !important;
       font-weight:800 !important;
       text-align:center !important;
@@ -537,18 +545,18 @@ function buildRenderDocument(data){
       width:100% !important;
       display:flex !important;
       flex-direction:column !important;
-      gap:13px !important;
+      gap:11px !important;
     }
 
     #dtk-pdf-download-document .pdf-solution{
       width:100% !important;
-      min-height:164px !important;
-      height:164px !important;
+      min-height:168px !important;
+      height:168px !important;
       display:grid !important;
       grid-template-columns:128px minmax(0,1fr) !important;
       align-items:center !important;
       column-gap:18px !important;
-      padding:14px 17px !important;
+      padding:13px 16px !important;
       border:1px solid #e1e1e1 !important;
       border-radius:13px !important;
       background:#fff !important;
@@ -563,8 +571,8 @@ function buildRenderDocument(data){
     }
 
     #dtk-pdf-download-document .pdf-solution-img{
-      width:112px !important;
-      height:112px !important;
+      width:116px !important;
+      height:116px !important;
       border-radius:9px !important;
       overflow:hidden !important;
       background:#f2f2f2 !important;
@@ -615,7 +623,7 @@ function buildRenderDocument(data){
       width:100% !important;
       table-layout:fixed !important;
       border-collapse:collapse !important;
-      margin:0 0 19px !important;
+      margin:0 0 12px !important;
     }
 
     #dtk-pdf-download-document .pdf-table th{
@@ -648,7 +656,7 @@ function buildRenderDocument(data){
 
     #dtk-pdf-download-document .pdf-totals{
       width:320px !important;
-      margin:0 0 18px auto !important;
+      margin:0 0 12px auto !important;
     }
 
     #dtk-pdf-download-document .pdf-total-row{
@@ -682,9 +690,9 @@ function buildRenderDocument(data){
     /* ASESOR */
     #dtk-pdf-download-document .pdf-advisor-box{
       width:315px !important;
-      min-height:118px !important;
-      margin:0 auto 18px !important;
-      padding:18px 20px !important;
+      min-height:96px !important;
+      margin:0 auto 12px !important;
+      padding:14px 18px !important;
       border:1px dashed #ba0014 !important;
       border-radius:12px !important;
       text-align:center !important;
@@ -735,7 +743,7 @@ function buildRenderDocument(data){
     /* TÉRMINOS */
     #dtk-pdf-download-document .pdf-flow-terms{
       width:100% !important;
-      margin-top:10px !important;
+      margin-top:8px !important;
     }
 
     #dtk-pdf-download-document .pdf-terms-box{
@@ -750,7 +758,7 @@ function buildRenderDocument(data){
     }
 
     #dtk-pdf-download-document .pdf-confidential{
-      margin:9px 15px 0 !important;
+      margin:6px 15px 0 !important;
       text-align:center !important;
       color:#777 !important;
       font-size:8px !important;
@@ -764,7 +772,7 @@ function buildRenderDocument(data){
     }
 
     #dtk-pdf-download-document .pdf-country-contact{
-      margin:8px auto 14px !important;
+      margin:6px auto 10px !important;
       text-align:center !important;
     }
 
@@ -790,10 +798,10 @@ function buildRenderDocument(data){
     }
 
     #dtk-pdf-download-document .pdf-final-footer{
-      width:calc(100% + 68px) !important;
-      margin-left:-34px !important;
-      margin-right:-34px !important;
-      margin-bottom:-28px !important;
+      width:calc(100% + 64px) !important;
+      margin-left:-32px !important;
+      margin-right:-32px !important;
+      margin-bottom:-22px !important;
     }
 
     #dtk-pdf-download-document .pdf-page3-claim{
@@ -967,6 +975,7 @@ async function waitForAssets(root){
 }
 
 function ensureRenderHost(){
+  // Reutiliza #dtk-render-host del embed limpio cuando existe.
   let host=$('#dtk-render-host');
 
   if(host){
