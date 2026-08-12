@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v19-actualizacion-cache';
+window.DTK_BUILD_VERSION = 'v20-ajuste-columnas-impuesto';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -842,27 +842,32 @@ window.DTK_DATA = {
     clearErrors();
     if (!countryHasAdvisorList(getCountry())) syncManualAdvisorCode();
     let valid = true;
-    const requiredIds = ['client-name','client-email','client-phone','quote-date','quote-country','quote-advisor-code','terms-installation','terms-payment','terms-validity','terms-warranty'];
+    
+    const requiredIds = [
+      'client-name',
+      'client-email',
+      'client-phone',
+      'quote-date',
+      'quote-country',
+      'quote-advisor-code',
+      'quote-advisor-email', 
+      'terms-installation',
+      'terms-payment',
+      'terms-validity',
+      'terms-warranty'
+    ];
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validación simple para correos reales (requiere un @)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     for (const id of requiredIds) {
       const el = $(id);
       const value = String(el?.value || '').trim();
+      
       if (!el || !value) {
         el?.classList.add('dtk-error');
         valid = false;
-      } else if (id === 'client-email' && !emailRegex.test(value)) {
+      } else if ((id === 'client-email' || id === 'quote-advisor-email') && !emailRegex.test(value)) {
         el?.classList.add('dtk-error');
-        valid = false;
-      }
-    }
-
-    // Validar también el correo del asesor si fue rellenado
-    const advisorEmailEl = $('quote-advisor-email');
-    if (advisorEmailEl && advisorEmailEl.value.trim()) {
-      if (!emailRegex.test(advisorEmailEl.value.trim())) {
-        advisorEmailEl.classList.add('dtk-error');
         valid = false;
       }
     }
@@ -885,7 +890,7 @@ window.DTK_DATA = {
     });
 
     if (!valid) {
-      showNotice('Revisa los campos en rojo. Falta información obligatoria (*) o el correo no es válido.', 'error');
+      showNotice('Revisa los campos en rojo. Falta información obligatoria (*) o un correo no es válido.', 'error');
       document.querySelector('.dtk-error')?.scrollIntoView({ behavior:'smooth', block:'center' });
       return false;
     }
@@ -1007,9 +1012,8 @@ window.DTK_DATA = {
     const rows = rowData();
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
-      const taxRate = currentTaxRate();
-      const taxLabel = taxRate === 0 ? 'NA' : `${taxRate}%`;
-      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td>${escapeHtml(taxLabel)}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
+      // AQUÍ OCURRE LA MAGIA: Eliminamos la columna de impuesto en las filas dinámicas
+      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
     const chosen = DATA.products.map(product => ({
