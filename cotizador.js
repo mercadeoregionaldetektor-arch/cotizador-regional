@@ -1509,48 +1509,71 @@ window.DTK_DATA = {
   }
 
   async function downloadPDF() {
+    // 1. Validamos que todo esté lleno y aseguramos el número de propuesta final
     if (!(await validateForm({ requireFinalNumber: true }))) return;
 
-    restorePdfDynamicLayout();
+    // Calculamos totales por seguridad antes de extraer los datos
     calculateAll();
-    populatePreview();
+    
+    showNotice('Preparando datos de la cotización...', 'success');
 
-    await ensurePdfMeasurable(() => {
-      paginatePdfDynamically();
-    });
-
-    if (typeof window.html2pdf === 'undefined') {
-      showNotice('No se pudo cargar la librería PDF. Verifica la conexión a internet.', 'error');
-      return;
-    }
-    const host = els['dtk-render-host'];
-    host.innerHTML = '';
-    const clone = els['dtk-pdf-export-content'].cloneNode(true);
-    clone.removeAttribute('id');
-    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-    host.appendChild(clone);
-    showNotice('Generando PDF, por favor espera…', 'success');
-
-    await waitForImages(clone);
-
-    const docName = els['quote-number'].value || 'Cotizacion-Detektor';
-    const options = {
-      margin: 0,
-      filename: `Cotizacion_${docName.replace(/[^A-Za-z0-9-]/g,'')}.pdf`,
-      image: { type:'jpeg', quality:0.98 },
-      html2canvas: { scale:2, useCORS:true, allowTaint:false, backgroundColor:'#ffffff', logging:false },
-      jsPDF: { unit:'px', format:[794,1123], orientation:'portrait', hotfixes:['px_scaling'] },
-      pagebreak: { mode:['css','legacy'], before:[] }
+    // 2. Empaquetamos toda la información en un JSON limpio
+    const payload = {
+      quoteData: {
+        date: $('quote-date').value,
+        number: els['quote-number'].value,
+        country: els['quote-country'].value,
+        advisorCode: getAdvisorCode(),
+        advisorName: getAdvisorName(),
+        advisorEmail: $('quote-advisor-email').value,
+        advisorPhone: $('quote-advisor-phone').value,
+        observations: $('quote-obs').value
+      },
+      clientData: {
+        name: $('client-name').value,
+        company: $('client-company').value,
+        role: $('client-role').value,
+        email: $('client-email').value,
+        phone: $('client-phone').value,
+        city: $('client-city').value
+      },
+      terms: {
+        installation: $('terms-installation').value,
+        payment: $('terms-payment').value,
+        validity: $('terms-validity').value,
+        warranty: $('terms-warranty').value,
+        extra: $('terms-extra').value
+      },
+      financials: {
+        currency: currentCurrency(),
+        taxRate: currentTaxRate(),
+        taxLabel: getCountry()?.taxName || 'IVA',
+        subtotal: els['val-subtotal'].textContent,
+        taxAmount: els['val-tax'].textContent,
+        total: els['val-total'].textContent
+      },
+      // Extraemos cada producto agregado en la tabla dinámica
+      products: rowData().map(item => ({
+        productId: item.productId,
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        discount: item.discount,
+        subtotal: item.subtotal
+      }))
     };
-    try {
-      await window.html2pdf().set(options).from(clone).save();
-      showNotice('PDF generado correctamente.', 'success');
-    } catch (error) {
-      console.error(error);
-      showNotice('No fue posible generar el PDF. Inténtalo nuevamente.', 'error');
-    } finally {
-      host.innerHTML = '';
-    }
+
+    // 3. Imprimimos el resultado en consola para depuración
+    console.log("🚀 Payload listo para enviar a Render:", payload);
+    
+    // Aviso temporal indicando que el botón hizo su trabajo
+    showNotice('Botón accionado. Revisa la consola para ver el JSON estructurado.', 'success');
+
+    /* 
+    ========================================================================
+    AQUÍ SE INYECTARÁ EL CÓDIGO FETCH (POST) CUANDO EL BACKEND ESTÉ LISTO
+    ========================================================================
+    */
   }
 
   function resetModes() {
