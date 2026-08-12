@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v17-barra-final-abajo';
+window.DTK_BUILD_VERSION = 'v17-barra-final-abajo-resaltado-productos';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -10,7 +10,6 @@ window.DTK_CONFIG = {
   companyPrefix: 'DET',
   quoteCounterStorageKey: 'dtk_quote_counters_v2'
 };
-
 
 window.DTK_COUNTRY_CONTACTS = {
   'Colombia': {
@@ -133,7 +132,7 @@ window.DTK_DATA = {
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
-        validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
+        validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
         extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
       }
@@ -150,7 +149,7 @@ window.DTK_DATA = {
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
         payment: 'El pago del servicio lo puede realizar mediante transferencia electrónica a nuestras cuentas bancarias especificadas en el contrato de servicios o bien por descargo automático a tarjeta de crédito.',
-        validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
+        validity: 'El contrato de servicio comprende un período de meses (__), con permanencia mínima de __ meses. Precios y descuentos de esta propuesta son validos hasta el día de mes año.',
         warranty: 'La garantía y mantenimiento de los equipos se mantiene vigente por el tiempo de duración del contrato de servicios. En caso de que un dispositivo GPS no reporte información a plataforma debido a la manipulación de personas ajenas a Detektor la revisión tendrá un costo de $ USD',
         extra: 'Esta propuesta ha sido desarrollada por Detektor y se mantendrá bajo propiedad hasta el momento en que haya una aceptación formal, de esta forma, sus contenidos no podrán ser revelados a ningún tercero, así como tampoco los conceptos originales desarrollados para Detektor podrán ser utilizados con fines comerciales. Detektor cree en la sostenibilidad, por eso presentamos propuestas electrónicas en pro del medio ambiente. Antes de imprimir este documento, asegúrese que es realmente necesario'
       }
@@ -467,8 +466,6 @@ window.DTK_DATA = {
     return DATA.countries[els['quote-country']?.value] || null;
   }
 
-  // La presencia de asesores manda sobre advisorMode.
-  // Esto evita que una configuración antigua deje un país en modo manual.
   function countryHasAdvisorList(country) {
     return !!country && Array.isArray(country.agents) && country.agents.length > 0;
   }
@@ -499,7 +496,6 @@ window.DTK_DATA = {
     if (!words.length) return '';
     if (words.length === 1) return words[0].slice(0, 12);
 
-    // Ejemplo: "María Gómez" -> "MGOMEZ"
     return sanitizeCode(`${words[0].charAt(0)}${words[words.length - 1]}`).slice(0, 12);
   }
 
@@ -695,7 +691,6 @@ window.DTK_DATA = {
       syncManualAdvisorCode();
     }
 
-    // Placeholders dinámicos según el país seleccionado
     const phonePlaceholder = country.phonePlaceholder || 'Ej. +00 000 000 0000';
     const cityPlaceholder = country.cityPlaceholder || 'Ej. Ciudad';
 
@@ -828,9 +823,6 @@ window.DTK_DATA = {
 
     valEl.dataset.mode = mode;
 
-    // IMPUESTO:
-    // "Lista" usa la tasa configurada por país.
-    // "Manual" permite escribir una tasa porcentual personalizada.
     if (target === 'tax') {
       valEl.contentEditable = 'false';
       valEl.classList.remove('manual');
@@ -858,8 +850,6 @@ window.DTK_DATA = {
       return;
     }
 
-    // SUBTOTAL Y TOTAL FINAL:
-    // Se mantienen como valor monetario editable cuando se usa Manual.
     valEl.contentEditable = mode === 'manual' ? 'true' : 'false';
     valEl.classList.toggle('manual', mode === 'manual');
 
@@ -911,13 +901,10 @@ window.DTK_DATA = {
     const number = await reserveQuoteNumber(false, { showError: requireFinalNumber });
     if (!number) {
       if (requireFinalNumber) {
-        // El problema es el consecutivo/backend, NO el identificador del asesor.
         els['quote-number']?.classList.add('dtk-error');
         els['quote-number']?.scrollIntoView({ behavior:'smooth', block:'center' });
         return false;
       }
-      // La vista previa puede abrirse sin bloquearse por una caída/configuración del backend.
-      // Este número es solo visual y nunca se guarda como consecutivo definitivo.
       const provisional = previewQuoteNumber();
       if (els['quote-number']) els['quote-number'].value = provisional;
       showNotice('Vista previa abierta con número provisional. El consecutivo definitivo se generará al descargar el PDF.', 'success');
@@ -989,7 +976,6 @@ window.DTK_DATA = {
 
   function populatePreview() {
     const gv = id => $(id)?.value?.trim() || '';
-    // Los campos no diligenciados desaparecen del PDF, en lugar de mostrar "-".
     setPdfOptionalText('prev-client-name', gv('client-name'));
     setPdfOptionalText('prev-client-company', gv('client-company'));
     setPdfOptionalText('prev-client-role', gv('client-role'));
@@ -1030,9 +1016,6 @@ window.DTK_DATA = {
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td>${escapeHtml(taxLabel)}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
-    // "NUESTRAS SOLUCIONES TECNOLÓGICAS" funciona como bloque corporativo fijo.
-    // Siempre muestra los 5 productos principales del catálogo, centrados y en el mismo orden.
-    // Los productos personalizados siguen apareciendo únicamente en PROPUESTA ECONÓMICA.
     const chosen = DATA.products.map(product => ({
       productId: product.id,
       name: product.name
@@ -1056,6 +1039,9 @@ window.DTK_DATA = {
           solutionsTitle.style.display = '';
         }
 
+        // NUEVO: Obtenemos los IDs de los productos agregados a la tabla (carrito)
+        const selectedProductIds = rows.map(r => r.productId).filter(Boolean);
+
         solutions.innerHTML = chosen.map((item, i) => {
           const product = DATA.products.find(p => p.id === item.productId);
           if (!product) return '';
@@ -1069,7 +1055,11 @@ window.DTK_DATA = {
               ? ['● Administración centralizada', '● Reportes personalizables', '● Alertas y app móvil']
               : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
 
-          return `<div class="pdf-solution">
+          // NUEVO: Validamos si el producto está en la cotización
+          const isSelected = selectedProductIds.includes(product.id);
+
+          // NUEVO: Inyectamos la clase 'is-selected' dinámicamente
+          return `<div class="pdf-solution ${isSelected ? 'is-selected' : ''}">
             <div class="pdf-solution-img" style="overflow:hidden;">
               ${productImageHtml(product, 'pdf')}
             </div>
@@ -1202,7 +1192,6 @@ window.DTK_DATA = {
         chunkList.removeChild(item);
 
         if (!chunkList.children.length) {
-          // Protección: un solo elemento nunca debe generar un bucle infinito.
           chunkList.appendChild(item);
           return;
         }
@@ -1277,7 +1266,6 @@ window.DTK_DATA = {
       }
     });
 
-    // Asesor + totales van una sola vez, después de la última fila.
     if (bottom) {
       chunk.appendChild(bottom);
 
@@ -1295,7 +1283,6 @@ window.DTK_DATA = {
       }
     }
 
-    // Observaciones permanecen inmediatamente después de los totales.
     if (observation && observation.style.display !== 'none') {
       chunk.appendChild(observation);
 
@@ -1376,7 +1363,6 @@ window.DTK_DATA = {
     groups.forEach(group => {
       const type = group.dataset.flowGroup;
 
-      // Si no hay productos de catálogo, esta sección se omite por completo.
       if (
         type === 'solutions' &&
         group.querySelector('.pdf-solutions')?.style.display === 'none'
@@ -1394,7 +1380,6 @@ window.DTK_DATA = {
             startNewPdfPage(state);
           }
 
-          // Probar primero el bloque entero en la página nueva.
           state.inner.appendChild(group);
 
           if (!currentPageFits(state.page)) {
@@ -1427,12 +1412,9 @@ window.DTK_DATA = {
         return;
       }
 
-      // Términos, más soluciones y footer se mantienen unidos.
-      // Si no caben, pasan completos a la siguiente hoja.
       moveWholeGroup(group, state);
     });
 
-    // Nunca dejar una última hoja vacía.
     [...document.querySelectorAll('.pdf-generated-page')].forEach(page => {
       const pageInner = page.querySelector('.pdf-inner');
       if (pageInner && !pageInner.children.length) {
@@ -1548,7 +1530,6 @@ window.DTK_DATA = {
     host.appendChild(clone);
     showNotice('Generando PDF, por favor espera…', 'success');
 
-    // Espera a que las imágenes de producto estén listas antes de capturar el PDF.
     await waitForImages(clone);
 
     const docName = els['quote-number'].value || 'Cotizacion-Detektor';
@@ -1613,9 +1594,6 @@ window.DTK_DATA = {
   }
 
   function wireEvents() {
-    // Se usa fase capture + stopImmediatePropagation para impedir que
-    // una versión antigua del cotizador, si quedó cargada por error en Webflow,
-    // vuelva a cambiar Panamá u otro país a modo manual.
     els['quote-country'].addEventListener('change', (event) => {
       event.stopImmediatePropagation();
       applyCountry();
