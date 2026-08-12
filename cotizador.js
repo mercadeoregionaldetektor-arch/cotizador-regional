@@ -12,14 +12,6 @@ window.DTK_CONFIG = {
 };
 
 window.DTK_COUNTRY_CONTACTS = {
-  'Colombia': {
-    web: 'https://www.detektor.com.co/',
-    socials: [
-      { type: 'facebook', label: 'f', url: 'https://www.facebook.com/profile.php?id=100029671341345&locale=es_LA' },
-      { type: 'linkedin', label: 'in', url: 'https://www.linkedin.com/company/tracker-de-colombia-s-a-s-/' },
-      { type: 'instagram', label: 'IG', url: 'https://www.instagram.com/detektorcolombia/' }
-    ]
-  },
   'Costa Rica': {
     web: 'https://www.detektor.co.cr/',
     socials: [
@@ -86,16 +78,6 @@ window.DTK_COUNTRY_CONTACTS = {
 
 window.DTK_DATA = {
   countries: {
-    'Colombia': {
-      code: 'CO', currency: ['COP', 'USD'], taxName: 'IVA', taxRates: [19, 0], phonePlaceholder: 'Ej. +57 300 000 0000', cityPlaceholder: 'Ej. Bogotá', advisorMode: 'manual', agents: [],
-      terms: {
-        installation: 'En disposición y coordinación con el cliente',
-        payment: '30 días crédito',
-        validity: '30 días calendario',
-        warranty: '1 año por defectos de fábrica',
-        extra: 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización. Comprometidos con la sostenibilidad, presentamos este documento en formato digital. Antes de imprimirlo, considere si es realmente necesario.'
-      }
-    },
     'Costa Rica': {
       code: 'CR', currency: ['CRC', 'USD'], taxName: 'IVA', taxRates: [13, 0], phonePlaceholder: 'Ej. +506 8888 8888', cityPlaceholder: 'Ej. San José', advisorMode: 'list',
       agents: [
@@ -314,15 +296,6 @@ window.DTK_DATA = {
       description: 'Cámaras con IA para prevención de fatiga y distracción al volante.',
       benefit: '✓ Reduce accidentes con alertas en tiempo real.',
       pdfDescription: 'Cámara con inteligencia artificial para prevenir riesgos y mejorar la conducción.'
-    },
-    {
-      id: 'smart-track',
-      name: 'Detektor Smart Track',
-      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d48cd2fcdddf06b6212_Productos-soluciones-detektor-cotizador%20(2).webp',
-      imageLabel: 'IMG: EQUIPO DE RESPUESTA',
-      description: 'Una sola plataforma todos sus vehículos sin importar el proveedor, a través de una administración centralizada.',
-      benefit: '✓ Monitoreo de su vehículo al alcance de su mano.',
-      pdfDescription: 'Aplicación de centro de control basada en la nube. Interfaz intuitiva para gestión de flotas, reportes y alertas automatizadas.'
     },
     {
       id: 'plus',
@@ -870,9 +843,28 @@ window.DTK_DATA = {
     if (!countryHasAdvisorList(getCountry())) syncManualAdvisorCode();
     let valid = true;
     const requiredIds = ['client-name','client-email','client-phone','quote-date','quote-country','quote-advisor-code','terms-installation','terms-payment','terms-validity','terms-warranty'];
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validación simple para correos reales (requiere un @)
+
     for (const id of requiredIds) {
       const el = $(id);
-      if (!el || !String(el.value || '').trim()) { el?.classList.add('dtk-error'); valid = false; }
+      const value = String(el?.value || '').trim();
+      if (!el || !value) {
+        el?.classList.add('dtk-error');
+        valid = false;
+      } else if (id === 'client-email' && !emailRegex.test(value)) {
+        el?.classList.add('dtk-error');
+        valid = false;
+      }
+    }
+
+    // Validar también el correo del asesor si fue rellenado
+    const advisorEmailEl = $('quote-advisor-email');
+    if (advisorEmailEl && advisorEmailEl.value.trim()) {
+      if (!emailRegex.test(advisorEmailEl.value.trim())) {
+        advisorEmailEl.classList.add('dtk-error');
+        valid = false;
+      }
     }
 
     const country = getCountry();
@@ -893,7 +885,7 @@ window.DTK_DATA = {
     });
 
     if (!valid) {
-      showNotice('Revisa los campos en rojo. Falta información obligatoria (*).', 'error');
+      showNotice('Revisa los campos en rojo. Falta información obligatoria (*) o el correo no es válido.', 'error');
       document.querySelector('.dtk-error')?.scrollIntoView({ behavior:'smooth', block:'center' });
       return false;
     }
@@ -1051,11 +1043,10 @@ window.DTK_DATA = {
 
           const title = product.name;
           const description = product.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
+          
           const bullets =
             product.id === 'gps'
               ? ['● Monitoreo y recorridos', '● Geocercas y alertas', '● Reportes de operación']
-              : product.id === 'smart-track'
-              ? ['● Administración centralizada', '● Reportes personalizables', '● Alertas y app móvil']
               : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
 
           const isSelected = selectedProductIds.includes(product.id);
