@@ -1493,6 +1493,17 @@ window.DTK_DATA = {
     area.scrollTo({ top: targetRect.top - areaRect.top + area.scrollTop, behavior:'smooth' });
   }
 
+  async function downloadPDF() {
+    // 1. Bloquear botones para evitar doble clic
+    const btn1 = els['btn-download'];
+    const btn2 = els['btn-modal-download'];
+    const originalText1 = btn1.textContent;
+    const originalText2 = btn2.textContent;
+
+    try {
+      btn1.disabled = true; btn2.disabled = true;
+      btn1.textContent = 'GENERANDO... ⏳'; btn2.textContent = 'GENERANDO... ⏳';
+
       // 2. Validamos que todo esté lleno y aseguramos el número de propuesta final
       if (!(await validateForm({ requireFinalNumber: true }))) return;
 
