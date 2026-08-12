@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v20-ajuste-columnas-impuesto';
+window.DTK_BUILD_VERSION = 'v21-autoguardado';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -317,18 +317,23 @@ window.DTK_DATA = {
   const CONTACTS = window.DTK_COUNTRY_CONTACTS || {};
   const $ = (id) => document.getElementById(id);
   const els = {};
+  
   let reservedKey = '';
   let reservedNumber = '';
   let quoteTimer = null;
   let noticeTimer = null;
   let pdfPage2BaseHtml = '';
+  
+  // Variables para el autoguardado (Borrador)
+  let draftTimer = null;
+  let isLoadingDraft = false;
 
   function initRefs() {
     [
       'quote-date','quote-number','quote-country','quote-advisor-select','quote-advisor-manual','quote-advisor-code',
       'quote-advisor-phone','quote-advisor-email','currency-select','select-tax','input-tax-manual','tax-manual-wrap','tax-label','dtk-calc-tbody',
       'val-subtotal','val-tax','val-total','advisor-select-wrap','advisor-manual-wrap','dtk-products-catalog',
-      'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice'
+      'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice', 'dtk-app'
     ].forEach(k => els[k] = $(k));
   }
 
@@ -573,6 +578,9 @@ window.DTK_DATA = {
       els['quote-number'].value = quoteNumber;
       els['quote-number'].classList.remove('dtk-error');
     }
+    
+    // Al recibir un número nuevo oficial, guardamos el borrador.
+    scheduleSaveDraft();
     return quoteNumber;
   }
 
@@ -770,18 +778,23 @@ window.DTK_DATA = {
     });
 
     let subtotal = rawSubtotal;
-    if (els['val-subtotal'].dataset.mode === 'auto') els['val-subtotal'].textContent = formatMoney(rawSubtotal);
-    else subtotal = parseNum(els['val-subtotal'].textContent);
+    if (els['val-subtotal']?.dataset.mode === 'auto') els['val-subtotal'].textContent = formatMoney(rawSubtotal);
+    else subtotal = parseNum(els['val-subtotal']?.textContent);
 
     const taxRate = currentTaxRate();
     const tax = subtotal * (taxRate / 100);
 
-    els['val-tax'].textContent = formatMoney(tax);
-
-    if (els['val-total'].dataset.mode === 'auto') {
-      els['val-total'].textContent = formatMoney(subtotal + tax);
+    if (els['val-tax']?.dataset.mode === 'auto') {
+      els['val-tax'].textContent = formatMoney(tax);
     }
+
+    if (els['val-total']?.dataset.mode === 'auto') {
+      const taxAmount = els['val-tax']?.dataset.mode === 'manual' ? parseNum(els['val-tax'].textContent) : tax;
+      els['val-total'].textContent = formatMoney(subtotal + taxAmount);
+    }
+    
     renderEmptyRow();
+    scheduleSaveDraft(); // Autoguardado silencioso al recalcular
   }
 
   function setMode(target, mode) {
@@ -992,9 +1005,9 @@ window.DTK_DATA = {
     setPdfOptionalText('prev-adv-mail-box', gv('quote-advisor-email'), { row: false });
     setPdfOptionalText('prev-adv-phone-box', gv('quote-advisor-phone'), { row: false });
 
-    setText('prev-subtotal', els['val-subtotal'].textContent);
-    setText('prev-tax', els['val-tax'].textContent);
-    setText('prev-total', els['val-total'].textContent);
+    setText('prev-subtotal', els['val-subtotal']?.textContent);
+    setText('prev-tax', els['val-tax']?.textContent);
+    setText('prev-total', els['val-total']?.textContent);
 
     const obs = gv('quote-obs');
     const obsWrap = $('prev-obs')?.closest('.pdf-observation');
@@ -1012,7 +1025,7 @@ window.DTK_DATA = {
     const rows = rowData();
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
-      // AQUÍ OCURRE LA MAGIA: Eliminamos la columna de impuesto en las filas dinámicas
+      // AQUÍ OCURRE LA MAGIA: Eliminamos la columna de impuesto en las filas dinámicas (quedan 4 columnas)
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
@@ -1547,7 +1560,6 @@ window.DTK_DATA = {
         taxAmount: els['val-tax'].textContent,
         total: els['val-total'].textContent
       },
-      // Extraemos cada producto agregado en la tabla dinámica
       products: rowData().map(item => ({
         productId: item.productId,
         name: item.name,
@@ -1558,17 +1570,8 @@ window.DTK_DATA = {
       }))
     };
 
-    // 3. Imprimimos el resultado en consola para depuración
     console.log("🚀 Payload listo para enviar a Render:", payload);
-    
-    // Aviso temporal indicando que el botón hizo su trabajo
     showNotice('Botón accionado. Revisa la consola para ver el JSON estructurado.', 'success');
-
-    /* 
-    ========================================================================
-    AQUÍ SE INYECTARÁ EL CÓDIGO FETCH (POST) CUANDO EL BACKEND ESTÉ LISTO
-    ========================================================================
-    */
   }
 
   function resetModes() {
@@ -1592,6 +1595,9 @@ window.DTK_DATA = {
   }
 
   function clearForm() {
+    // Al limpiar, eliminamos el borrador guardado en caché
+    try { localStorage.removeItem('dtk_quote_draft'); } catch(e) {}
+
     const fields = ['client-name','client-company','client-role','client-email','client-phone','client-city','quote-advisor-manual','quote-advisor-code','quote-advisor-phone','quote-advisor-email'];
     fields.forEach(id => { if ($(id)) $(id).value = ''; });
     $('quote-obs').value = 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.';
@@ -1612,7 +1618,146 @@ window.DTK_DATA = {
     window.scrollTo({ top:0, behavior:'smooth' });
   }
 
+  // --- LÓGICA DE AUTOGUARDADO (BORRADOR) ---
+  function saveDraft() {
+    if (isLoadingDraft) return;
+    
+    const draft = {
+      quoteDate: els['quote-date']?.value || '',
+      quoteNumber: els['quote-number']?.value || '',
+      reservedKeyState: reservedKey,
+      reservedNumberState: reservedNumber,
+      quoteCountry: els['quote-country']?.value || '',
+      quoteAdvisorSelect: els['quote-advisor-select']?.value || '',
+      quoteAdvisorManual: els['quote-advisor-manual']?.value || '',
+      quoteAdvisorPhone: els['quote-advisor-phone']?.value || '',
+      quoteAdvisorEmail: els['quote-advisor-email']?.value || '',
+      quoteObs: $('quote-obs')?.value || '',
+      clientName: $('client-name')?.value || '',
+      clientCompany: $('client-company')?.value || '',
+      clientRole: $('client-role')?.value || '',
+      clientEmail: $('client-email')?.value || '',
+      clientPhone: $('client-phone')?.value || '',
+      clientCity: $('client-city')?.value || '',
+      termsInst: $('terms-installation')?.value || '',
+      termsPay: $('terms-payment')?.value || '',
+      termsVal: $('terms-validity')?.value || '',
+      termsWarr: $('terms-warranty')?.value || '',
+      termsExtra: $('terms-extra')?.value || '',
+      currency: els['currency-select']?.value || '',
+      taxSelect: els['select-tax']?.value || '',
+      taxManual: els['input-tax-manual']?.value || '',
+      rows: rowData().map(r => ({ name: r.name, qty: r.qty, price: r.price, discount: r.discount, productId: r.productId })),
+      modes: {
+        subtotal: els['val-subtotal']?.dataset.mode || 'auto',
+        tax: els['val-tax']?.dataset.mode || 'auto',
+        total: els['val-total']?.dataset.mode || 'auto'
+      },
+      manualValues: {
+        subtotal: els['val-subtotal']?.textContent || '0',
+        tax: els['val-tax']?.textContent || '0',
+        total: els['val-total']?.textContent || '0'
+      }
+    };
+    
+    try { localStorage.setItem('dtk_quote_draft', JSON.stringify(draft)); } catch(e) {}
+  }
+
+  function scheduleSaveDraft() {
+    if (isLoadingDraft) return;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 800); // Guarda 0.8s después de que el usuario deja de interactuar
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem('dtk_quote_draft');
+      if (!raw) return false;
+      const draft = JSON.parse(raw);
+      if (!draft) return false;
+
+      isLoadingDraft = true;
+
+      // País (Carga la configuración base)
+      if (draft.quoteCountry) {
+        els['quote-country'].value = draft.quoteCountry;
+        applyCountry(); 
+      }
+
+      // Proteger Consecutivo (Si el usuario ya había reservado o quemado un número en la sesión anterior)
+      reservedKey = draft.reservedKeyState || '';
+      reservedNumber = draft.reservedNumberState || '';
+      const setVal = (id, val) => { const el = $(id); if (el && val !== undefined) el.value = val; };
+
+      setVal('quote-date', draft.quoteDate);
+      setVal('quote-number', draft.quoteNumber);
+      if (reservedNumber) {
+        els['quote-number'].value = reservedNumber;
+      }
+      
+      // Asesor
+      setVal('quote-advisor-select', draft.quoteAdvisorSelect);
+      setVal('quote-advisor-manual', draft.quoteAdvisorManual);
+      if (draft.quoteCountry && countryHasAdvisorList(getCountry())) {
+         onAdvisorSelect();
+      } else {
+         syncManualAdvisorCode();
+      }
+
+      // Resto de inputs de texto
+      setVal('quote-advisor-phone', draft.quoteAdvisorPhone);
+      setVal('quote-advisor-email', draft.quoteAdvisorEmail);
+      setVal('quote-obs', draft.quoteObs);
+      setVal('client-name', draft.clientName);
+      setVal('client-company', draft.clientCompany);
+      setVal('client-role', draft.clientRole);
+      setVal('client-email', draft.clientEmail);
+      setVal('client-phone', draft.clientPhone);
+      setVal('client-city', draft.clientCity);
+      setVal('terms-installation', draft.termsInst);
+      setVal('terms-payment', draft.termsPay);
+      setVal('terms-validity', draft.termsVal);
+      setVal('terms-warranty', draft.termsWarr);
+      setVal('terms-extra', draft.termsExtra);
+
+      // Selects financieros
+      if (draft.currency) els['currency-select'].value = draft.currency;
+      if (draft.taxSelect) els['select-tax'].value = draft.taxSelect;
+      if (draft.taxManual) els['input-tax-manual'].value = draft.taxManual;
+
+      // Reconstrucción de la tabla de productos
+      els['dtk-calc-tbody'].innerHTML = '';
+      if (draft.rows && draft.rows.length) {
+        draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId));
+      } else {
+        renderEmptyRow();
+      }
+
+      // Restauración de sobreescrituras manuales en totales
+      if (draft.modes) {
+         if (draft.modes.subtotal === 'manual') { setMode('subtotal', 'manual'); els['val-subtotal'].textContent = draft.manualValues.subtotal; }
+         if (draft.modes.tax === 'manual') { setMode('tax', 'manual'); els['val-tax'].textContent = draft.manualValues.tax; }
+         if (draft.modes.total === 'manual') { setMode('total', 'manual'); els['val-total'].textContent = draft.manualValues.total; }
+      }
+
+      calculateAll();
+
+      isLoadingDraft = false;
+      return true;
+    } catch(e) {
+      console.error('No se pudo cargar el borrador.', e);
+      isLoadingDraft = false;
+      return false;
+    }
+  }
+  // ------------------------------------------
+
   function wireEvents() {
+    // Autoguardado global para capturar cambios en textos y selects
+    const appEl = els['dtk-app'] || document.body;
+    appEl.addEventListener('input', scheduleSaveDraft);
+    appEl.addEventListener('change', scheduleSaveDraft);
+
     els['quote-country'].addEventListener('change', (event) => {
       event.stopImmediatePropagation();
       applyCountry();
@@ -1747,11 +1892,22 @@ window.DTK_DATA = {
       pdfPage2BaseHtml = page2Inner.innerHTML;
     }
 
-    els['quote-date'].value = todayLocal();
-    els['dtk-calc-tbody'].innerHTML = '';
-    renderEmptyRow();
+    // Inicializamos el formulario, si detecta un borrador lo carga.
+    const isDraftLoaded = loadDraft();
+
+    if (!isDraftLoaded) {
+      els['quote-date'].value = todayLocal();
+      els['dtk-calc-tbody'].innerHTML = '';
+      renderEmptyRow();
+      calculateAll();
+    } else {
+      // Retraso ligero para no pisar las alertas iniciales de Webflow
+      setTimeout(() => {
+        showNotice('Borrador previo cargado con éxito. No perdiste tus datos.', 'success');
+      }, 500);
+    }
+    
     wireEvents();
-    calculateAll();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
