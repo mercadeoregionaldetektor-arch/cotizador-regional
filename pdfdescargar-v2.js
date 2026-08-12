@@ -1,4 +1,4 @@
-*
+/*
  * pdfdescargar.js · Detektor Cotizador Webflow
  * ------------------------------------------------------------
  * RESPONSABILIDAD ÚNICA:
