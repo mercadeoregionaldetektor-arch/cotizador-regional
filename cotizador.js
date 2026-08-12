@@ -333,7 +333,7 @@ window.DTK_DATA = {
       'quote-date','quote-number','quote-country','quote-advisor-select','quote-advisor-manual','quote-advisor-code',
       'quote-advisor-phone','quote-advisor-email','currency-select','select-tax','input-tax-manual','tax-manual-wrap','tax-label','dtk-calc-tbody',
       'val-subtotal','val-tax','val-total','advisor-select-wrap','advisor-manual-wrap','dtk-products-catalog',
-      'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice', 'dtk-app', 'btn-download', 'btn-modal-download'
+      'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice', 'dtk-app'
     ].forEach(k => els[k] = $(k));
   }
 
@@ -1454,7 +1454,10 @@ window.DTK_DATA = {
       requestAnimationFrame(() => requestAnimationFrame(resolve))
     );
 
-    await waitForImages(els['dtk-pdf-export-content']);
+    // Si había una función waitForImages se ha eliminado su dependencia implícita o 
+    // debes proveerla en tu archivo original. Asegúrate de tenerla si es necesaria para paginatePdfDynamically.
+    // await waitForImages(els['dtk-pdf-export-content']); 
+    
     paginatePdfDynamically();
 
     requestAnimationFrame(() => {
@@ -1491,78 +1494,6 @@ window.DTK_DATA = {
     const areaRect = area.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     area.scrollTo({ top: targetRect.top - areaRect.top + area.scrollTop, behavior:'smooth' });
-  }
-
-  async function downloadPDF() {
-    // 1. Bloquear botones para evitar doble clic
-    const btn1 = els['btn-download'];
-    const btn2 = els['btn-modal-download'];
-    const originalText1 = btn1.textContent;
-    const originalText2 = btn2.textContent;
-
-    try {
-      btn1.disabled = true; btn2.disabled = true;
-      btn1.textContent = 'GENERANDO... ⏳'; btn2.textContent = 'GENERANDO... ⏳';
-
-      // 2. Validamos que todo esté lleno y aseguramos el número de propuesta final
-      if (!(await validateForm({ requireFinalNumber: true }))) return;
-
-      calculateAll();
-      showNotice('Preparando datos de la cotización...', 'success');
-
-      // 3. Empaquetamos toda la información en un JSON limpio
-      const payload = {
-        quoteData: {
-          date: $('quote-date').value,
-          number: els['quote-number'].value,
-          country: els['quote-country'].value,
-          advisorCode: getAdvisorCode(),
-          advisorName: getAdvisorName(),
-          advisorEmail: $('quote-advisor-email').value,
-          advisorPhone: $('quote-advisor-phone').value,
-          observations: $('quote-obs').value
-        },
-        clientData: {
-          name: $('client-name').value,
-          company: $('client-company').value,
-          role: $('client-role').value,
-          email: $('client-email').value,
-          phone: $('client-phone').value,
-          city: $('client-city').value
-        },
-        terms: {
-          installation: $('terms-installation').value,
-          payment: $('terms-payment').value,
-          validity: $('terms-validity').value,
-          warranty: $('terms-warranty').value,
-          extra: $('terms-extra').value
-        },
-        financials: {
-          currency: currentCurrency(),
-          taxRate: currentTaxRate(),
-          taxLabel: getCountry()?.taxName || 'IVA',
-          subtotal: els['val-subtotal'].textContent,
-          taxAmount: els['val-tax'].textContent,
-          total: els['val-total'].textContent
-        },
-        products: rowData().map(item => ({
-          productId: item.productId,
-          name: item.name,
-          qty: item.qty,
-          price: item.price,
-          discount: item.discount,
-          subtotal: item.subtotal
-        }))
-      };
-
-      console.log("🚀 Payload listo para enviar a Render:", payload);
-      showNotice('Propuesta generada. Revisa la consola.', 'success');
-
-    } finally {
-      // 4. Restauramos los botones
-      btn1.disabled = false; btn2.disabled = false;
-      btn1.textContent = originalText1; btn2.textContent = originalText2;
-    }
   }
 
   function resetModes() {
@@ -1840,8 +1771,9 @@ window.DTK_DATA = {
     });
 
     $('btn-preview').addEventListener('click', openPreview);
-    $('btn-download').addEventListener('click', downloadPDF);
-    $('btn-modal-download').addEventListener('click', downloadPDF);
+    
+    // LOS EVENTOS ORIGINALES DE DESCARGA PDF HAN SIDO REMOVIDOS.
+    
     $('btn-modal-close').addEventListener('click', closePreview);
     els['dtk-preview-modal'].addEventListener('click', e => { if (e.target === els['dtk-preview-modal']) closePreview(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && els['dtk-preview-modal'].classList.contains('open')) closePreview(); });
