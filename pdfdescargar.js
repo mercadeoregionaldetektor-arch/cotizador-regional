@@ -1,8 +1,7 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Lee datos del cotizador y descarga el PDF.
- * No controla preview, limpiar, borradores, consecutivos ni Render/API.
- * Botones: #btn-download y #btn-modal-download
+ * Soluciona superposición de fuentes (kerning bugs) y aplastamiento de imagen.
  */
 (function(){
 'use strict';
@@ -451,6 +450,24 @@ function buildRenderDocument(data){
   const clone=source.cloneNode(true);
   clone.id='dtk-pdf-download-document';
 
+  // FIX: Reset crítico de CSS para evitar que html2canvas devore los espacios en entornos Webflow
+  const fixStyles = document.createElement('style');
+  fixStyles.innerHTML = `
+    #dtk-pdf-download-document * {
+      text-rendering: auto !important;
+      font-variant-ligatures: none !important;
+      letter-spacing: normal !important;
+    }
+    .dtk-pdf-page {
+      width: ${CFG.pageWidth}px !important;
+      min-height: ${CFG.pageHeight}px !important;
+      background-color: #ffffff !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+  `;
+  clone.prepend(fixStyles);
+
   const cover=$('.dtk-pdf-page#pdf-page-1',clone)||$('.dtk-pdf-page',clone);
   if(!cover) throw new Error('No se encontró la portada del PDF.');
 
@@ -552,15 +569,24 @@ async function waitForAssets(root){
 
 function ensureRenderHost(){
   let host=$('#dtk-render-host');
-  if(host) return host;
+  if(host) {
+    host.innerHTML='';
+    return host;
+  }
 
   host=document.createElement('div');
   host.id='dtk-render-host';
-  host.style.position='fixed';
-  host.style.left='-10000px';
+  
+  // FIX: En lugar de esconderlo a -10000px, lo mantenemos en el viewport pero con opacidad nula. 
+  // Esto obliga al navegador a medir correctamente fuentes y textos para evitar superposiciones.
+  host.style.position='absolute';
   host.style.top='0';
+  host.style.left='0';
   host.style.width=`${CFG.pageWidth}px`;
-  host.style.zIndex='-1';
+  host.style.zIndex='-9999';
+  host.style.opacity='0.001';
+  host.style.pointerEvents='none';
+  host.style.overflow='hidden';
 
   document.body.appendChild(host);
   return host;
@@ -577,19 +603,15 @@ async function generateAndDownload(data){
   await ensureLibraries();
 
   const host=ensureRenderHost();
-  host.innerHTML='';
 
   const renderDocument=buildRenderDocument(data);
-  // Fijamos el ancho para mantener el layout pero permitimos altura dinámica
-  renderDocument.style.width=`${CFG.pageWidth}px`;
-  renderDocument.style.margin='0';
-
   host.appendChild(renderDocument);
 
   await waitForAssets(renderDocument);
 
-  // Margen de gracia para asegurar que las tipografías y CSS terminen de renderizar
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // FIX: Ampliamos el tiempo de espera (800ms) para garantizar que las tipografías corporativas se carguen 
+  // en el DOM clonado antes de tomar la captura.
+  await new Promise(resolve => setTimeout(resolve, 800));
 
   const pages=$$('.dtk-pdf-page',renderDocument);
 
@@ -598,50 +620,48 @@ async function generateAndDownload(data){
   }
 
   const {jsPDF}=window.jspdf;
-
-  // Cambiamos a formato estándar A4 con unidades en milímetros para evitar desajustes
-  const pdf=new jsPDF({
-    orientation:'portrait',
-    unit:'mm',
-    format:'a4',
-    compress:true
-  });
-
-  const pdfWidth = pdf.internal.pageSize.getWidth();
+  let pdf = null;
 
   for(let i=0;i<pages.length;i++){
     const page=pages[i];
 
-    // Permitimos que la captura se adapte a las dimensiones fluidas de altura
     const canvas=await window.html2canvas(page,{
-      scale:CFG.renderScale || 2, 
+      scale:CFG.renderScale || 2,
       useCORS:true,
       allowTaint:false,
       backgroundColor:'#ffffff',
       logging:false,
       width:CFG.pageWidth,
-      windowWidth:CFG.pageWidth,
-      scrollX:0,
-      scrollY:0
+      windowWidth:CFG.pageWidth
     });
 
-    if(i>0){
-      pdf.addPage('a4', 'portrait');
+    const imgData=canvas.toDataURL('image/jpeg',0.98);
+
+    // FIX: Adaptación de aspecto exacta. Obtenemos las dimensiones físicas en pixeles que arrojó el canvas.
+    const pdfPageWidth = canvas.width / (CFG.renderScale || 2);
+    const pdfPageHeight = canvas.height / (CFG.renderScale || 2);
+
+    if(i===0){
+      // Inicializamos el PDF configurando la página exactamente al tamaño de la imagen generada, cero distorsión.
+      pdf=new jsPDF({
+        orientation:'portrait',
+        unit:'px',
+        format:[pdfPageWidth, pdfPageHeight],
+        compress:true,
+        hotfixes:['px_scaling']
+      });
+    }else{
+      // Agregamos hojas adicionales respetando la proporción exacta de esa hoja en específico.
+      pdf.addPage([pdfPageWidth, pdfPageHeight], 'portrait');
     }
 
-    const image=canvas.toDataURL('image/jpeg',0.98); // Aumentamos calidad al 98%
-
-    // Calculamos proporción real del layout para evitar efecto "estirado/aplastado"
-    const canvasRatio = canvas.height / canvas.width;
-    const renderHeight = pdfWidth * canvasRatio;
-
     pdf.addImage(
-      image,
+      imgData,
       'JPEG',
       0,
       0,
-      pdfWidth,
-      renderHeight,
+      pdfPageWidth,
+      pdfPageHeight,
       undefined,
       'FAST'
     );
