@@ -1,6 +1,7 @@
 const http = require('http');
 const fsp = require('fs/promises');
 const path = require('path');
+const puppeteer = require('puppeteer');
 
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -73,7 +74,8 @@ function readBody(req) {
     let raw = '';
     req.on('data', chunk => {
       raw += chunk;
-      if (raw.length > 50000) {
+      // Límite aumentado a 5MB para evitar que falle al recibir cotizaciones con muchos productos
+      if (raw.length > 5000000) { 
         reject(new Error('Payload too large'));
         req.destroy();
       }
@@ -143,6 +145,64 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ==========================================
+  // NUEVA RUTA: GENERACIÓN DE PDF
+  // ==========================================
+  if (req.method === 'POST' && pathname === '/api/generate-pdf') {
+    try {
+      // Reutilizamos tu función readBody para parsear el JSON
+      const payload = await readBody(req);
+
+      // 1. Lanzamos el navegador virtual (Render requiere estos args)
+      const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      
+      const page = await browser.newPage();
+
+      // 2. Molde HTML básico para prueba inicial
+      const htmlContent = `
+        <html>
+          <body style="font-family: Arial, sans-serif; padding: 40px; color: #333;">
+            <h1 style="color: #c00010;">Cotización de Prueba - Detektor</h1>
+            <hr>
+            <p><strong>Propuesta N°:</strong> ${payload.quoteData?.number || 'N/A'}</p>
+            <p><strong>Cliente:</strong> ${payload.clientData?.name || 'N/A'}</p>
+            <p><strong>Empresa:</strong> ${payload.clientData?.company || 'N/A'}</p>
+            <p><strong>Total con Impuestos:</strong> ${payload.financials?.total || '0'}</p>
+          </body>
+        </html>
+      `;
+
+      // 3. Renderizamos el HTML
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+      // 4. Imprimimos a PDF
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '0', right: '0', bottom: '0', left: '0' }
+      });
+
+      await browser.close();
+
+      // 5. Enviamos el archivo binario de vuelta manteniendo tus headers de CORS
+      res.writeHead(200, {
+        ...cors,
+        'Content-Type': 'application/pdf',
+        'Content-Length': pdfBuffer.length
+      });
+      res.end(pdfBuffer);
+      
+      return; // Importante para detener la ejecución y que no pase al 404
+
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      return sendJson(res, 500, { ok: false, error: 'Fallo al generar el documento PDF' }, cors);
+    }
+  }
+
+  // Fallback para rutas no encontradas
   return sendJson(res, 404, { ok: false, error: 'Not found' }, cors);
 });
 
