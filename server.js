@@ -4,7 +4,7 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 
 // Importamos el diseño exacto que creamos en el otro archivo
-const buildPdfTemplate = require('./pdfdescargar');
+const buildPdfTemplate = require('./descargar-pdf.js');
 
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
