@@ -275,8 +275,8 @@ window.DTK_DATA = {
       name: 'Detektor El Cazador',
       image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d48e70aa94196be3df0_Productos-soluciones-detektor-cotizador%20(1).webp',
       imageLabel: 'IMG: RECUPERACIÓN VEHICULAR',
-      description: 'Localización vehicular en tiempo real con red de reacción 24/7.',
-      benefit: '✓ Tu vehículo en días, no en meses.',
+      description: 'Rastreo y localización vehicular en caso de hurto con tecnología exclusiva y equipo de reacción 24/7.',
+      benefit: '✓ La solución más efectiva del mercado',
       pdfDescription: 'Tecnología especializada para localizar vehículos en caso de hurto, incluso donde otras señales no llegan.'
     },
     {
@@ -293,7 +293,7 @@ window.DTK_DATA = {
       name: 'Roadview IA',
       image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d481a47f3c932fec5b9_Productos-soluciones-detektor-cotizador%20(4).webp',
       imageLabel: 'IMG: CÁMARA IA VEHÍCULO',
-      description: 'Cámaras con IA para prevención de fatiga y distracción al volante.',
+      description: 'Cámaras con IA para prevención de accidentes a través del análisis en tiempo real.',
       benefit: '✓ Reduce accidentes con alertas en tiempo real.',
       pdfDescription: 'Cámara con inteligencia artificial para prevenir riesgos y mejorar la conducción.'
     },
