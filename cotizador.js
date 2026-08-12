@@ -1739,4 +1739,3 @@ window.DTK_DATA = {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
-</script>
