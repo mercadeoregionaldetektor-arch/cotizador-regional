@@ -641,16 +641,24 @@
     }
   }
 
-  function init() {
-    const button = $('#btn-download');
-    if (!button) {
-      console.warn('[DTK PDF DOWNLOAD] No se encontró #btn-download.');
-      return;
-    }
+  function delegatedDownloadClick(event) {
+    const target = event.target;
+    const button = target && target.closest ? target.closest('#btn-download') : null;
+    if (!button) return;
 
-    if (!button.dataset.dtkDownloadOnlyBound) {
-      button.dataset.dtkDownloadOnlyBound = '1';
-      button.addEventListener('click', downloadPdf);
+    // Captura el clic aunque Webflow u otro script haya reemplazado el botón
+    // o tenga listeners propios. No toca ningún otro botón del cotizador.
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    downloadPdf(event);
+  }
+
+  function init() {
+    // Escucha delegada en fase de captura: funciona aunque el botón exista después
+    // de que este archivo JS haya cargado.
+    if (!window.__DTK_PDF_DELEGATED_CLICK_BOUND__) {
+      window.__DTK_PDF_DELEGATED_CLICK_BOUND__ = true;
+      document.addEventListener('click', delegatedDownloadClick, true);
     }
 
     // API mínima, sin vista previa ni operaciones sobre el formulario.
@@ -659,12 +667,15 @@
       download: () => downloadPdf()
     });
 
-    console.info('[DTK PDF DOWNLOAD] Módulo listo: leer datos + descargar PDF.');
+    const button = $('#btn-download');
+    if (button) {
+      button.setAttribute('type', 'button');
+      console.info('[DTK PDF DOWNLOAD] Botón #btn-download detectado y listo.');
+    } else {
+      console.info('[DTK PDF DOWNLOAD] Módulo listo. Esperando #btn-download por delegación.');
+    }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    init();
-  }
+  // No depende de que el botón exista al momento de cargar el archivo.
+  init();
 })();
