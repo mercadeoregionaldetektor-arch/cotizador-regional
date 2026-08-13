@@ -845,7 +845,6 @@ window.DTK_DATA = {
       'quote-date',
       'quote-country',
       'quote-advisor-code',
-      'quote-advisor-email', 
       'terms-installation',
       'terms-payment',
       'terms-validity',
@@ -854,6 +853,7 @@ window.DTK_DATA = {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // 1. Validar solo los campos obligatorios
     for (const id of requiredIds) {
       const el = $(id);
       const value = String(el?.value || '').trim();
@@ -861,10 +861,18 @@ window.DTK_DATA = {
       if (!el || !value) {
         el?.classList.add('dtk-error');
         valid = false;
-      } else if ((id === 'client-email' || id === 'quote-advisor-email') && !emailRegex.test(value)) {
+      } else if (id === 'client-email' && !emailRegex.test(value)) {
         el?.classList.add('dtk-error');
         valid = false;
       }
+    }
+
+    // 2. Validar formato del correo del asesor SOLO si el usuario escribió algo
+    const advEmailEl = $('quote-advisor-email');
+    const advEmailVal = String(advEmailEl?.value || '').trim();
+    if (advEmailVal && !emailRegex.test(advEmailVal)) {
+      advEmailEl.classList.add('dtk-error');
+      valid = false;
     }
 
     const country = getCountry();
