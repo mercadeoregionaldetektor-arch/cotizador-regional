@@ -709,9 +709,9 @@ function drawCoverPage(doc,data,assets){
     doc.text(`${label}:`,leftX,y);
 
     setFont(doc,9,'bold',CFG.dark);
-    const lines=textLines(doc,val,colW-108);
-    doc.text(lines,leftX+102,y,{lineHeightFactor:1.15});
-    y+=Math.max(18,lines.length*10);
+    const lines=textLines(doc,val,colW-115);
+    doc.text(lines,leftX+112,y,{lineHeightFactor:1.15});
+    y+=18+(Math.max(lines.length,1)-1)*12;
   });
 
   stroke(doc,[210,210,210]);
@@ -738,7 +738,7 @@ function drawCoverPage(doc,data,assets){
     setFont(doc,9,'bold',CFG.dark);
     const lines=textLines(doc,String(val),colW-94);
     doc.text(lines,rightX+88,y,{lineHeightFactor:1.15});
-    y+=Math.max(20,lines.length*10);
+    y+=18+(Math.max(lines.length,1)-1)*12;
   });
 }
 
