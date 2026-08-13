@@ -1396,6 +1396,17 @@ function delegatedDownloadClick(event){
 
   if(!button) return;
 
+  // --- NUEVA VALIDACIÓN DE CAMPOS OBLIGATORIOS ---
+  const form = button.closest('form') || document.querySelector('form');
+  
+  if (form && typeof form.checkValidity === 'function') {
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+  }
+  // -----------------------------------------------
+
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
