@@ -8,6 +8,7 @@
  * - imágenes solo para portada/productos/iconos
  * - iconos desde Flaticon UIcons
  * - productos personalizados SOLO en Propuesta Económica
+ * - Validación obligatoria de campos vacíos (borde rojo) y productos
  * ------------------------------------------------------------
  */
 (function(){
@@ -1396,40 +1397,50 @@ function delegatedDownloadClick(event){
 
   if(!button) return;
 
-  // --- VALIDACIÓN DIRECTA (ADAPTADA A LA CLASE .dtk-required) ---
-  // Ahora buscamos tanto la clase ".dtk-required" como el atributo nativo "[required]"
-  const requiredElements = Array.from(document.querySelectorAll('.dtk-required, [required]'));
+  // 1. Limpiar bordes rojos previos
+  const prevErrors = document.querySelectorAll('.dtk-error');
+  prevErrors.forEach(el => el.classList.remove('dtk-error'));
 
+  // 2. Validar campos obligatorios vacíos
+  const requiredElements = Array.from(document.querySelectorAll('.dtk-required, [required]'));
   let hasError = false;
   let firstErrorField = null;
 
   for (const el of requiredElements) {
-    // Ignorar si el campo está oculto (como el campo manual de asesor)
-    if (el.offsetParent === null) continue;
+    if (el.offsetParent === null) continue; // Ignorar si está oculto
 
-    // Verificar si está vacío
     if (String(el.value).trim() === '') {
       hasError = true;
-      firstErrorField = el;
-      break;
+      el.classList.add('dtk-error'); // Aplica el marco rojo
+      if (!firstErrorField) firstErrorField = el;
     }
   }
 
-  if (hasError) {
-    // Detener la descarga
+  // 3. Validar que exista al menos 1 producto en la Propuesta Económica
+  const economicRows = readEconomicRows();
+  const hasProducts = economicRows.length > 0;
+
+  if (hasError || !hasProducts) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
 
-    // Le añadimos temporalmente el atributo "required" nativo para forzar la alerta roja del navegador
-    firstErrorField.setAttribute('required', 'true');
-    
-    if (typeof firstErrorField.reportValidity === 'function') {
-      firstErrorField.reportValidity();
+    if (hasError) {
+      // Activar la alerta nativa roja y hacer scroll
+      firstErrorField.setAttribute('required', 'true');
+      if (typeof firstErrorField.reportValidity === 'function') {
+        firstErrorField.reportValidity();
+      }
+      firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstErrorField.focus();
+    } else if (!hasProducts) {
+      // Mostrar alerta si todo lo demás está lleno, pero faltan productos
+      alert('Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.');
+      const productsSection = document.querySelector('.dtk-products') || document.querySelector('#dtk-calc-tbody');
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
-
-    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    firstErrorField.focus();
 
     return; // Abortar PDF
   }
@@ -1450,6 +1461,19 @@ function init(){
       delegatedDownloadClick,
       true
     );
+
+    // Eventos para limpiar el marco rojo tan pronto el usuario escriba/seleccione algo
+    document.addEventListener('input', (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains('dtk-error')) {
+        if (String(e.target.value).trim() !== '') e.target.classList.remove('dtk-error');
+      }
+    });
+
+    document.addEventListener('change', (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains('dtk-error')) {
+        if (String(e.target.value).trim() !== '') e.target.classList.remove('dtk-error');
+      }
+    });
   }
 
   const mainButton=$('#btn-download');
