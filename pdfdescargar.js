@@ -8,7 +8,7 @@
  * - imágenes solo para portada/productos/iconos
  * - iconos desde Flaticon UIcons
  * - productos personalizados SOLO en Propuesta Económica
- * - Validación obligatoria de campos vacíos (borde rojo) y productos
+ * - Validación 100% UI (sin alertas nativas del navegador)
  * ------------------------------------------------------------
  */
 (function(){
@@ -1374,9 +1374,12 @@ async function downloadPdf(event){
   }catch(error){
     console.error('[DTK PDF VECTOR]',error);
 
-    alert(
-      `No fue posible generar el PDF.\n\n${error.message||error}`
-    );
+    // Si ocurre un error grave (como que el CDN de la librería falle) lo mandamos al notice inferior en lugar de un alert.
+    const notice = document.getElementById('dtk-notice');
+    if (notice) {
+      notice.textContent = `No fue posible generar el PDF. ${error.message||error}`;
+      notice.className = 'dtk-notice error';
+    }
 
   }finally{
     states.forEach(({button,text,disabled})=>{
@@ -1396,6 +1399,13 @@ function delegatedDownloadClick(event){
   );
 
   if(!button) return;
+
+  // 0. Limpiar cualquier texto de advertencia previo
+  const notice = document.getElementById('dtk-notice');
+  if (notice) {
+    notice.textContent = '';
+    notice.className = 'dtk-notice';
+  }
 
   // 1. Limpiar bordes rojos previos
   const prevErrors = document.querySelectorAll('.dtk-error');
@@ -1426,16 +1436,24 @@ function delegatedDownloadClick(event){
     event.stopImmediatePropagation();
 
     if (hasError) {
-      // Activar la alerta nativa roja y hacer scroll
-      firstErrorField.setAttribute('required', 'true');
-      if (typeof firstErrorField.reportValidity === 'function') {
-        firstErrorField.reportValidity();
+      // Inyectar mensaje en la barra inferior (en vez del popup nativo del navegador)
+      if (notice) {
+        notice.textContent = 'Por favor, completa los campos obligatorios marcados en rojo.';
+        notice.className = 'dtk-notice error';
       }
+      
+      // Hacer scroll directo hacia el primer campo que olvidaron llenar
       firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       firstErrorField.focus();
+
     } else if (!hasProducts) {
-      // Mostrar alerta si todo lo demás está lleno, pero faltan productos
-      alert('Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.');
+      // Inyectar el mensaje de productos en la barra inferior
+      if (notice) {
+        notice.textContent = 'Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.';
+        notice.className = 'dtk-notice error';
+      }
+
+      // Hacer scroll hacia la zona de productos
       const productsSection = document.querySelector('.dtk-products') || document.querySelector('#dtk-calc-tbody');
       if (productsSection) {
         productsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1462,18 +1480,22 @@ function init(){
       true
     );
 
-    // Eventos para limpiar el marco rojo tan pronto el usuario escriba/seleccione algo
-    document.addEventListener('input', (e) => {
+    // Eventos para limpiar el marco rojo y el mensaje de error tan pronto el usuario interactúa
+    const clearError = (e) => {
       if (e.target && e.target.classList && e.target.classList.contains('dtk-error')) {
-        if (String(e.target.value).trim() !== '') e.target.classList.remove('dtk-error');
+        if (String(e.target.value).trim() !== '') {
+          e.target.classList.remove('dtk-error');
+          const notice = document.getElementById('dtk-notice');
+          if (notice) {
+             notice.textContent = '';
+             notice.className = 'dtk-notice';
+          }
+        }
       }
-    });
+    };
 
-    document.addEventListener('change', (e) => {
-      if (e.target && e.target.classList && e.target.classList.contains('dtk-error')) {
-        if (String(e.target.value).trim() !== '') e.target.classList.remove('dtk-error');
-      }
-    });
+    document.addEventListener('input', clearError);
+    document.addEventListener('change', clearError);
   }
 
   const mainButton=$('#btn-download');
