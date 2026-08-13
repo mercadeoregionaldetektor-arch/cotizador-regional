@@ -1396,41 +1396,42 @@ function delegatedDownloadClick(event){
 
   if(!button) return;
 
-  // --- VALIDACIÓN DIRECTA DE CAMPOS (SIN DEPENDER DEL <FORM>) ---
-  // Buscamos todos los inputs, selects y textareas que sean obligatorios
-  const requiredElements = Array.from(document.querySelectorAll('input[required], select[required], textarea[required]'));
+  // --- VALIDACIÓN DIRECTA (ADAPTADA A LA CLASE .dtk-required) ---
+  // Ahora buscamos tanto la clase ".dtk-required" como el atributo nativo "[required]"
+  const requiredElements = Array.from(document.querySelectorAll('.dtk-required, [required]'));
 
   let hasError = false;
   let firstErrorField = null;
 
   for (const el of requiredElements) {
-    // Ignoramos los campos que estén ocultos en la interfaz
+    // Ignorar si el campo está oculto (como el campo manual de asesor)
     if (el.offsetParent === null) continue;
 
-    // Comprobamos si el campo es inválido o está en blanco
-    if (!el.checkValidity() || String(el.value).trim() === '') {
+    // Verificar si está vacío
+    if (String(el.value).trim() === '') {
       hasError = true;
       firstErrorField = el;
-      break; // Nos detenemos al encontrar el primer campo vacío
+      break;
     }
   }
 
   if (hasError) {
-    // Detenemos la acción de los clics y la descarga
+    // Detener la descarga
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
 
-    // Mostramos la advertencia roja nativa del navegador ("Rellena este campo")
+    // Le añadimos temporalmente el atributo "required" nativo para forzar la alerta roja del navegador
+    firstErrorField.setAttribute('required', 'true');
+    
     if (typeof firstErrorField.reportValidity === 'function') {
       firstErrorField.reportValidity();
     }
 
-    // Hacemos scroll suave para llevar al usuario directamente al campo que le faltó
     firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
     firstErrorField.focus();
 
-    return; // Abortamos la generación del PDF
+    return; // Abortar PDF
   }
   // -------------------------------------------------------------
 
