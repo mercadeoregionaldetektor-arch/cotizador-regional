@@ -116,14 +116,6 @@ function readEconomicRows(){
   })).filter(row=>row.product);
 }
 
-/*
- * IMPORTANTE:
- * Esta función SOLO devuelve productos del catálogo Detektor.
- * NO agrega filas personalizadas de la propuesta económica.
- *
- * Así, "+ Agregar producto personalizado" aparece únicamente
- * en PROPUESTA ECONÓMICA > DESCRIPCIÓN.
- */
 function readCatalogProducts(economicRows){
   const selectedIds=new Set(economicRows.map(row=>row.productId).filter(Boolean));
   const selectedNames=new Set(economicRows.map(row=>normalize(row.product)));
@@ -1374,7 +1366,6 @@ async function downloadPdf(event){
   }catch(error){
     console.error('[DTK PDF VECTOR]',error);
 
-    // Si ocurre un error grave (como que el CDN de la librería falle) lo mandamos al notice inferior en lugar de un alert.
     const notice = document.getElementById('dtk-notice');
     if (notice) {
       notice.textContent = `No fue posible generar el PDF. ${error.message||error}`;
@@ -1400,33 +1391,29 @@ function delegatedDownloadClick(event){
 
   if(!button) return;
 
-  // 0. Limpiar cualquier texto de advertencia previo
   const notice = document.getElementById('dtk-notice');
   if (notice) {
     notice.textContent = '';
     notice.className = 'dtk-notice';
   }
 
-  // 1. Limpiar bordes rojos previos
   const prevErrors = document.querySelectorAll('.dtk-error');
   prevErrors.forEach(el => el.classList.remove('dtk-error'));
 
-  // 2. Validar campos obligatorios vacíos
   const requiredElements = Array.from(document.querySelectorAll('.dtk-required, [required]'));
   let hasError = false;
   let firstErrorField = null;
 
   for (const el of requiredElements) {
-    if (el.offsetParent === null) continue; // Ignorar si está oculto
+    if (el.offsetParent === null) continue;
 
     if (String(el.value).trim() === '') {
       hasError = true;
-      el.classList.add('dtk-error'); // Aplica el marco rojo
+      el.classList.add('dtk-error');
       if (!firstErrorField) firstErrorField = el;
     }
   }
 
-  // 3. Validar que exista al menos 1 producto en la Propuesta Económica
   const economicRows = readEconomicRows();
   const hasProducts = economicRows.length > 0;
 
@@ -1436,33 +1423,28 @@ function delegatedDownloadClick(event){
     event.stopImmediatePropagation();
 
     if (hasError) {
-      // Inyectar mensaje en la barra inferior (en vez del popup nativo del navegador)
       if (notice) {
         notice.textContent = 'Por favor, completa los campos obligatorios marcados en rojo.';
         notice.className = 'dtk-notice error';
       }
       
-      // Hacer scroll directo hacia el primer campo que olvidaron llenar
       firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       firstErrorField.focus();
 
     } else if (!hasProducts) {
-      // Inyectar el mensaje de productos en la barra inferior
       if (notice) {
         notice.textContent = 'Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.';
         notice.className = 'dtk-notice error';
       }
 
-      // Hacer scroll hacia la zona de productos
       const productsSection = document.querySelector('.dtk-products') || document.querySelector('#dtk-calc-tbody');
       if (productsSection) {
         productsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
 
-    return; // Abortar PDF
+    return; 
   }
-  // -------------------------------------------------------------
 
   event.preventDefault();
   event.stopPropagation();
@@ -1480,7 +1462,6 @@ function init(){
       true
     );
 
-    // Eventos para limpiar el marco rojo y el mensaje de error tan pronto el usuario interactúa
     const clearError = (e) => {
       if (e.target && e.target.classList && e.target.classList.contains('dtk-error')) {
         if (String(e.target.value).trim() !== '') {
