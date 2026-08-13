@@ -1396,16 +1396,43 @@ function delegatedDownloadClick(event){
 
   if(!button) return;
 
-  // --- NUEVA VALIDACIÓN DE CAMPOS OBLIGATORIOS ---
-  const form = button.closest('form') || document.querySelector('form');
-  
-  if (form && typeof form.checkValidity === 'function') {
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
+  // --- VALIDACIÓN DIRECTA DE CAMPOS (SIN DEPENDER DEL <FORM>) ---
+  // Buscamos todos los inputs, selects y textareas que sean obligatorios
+  const requiredElements = Array.from(document.querySelectorAll('input[required], select[required], textarea[required]'));
+
+  let hasError = false;
+  let firstErrorField = null;
+
+  for (const el of requiredElements) {
+    // Ignoramos los campos que estén ocultos en la interfaz
+    if (el.offsetParent === null) continue;
+
+    // Comprobamos si el campo es inválido o está en blanco
+    if (!el.checkValidity() || String(el.value).trim() === '') {
+      hasError = true;
+      firstErrorField = el;
+      break; // Nos detenemos al encontrar el primer campo vacío
     }
   }
-  // -----------------------------------------------
+
+  if (hasError) {
+    // Detenemos la acción de los clics y la descarga
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    // Mostramos la advertencia roja nativa del navegador ("Rellena este campo")
+    if (typeof firstErrorField.reportValidity === 'function') {
+      firstErrorField.reportValidity();
+    }
+
+    // Hacemos scroll suave para llevar al usuario directamente al campo que le faltó
+    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    firstErrorField.focus();
+
+    return; // Abortamos la generación del PDF
+  }
+  // -------------------------------------------------------------
 
   event.preventDefault();
   event.stopPropagation();
