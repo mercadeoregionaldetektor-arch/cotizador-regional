@@ -110,6 +110,7 @@ function readEconomicRows(){
     productId:row.dataset.productId||'',
     product:String($('.dtk-prod-name',row)?.value||'').trim(),
     qty:String($('.dtk-qty',row)?.value||'').trim(),
+    period:String($('.dtk-period',row)?.value||'Mensual').trim(), // AGREGADO: Lectura de la celda mensual/anual
     unit:String($('.dtk-price',row)?.value||'').trim(),
     discount:String($('.dtk-desc',row)?.value||'').trim(),
     subtotal:String($('.dtk-row-subtotal',row)?.textContent||'').trim()
@@ -197,7 +198,8 @@ function collectData(){
       date:valueOf('#quote-date'),
       number:valueOf('#quote-number'),
       country,
-      observations:valueOf('#quote-obs')
+      observations:valueOf('#quote-obs'),
+      notes:valueOf('#quote-notes') // AGREGADO: Campo de Notas/Excepciones
     },
     advisor:readAdvisor(),
     client:{
@@ -670,11 +672,11 @@ function drawCoverPage(doc,data,assets){
     doc.text(lines,cx,capY+53,{align:'center',lineHeightFactor:1.18});
   });
 
-  // Caja información
-  fill(doc,[247,248,249]);
+  // Caja información (AGREGADO: Cambio de color de gris opaco a tono cálido con estilo corporativo)
+  fill(doc,[251,243,242]); // Fondo principal cálido
   doc.roundedRect(42,770,W-84,285,14,14,'F');
   fill(doc,CFG.red);
-  doc.rect(42,770,W-84,3,'F');
+  doc.rect(42,770,W-84,3,'F'); // Ribete rojo superior
 
   drawText(doc,'Información de la propuesta',66,805,W-132,{
     size:16,
@@ -862,8 +864,10 @@ function money(value,currency){
 function drawEconomicTable(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const widths=[360,70,135,145];
-  const headers=['DESCRIPCIÓN','CANT.','PRECIO/U','TOTAL'];
+  
+  // AGREGADO: Columna PERIODO e índices de anchos ajustados (Total=710)
+  const widths=[250, 60, 100, 150, 150]; 
+  const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
   const headerH=34;
 
   fill(doc,[7,7,7]);
@@ -873,8 +877,8 @@ function drawEconomicTable(doc,data,y){
 
   headers.forEach((header,i)=>{
     setFont(doc,9,'bold',CFG.white);
-    const align=i===3?'right':'left';
-    const tx=i===3?cx+widths[i]-8:cx+8;
+    const align=i===4?'right':'left'; // Columna 4 es la de TOTAL
+    const tx=i===4?cx+widths[i]-8:cx+8;
     doc.text(header,tx,y+21,{align});
     cx+=widths[i];
   });
@@ -884,6 +888,7 @@ function drawEconomicTable(doc,data,y){
   const rows=data.economicRows.length?data.economicRows:[{
     product:'Sin productos agregados.',
     qty:'',
+    period:'',
     unit:'',
     subtotal:''
   }];
@@ -902,10 +907,15 @@ function drawEconomicTable(doc,data,y){
     doc.text(desc,x+8,y+18,{lineHeightFactor:1.18});
 
     doc.text(String(row.qty||'1'),x+widths[0]+8,y+18);
+    
+    // AGREGADO: Renderizado de la periodicidad mensual/anual
+    if(row.period) {
+        doc.text(String(row.period), x+widths[0]+widths[1]+8, y+18);
+    }
 
     doc.text(
       money(row.unit||'0',data.totals.currency),
-      x+widths[0]+widths[1]+8,
+      x+widths[0]+widths[1]+widths[2]+8,
       y+18
     );
 
@@ -937,13 +947,22 @@ function drawTotals(doc,data,y){
   rows.forEach(row=>{
     const baseline=y+(row.final?25:18);
     setFont(doc,row.final?14:10.5,row.final?'bold':'normal',row.final?CFG.red:CFG.text);
-    doc.text(row.label,x,baseline);
-    doc.text(row.value,x+boxW,baseline,{align:'right'});
+    
+    // AGREGADO: Corrección de solapamiento. Calcula ancho del monto para truncar la etiqueta si es necesario
+    const valueWidth = doc.getTextWidth(row.value);
+    const maxLabelWidth = boxW - valueWidth - 15; 
+    const splitLabel = doc.splitTextToSize(row.label, maxLabelWidth);
+
+    doc.text(splitLabel, x, baseline);
+    doc.text(row.value, x + boxW, baseline, { align: 'right' });
+
     if(!row.final){
       stroke(doc,CFG.line);
-      doc.line(x,y+row.height-2,x+boxW,y+row.height-2);
+      const extraH = splitLabel.length > 1 ? (splitLabel.length - 1) * 14 : 0;
+      doc.line(x,y+row.height-2+extraH,x+boxW,y+row.height-2+extraH);
     }
-    y+=row.height;
+    
+    y += row.height + (splitLabel.length > 1 ? (splitLabel.length - 1) * (row.final ? 14 : 10.5) : 0);
   });
 
   return y;
@@ -1032,6 +1051,34 @@ function drawObservation(doc,text,y){
 
   setFont(doc,8.6,'bold',CFG.dark);
   doc.text('Observaciones generales:',x+12,y+17);
+
+  setFont(doc,fontSize,'normal',CFG.text);
+  doc.text(lines,x+12,y+33,{lineHeightFactor:lineHeight});
+
+  return y+h;
+}
+
+// AGREGADO: Función dedicada para la sección de Notas / Excepciones
+function drawNotes(doc,text,y){
+  if(!String(text||'').trim()) return y;
+
+  const x=CFG.marginX;
+  const w=CFG.pageWidth-CFG.marginX*2;
+  const fontSize=8;
+  const lineHeight=1.30;
+  const lineStep=fontSize*lineHeight;
+
+  setFont(doc,fontSize,'normal',CFG.text);
+  const lines=textLines(doc,text,w-26);
+  const h=Math.max(52,34+(Math.max(lines.length,1)-1)*lineStep+fontSize+12);
+
+  fill(doc,CFG.soft);
+  doc.roundedRect(x,y,w,h,5,5,'F');
+  fill(doc,CFG.red);
+  doc.rect(x,y,4,h,'F');
+
+  setFont(doc,8.6,'bold',CFG.dark);
+  doc.text('Notas / Excepciones de negociación:',x+12,y+17);
 
   setFont(doc,fontSize,'normal',CFG.text);
   doc.text(lines,x+12,y+33,{lineHeightFactor:lineHeight});
@@ -1252,6 +1299,9 @@ function drawFinalPage(doc,data,assets){
   y=drawTotals(doc,data,y)+10;
   y=drawAdvisor(doc,data,y)+16;
   y=drawObservation(doc,data.quote.observations,y)+18;
+  
+  // AGREGADO: Pintar las notas bajo las observaciones
+  y=drawNotes(doc,data.quote.notes,y)+18; 
 
   const termsBottom=850;
   y=drawTermsSection(doc,data,y,termsBottom);
@@ -1416,8 +1466,12 @@ function delegatedDownloadClick(event){
 
   const economicRows = readEconomicRows();
   const hasProducts = economicRows.length > 0;
+  
+  // AGREGADO: Validación de combinación de planes mensuales y anuales
+  const periods = new Set(economicRows.map(r => r.period).filter(Boolean));
+  const hasMixedPeriods = periods.size > 1;
 
-  if (hasError || !hasProducts) {
+  if (hasError || !hasProducts || hasMixedPeriods) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
@@ -1434,6 +1488,17 @@ function delegatedDownloadClick(event){
     } else if (!hasProducts) {
       if (notice) {
         notice.textContent = 'Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.';
+        notice.className = 'dtk-notice error';
+      }
+
+      const productsSection = document.querySelector('.dtk-products') || document.querySelector('#dtk-calc-tbody');
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } else if (hasMixedPeriods) {
+      // Mensaje de error para validación de periodicidad mixta
+      if (notice) {
+        notice.textContent = 'Atención: No se pueden combinar planes anuales y mensuales en la misma propuesta.';
         notice.className = 'dtk-notice error';
       }
 
