@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v22-formateo-y-datalist';
+window.DTK_BUILD_VERSION = 'v23-ajustes-cotizador';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -333,7 +333,7 @@ window.DTK_DATA = {
       'quote-date','quote-number','quote-country','quote-advisor-select','quote-advisor-manual','quote-advisor-code',
       'quote-advisor-phone','quote-advisor-email','currency-select','select-tax','input-tax-manual','tax-manual-wrap','tax-label','dtk-calc-tbody',
       'val-subtotal','val-tax','val-total','advisor-select-wrap','advisor-manual-wrap','dtk-products-catalog',
-      'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice', 'dtk-app'
+      'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice', 'dtk-app', 'quote-notes' // AGREGADO: Campo de notas
     ].forEach(k => els[k] = $(k));
   }
 
@@ -700,20 +700,29 @@ window.DTK_DATA = {
   function renderEmptyRow() {
     const tbody = els['dtk-calc-tbody'];
     if (!tbody) return;
-    if (!tbody.querySelector('tr[data-row]')) tbody.innerHTML = '<tr class="dtk-empty-row"><td colspan="6">Agrega uno o más productos para construir la propuesta económica.</td></tr>';
+    // AGREGADO: colspan cambiado de 6 a 7 por la nueva columna
+    if (!tbody.querySelector('tr[data-row]')) tbody.innerHTML = '<tr class="dtk-empty-row"><td colspan="7">Agrega uno o más productos para construir la propuesta económica.</td></tr>';
   }
 
-  function appendRow(name = '', qty = 1, price = 0, discount = 0, productId = '') {
+  // AGREGADO: Se añadió el parámetro 'period' por defecto en Mensual
+  function appendRow(name = '', qty = 1, price = 0, discount = 0, productId = '', period = 'Mensual') {
     const tbody = els['dtk-calc-tbody'];
     if (!tbody) return;
     tbody.querySelector('.dtk-empty-row')?.remove();
     const tr = document.createElement('tr');
     tr.dataset.row = '1';
     tr.dataset.productId = productId || '';
-    // Usamos type="text" con inputmode decimal y formatNumberOnly para que cargue la visual inicial con los separadores
+    
+    // AGREGADO: Nueva columna select dtk-period
     tr.innerHTML = `
       <td><input class="dtk-input dtk-prod-name" value="${escapeHtml(name)}" placeholder="Ej. Detektor GPS"></td>
       <td><input type="number" class="dtk-input dtk-qty" value="${qty}" min="0" step="any" aria-label="Cantidad"></td>
+      <td>
+        <select class="dtk-input dtk-period" aria-label="Periodicidad">
+          <option value="Mensual" ${period === 'Mensual' ? 'selected' : ''}>Mensual</option>
+          <option value="Anual" ${period === 'Anual' ? 'selected' : ''}>Anual</option>
+        </select>
+      </td>
       <td><input type="text" inputmode="decimal" class="dtk-input dtk-price" value="${formatNumberOnly(price)}" aria-label="Valor unitario"></td>
       <td><input type="number" class="dtk-input dtk-desc" value="${discount}" min="0" max="100" step="any" aria-label="Descuento"></td>
       <td class="dtk-row-subtotal">${formatMoney(0)}</td>
@@ -731,7 +740,7 @@ window.DTK_DATA = {
       showNotice('Ese producto ya está en la propuesta económica.', 'error');
       return;
     }
-    appendRow(product.name, 1, 0, 0, product.id);
+    appendRow(product.name, 1, 0, 0, product.id, 'Mensual');
     showNotice(`${product.name} agregado. Ingresa el valor unitario.`, 'success');
   }
 
@@ -741,11 +750,12 @@ window.DTK_DATA = {
       const price = parseNum(row.querySelector('.dtk-price')?.value);
       const discount = Math.min(100, Math.max(0, parseNum(row.querySelector('.dtk-desc')?.value)));
       const subtotal = qty * price * (1 - discount / 100);
+      const period = row.querySelector('.dtk-period')?.value || 'Mensual'; // AGREGADO: Lectura del periodo
       return {
         row,
         productId: row.dataset.productId || '',
         name: row.querySelector('.dtk-prod-name')?.value.trim() || '',
-        qty, price, discount, subtotal
+        qty, period, price, discount, subtotal
       };
     });
   }
@@ -853,7 +863,6 @@ window.DTK_DATA = {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // 1. Validar solo los campos obligatorios
     for (const id of requiredIds) {
       const el = $(id);
       const value = String(el?.value || '').trim();
@@ -867,7 +876,6 @@ window.DTK_DATA = {
       }
     }
 
-    // 2. Validar formato del correo del asesor SOLO si el usuario escribió algo
     const advEmailEl = $('quote-advisor-email');
     const advEmailVal = String(advEmailEl?.value || '').trim();
     if (advEmailVal && !emailRegex.test(advEmailVal)) {
@@ -887,6 +895,14 @@ window.DTK_DATA = {
       showNotice('Debes agregar al menos un producto a la cotización.', 'error');
       return false;
     }
+
+    // AGREGADO: Validación para prohibir combinación de periodos
+    const periods = new Set(rows.map(r => r.period).filter(Boolean));
+    if (periods.size > 1) {
+      showNotice('Atención: No se pueden combinar planes anuales y mensuales en la misma propuesta.', 'error');
+      return false;
+    }
+
     rows.forEach(item => {
       const input = item.row.querySelector('.dtk-prod-name');
       if (!item.name) { input?.classList.add('dtk-error'); valid = false; }
@@ -1011,7 +1027,8 @@ window.DTK_DATA = {
     const rows = rowData();
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
-      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
+      // AGREGADO: Inclusión del periodo en la vista previa 
+      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(item.period)}</td><td>${escapeHtml(formatMoney(item.price))}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
     const chosen = DATA.products.map(product => ({
@@ -1462,10 +1479,6 @@ window.DTK_DATA = {
       requestAnimationFrame(() => requestAnimationFrame(resolve))
     );
 
-    // Si había una función waitForImages se ha eliminado su dependencia implícita o 
-    // debes proveerla en tu archivo original. Asegúrate de tenerla si es necesaria para paginatePdfDynamically.
-    // await waitForImages(els['dtk-pdf-export-content']); 
-    
     paginatePdfDynamically();
 
     requestAnimationFrame(() => {
@@ -1530,6 +1543,7 @@ window.DTK_DATA = {
     const fields = ['client-name','client-company','client-role','client-email','client-phone','client-city','quote-advisor-manual','quote-advisor-code','quote-advisor-phone','quote-advisor-email'];
     fields.forEach(id => { if ($(id)) $(id).value = ''; });
     $('quote-obs').value = 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.';
+    if ($('quote-notes')) $('quote-notes').value = ''; // AGREGADO: limpiar notas
     els['quote-date'].value = todayLocal();
     els['quote-number'].value = '';
     els['quote-country'].value = '';
@@ -1562,6 +1576,7 @@ window.DTK_DATA = {
       quoteAdvisorPhone: els['quote-advisor-phone']?.value || '',
       quoteAdvisorEmail: els['quote-advisor-email']?.value || '',
       quoteObs: $('quote-obs')?.value || '',
+      quoteNotes: $('quote-notes')?.value || '', // AGREGADO: Guardar notas en borrador
       clientName: $('client-name')?.value || '',
       clientCompany: $('client-company')?.value || '',
       clientRole: $('client-role')?.value || '',
@@ -1576,7 +1591,8 @@ window.DTK_DATA = {
       currency: els['currency-select']?.value || '',
       taxSelect: els['select-tax']?.value || '',
       taxManual: els['input-tax-manual']?.value || '',
-      rows: rowData().map(r => ({ name: r.name, qty: r.qty, price: r.price, discount: r.discount, productId: r.productId })),
+      // AGREGADO: el periodo al serializar la fila
+      rows: rowData().map(r => ({ name: r.name, qty: r.qty, period: r.period, price: r.price, discount: r.discount, productId: r.productId })),
       modes: {
         subtotal: els['val-subtotal']?.dataset.mode || 'auto',
         tax: els['val-tax']?.dataset.mode || 'auto',
@@ -1633,6 +1649,7 @@ window.DTK_DATA = {
       setVal('quote-advisor-phone', draft.quoteAdvisorPhone);
       setVal('quote-advisor-email', draft.quoteAdvisorEmail);
       setVal('quote-obs', draft.quoteObs);
+      setVal('quote-notes', draft.quoteNotes); // AGREGADO: Cargar campo de notas
       setVal('client-name', draft.clientName);
       setVal('client-company', draft.clientCompany);
       setVal('client-role', draft.clientRole);
@@ -1651,7 +1668,8 @@ window.DTK_DATA = {
 
       els['dtk-calc-tbody'].innerHTML = '';
       if (draft.rows && draft.rows.length) {
-        draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId));
+        // AGREGADO: Pasamos r.period a la reconstrucción de las filas
+        draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId, r.period));
       } else {
         renderEmptyRow();
       }
@@ -1719,13 +1737,11 @@ window.DTK_DATA = {
     els['dtk-products-catalog'].addEventListener('click', e => {
       const add = e.target.closest('.dtk-btn-add');
       if (add) addCatalogProduct(add.dataset.productId);
-      if (e.target.id === 'btn-add-custom') appendRow('', 1, 0, 0, '');
+      if (e.target.id === 'btn-add-custom') appendRow('', 1, 0, 0, '', 'Mensual');
     });
 
-    // LÓGICA DE FORMATEO EN TABLA (MÁSCARA DE MONEDA DINÁMICA)
     els['dtk-calc-tbody'].addEventListener('focusin', e => {
       if (e.target.matches('.dtk-price')) {
-        // Al hacer clic, mostramos el número crudo para teclear fácilmente sin que el cursor salte
         const num = parseNum(e.target.value);
         e.target.value = num === 0 ? '' : num;
       }
@@ -1733,7 +1749,6 @@ window.DTK_DATA = {
     
     els['dtk-calc-tbody'].addEventListener('focusout', e => {
       if (e.target.matches('.dtk-price')) {
-        // Al salir del campo, formateamos el número según la moneda del país seleccionado
         const num = parseNum(e.target.value);
         e.target.value = formatNumberOnly(num);
         calculateAll();
@@ -1741,9 +1756,9 @@ window.DTK_DATA = {
     });
 
     els['dtk-calc-tbody'].addEventListener('input', e => {
-      if (e.target.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc')) {
+      // AGREGADO: ".dtk-period" se incluyó para que también repinte si cambias select
+      if (e.target.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc,.dtk-period')) {
         e.target.classList.remove('dtk-error');
-        // Calculamos todo por debajo (parseNum se encarga de leer bien aunque no esté formateado aún)
         calculateAll();
       }
     });
