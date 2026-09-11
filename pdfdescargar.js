@@ -457,8 +457,18 @@ async function preloadAssets(data){
 }
 
 /* =========================================================
-   HELPERS PDF
+   HELPERS PDF Y PAGINACIÓN DINÁMICA
    ========================================================= */
+
+// NUEVO: Verificador de margen inferior inteligente para evitar solapamientos
+function checkY(doc, currentY, requiredH) {
+  // El fondo del Footer ocupa unos 150px. Nada debe dibujarse pasando Y=950.
+  if (currentY + requiredH > 950) {
+      doc.addPage([CFG.pageWidth, CFG.pageHeight], 'portrait');
+      return 52; // Retorna el nuevo Y superior de la hoja en blanco
+  }
+  return currentY;
+}
 
 function setFont(doc,size=10,style='normal',color=CFG.text){
   doc.setFont('helvetica',style);
@@ -852,7 +862,7 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
 }
 
 /* =========================================================
-   PROPUESTA ECONÓMICA
+   PROPUESTA ECONÓMICA (AHORA CON PAGINACIÓN INTERNA)
    ========================================================= */
 
 function money(value,currency){
@@ -865,38 +875,41 @@ function drawEconomicTable(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   
-  // 6 columnas: DESCRIPCIÓN, CANT., PERIODO, PRECIO/U, DESC. %, TOTAL (Ancho total = 710)
   const widths=[230, 50, 70, 130, 70, 160]; 
   const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','DESC. %','TOTAL'];
   const headerH=34;
 
-  fill(doc,[7,7,7]);
-  doc.rect(x,y,w,headerH,'F');
+  // Renderizado del encabezado encapsulado para poder repetirlo si la tabla salta de página
+  function drawHeader(currentY) {
+    fill(doc,[7,7,7]);
+    doc.rect(x,currentY,w,headerH,'F');
+    let cx=x;
+    headers.forEach((header,i)=>{
+      setFont(doc,9,'bold',CFG.white);
+      const align = i===5 ? 'right' : (i===4 ? 'center' : 'left'); 
+      const tx = i===5 ? cx+widths[i]-8 : (i===4 ? cx+widths[i]/2 : cx+8);
+      doc.text(header,tx,currentY+21,{align});
+      cx+=widths[i];
+    });
+    return currentY + headerH;
+  }
 
-  let cx=x;
-
-  headers.forEach((header,i)=>{
-    setFont(doc,9,'bold',CFG.white);
-    const align = i===5 ? 'right' : (i===4 ? 'center' : 'left'); 
-    const tx = i===5 ? cx+widths[i]-8 : (i===4 ? cx+widths[i]/2 : cx+8);
-    doc.text(header,tx,y+21,{align});
-    cx+=widths[i];
-  });
-
-  y+=headerH;
+  y = drawHeader(y);
 
   const rows=data.economicRows.length?data.economicRows:[{
-    product:'Sin productos agregados.',
-    qty:'',
-    period:'',
-    unit:'',
-    discount:'',
-    subtotal:''
+    product:'Sin productos agregados.', qty:'', period:'', unit:'', discount:'', subtotal:''
   }];
 
   rows.forEach(row=>{
     const desc=textLines(doc,`- ${row.product}`,widths[0]-16);
     const rowH=Math.max(31,desc.length*12+12);
+
+    // Si la fila no cabe en la hoja actual, generamos una hoja nueva y dibujamos otra vez los encabezados
+    if (y + rowH > 950) {
+        doc.addPage([CFG.pageWidth, CFG.pageHeight], 'portrait');
+        y = 52;
+        y = drawHeader(y);
+    }
 
     fill(doc,CFG.white);
     doc.rect(x,y,w,rowH,'F');
@@ -929,7 +942,6 @@ function drawEconomicTable(doc,data,y){
     }
 
     setFont(doc,9.5,'bold',CFG.text);
-
     doc.text(
       money(row.subtotal||'0',data.totals.currency),
       x+w-8,
@@ -944,8 +956,7 @@ function drawEconomicTable(doc,data,y){
 }
 
 function drawTotals(doc,data,y){
-  const boxW=320;
-  const x=CFG.pageWidth-CFG.marginX-boxW;
+  const rightEdge = CFG.pageWidth - CFG.marginX;
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
   const rows=[
     {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
@@ -957,21 +968,25 @@ function drawTotals(doc,data,y){
     const baseline=y+(row.final?25:18);
     setFont(doc,row.final?14:10.5,row.final?'bold':'normal',row.final?CFG.red:CFG.text);
     
-    // AGREGADO: Corrección de solapamiento. Calcula ancho del monto para truncar la etiqueta si es necesario
-    const valueWidth = doc.getTextWidth(row.value);
-    const maxLabelWidth = boxW - valueWidth - 15; 
-    const splitLabel = doc.splitTextToSize(row.label, maxLabelWidth);
+    // AGREGADO: Dinámica inteligente para que nunca salte de línea si es número grande
+    const valWidth = doc.getTextWidth(row.value);
+    const lblWidth = doc.getTextWidth(row.label);
 
-    doc.text(splitLabel, x, baseline);
-    doc.text(row.value, x + boxW, baseline, { align: 'right' });
+    const gap = 30; // Espaciado mínimo entre "TOTAL" y el número
+    const requiredW = lblWidth + gap + valWidth;
+    const boxW = Math.max(320, requiredW); // Mínimo 320, si es gigantesco, la caja crece hacia la izquierda.
+
+    const x = rightEdge - boxW;
+
+    doc.text(row.label, x, baseline);
+    doc.text(row.value, rightEdge, baseline, { align: 'right' });
 
     if(!row.final){
       stroke(doc,CFG.line);
-      const extraH = splitLabel.length > 1 ? (splitLabel.length - 1) * 14 : 0;
-      doc.line(x,y+row.height-2+extraH,x+boxW,y+row.height-2+extraH);
+      doc.line(x,y+row.height-2,rightEdge,y+row.height-2);
     }
     
-    y += row.height + (splitLabel.length > 1 ? (splitLabel.length - 1) * (row.final ? 14 : 10.5) : 0);
+    y += row.height;
   });
 
   return y;
@@ -1067,7 +1082,6 @@ function drawObservation(doc,text,y){
   return y+h;
 }
 
-// AGREGADO: Función dedicada para la sección de Notas / Excepciones
 function drawNotes(doc,text,y){
   if(!String(text||'').trim()) return y;
 
@@ -1095,11 +1109,14 @@ function drawNotes(doc,text,y){
   return y+h;
 }
 
-function drawTermsSection(doc,data,y,maxBottom){
+// AGREGADO: Paginar el contenido de términos si excede el tamaño
+function drawTermsSection(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   const gap=12;
   const colW=(w-gap)/2;
+
+  y = checkY(doc, y, 160); // Validar espacio disponible
 
   setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
@@ -1156,15 +1173,15 @@ function drawTermsSection(doc,data,y,maxBottom){
   const extra=String(data.terms.extra||'').trim();
 
   if(extra){
-    const available=Math.max(66,maxBottom-y);
-    const fontSize=available<95?6.9:7.3;
+    const fontSize=7.3;
     const lineHeight=1.27;
     const lineStep=fontSize*lineHeight;
 
     setFont(doc,fontSize,'normal',CFG.text);
     const lines=textLines(doc,extra,w-24);
-    const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
-    const h=Math.min(available,Math.max(66,desired));
+    const h=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
+
+    y = checkY(doc, y, h + 15); // Validar si el texto extra de términos necesita una página entera
 
     fill(doc,CFG.soft);
     doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1300,26 +1317,42 @@ function drawFooter(doc,assets){
   );
 }
 
+// AGREGADO: Motor robusto para evaluar saltos de página a lo largo del documento.
 function drawFinalPage(doc,data,assets){
   let y=52;
 
   y=sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
-  y=drawEconomicTable(doc,data,y)+18;
-  y=drawTotals(doc,data,y)+10;
-  y=drawAdvisor(doc,data,y)+16;
-  y=drawObservation(doc,data.quote.observations,y)+18;
   
-  // AGREGADO: Pintar las notas bajo las observaciones
-  y=drawNotes(doc,data.quote.notes,y)+18; 
+  y=drawEconomicTable(doc,data,y)+18;
 
-  const termsBottom=850;
-  y=drawTermsSection(doc,data,y,termsBottom);
+  y=checkY(doc, y, 100);
+  y=drawTotals(doc,data,y)+10;
 
-  if(shouldAddConfidentiality(data.terms.extra)){
-    drawConfidentiality(doc,Math.min(y+14,865));
+  y=checkY(doc, y, 140);
+  y=drawAdvisor(doc,data,y)+16;
+
+  if(String(data.quote.observations||'').trim()) {
+      y=checkY(doc, y, 90);
+      y=drawObservation(doc,data.quote.observations,y)+18;
+  }
+  
+  if(String(data.quote.notes||'').trim()) {
+      y=checkY(doc, y, 90);
+      y=drawNotes(doc,data.quote.notes,y)+18; 
   }
 
-  drawContact(doc,data,assets,900);
+  y=drawTermsSection(doc,data,y);
+
+  if(shouldAddConfidentiality(data.terms.extra)){
+    y=checkY(doc, y, 40);
+    drawConfidentiality(doc,y);
+    y += 20;
+  }
+
+  y=checkY(doc, y, 100);
+  drawContact(doc,data,assets,y);
+
+  // El Footer va siempre anclado al fondo de la última hoja creada.
   drawFooter(doc,assets);
 }
 
@@ -1476,7 +1509,6 @@ function delegatedDownloadClick(event){
   const economicRows = readEconomicRows();
   const hasProducts = economicRows.length > 0;
   
-  // AGREGADO: Validación de combinación de planes mensuales y anuales
   const periods = new Set(economicRows.map(r => r.period).filter(Boolean));
   const hasMixedPeriods = periods.size > 1;
 
@@ -1505,7 +1537,6 @@ function delegatedDownloadClick(event){
         productsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     } else if (hasMixedPeriods) {
-      // Mensaje de error para validación de periodicidad mixta
       if (notice) {
         notice.textContent = 'Atención: No se pueden combinar planes anuales y mensuales en la misma propuesta.';
         notice.className = 'dtk-notice error';
