@@ -110,7 +110,7 @@ function readEconomicRows(){
     productId:row.dataset.productId||'',
     product:String($('.dtk-prod-name',row)?.value||'').trim(),
     qty:String($('.dtk-qty',row)?.value||'').trim(),
-    period:String($('.dtk-period',row)?.value||'Mensual').trim(), // AGREGADO: Lectura de la celda mensual/anual
+    period:String($('.dtk-period',row)?.value||'Mensual').trim(),
     unit:String($('.dtk-price',row)?.value||'').trim(),
     discount:String($('.dtk-desc',row)?.value||'').trim(),
     subtotal:String($('.dtk-row-subtotal',row)?.textContent||'').trim()
@@ -199,7 +199,7 @@ function collectData(){
       number:valueOf('#quote-number'),
       country,
       observations:valueOf('#quote-obs'),
-      notes:valueOf('#quote-notes') // AGREGADO: Campo de Notas/Excepciones
+      notes:valueOf('#quote-notes')
     },
     advisor:readAdvisor(),
     client:{
@@ -672,25 +672,25 @@ function drawCoverPage(doc,data,assets){
     doc.text(lines,cx,capY+53,{align:'center',lineHeightFactor:1.18});
   });
 
-  // Caja información (AGREGADO: Cambio de color de gris opaco a tono cálido con estilo corporativo)
-  fill(doc,[251,243,242]); // Fondo principal cálido
+  // Caja información (DISEÑO PREMIUM OSCURO PARA EL PDF)
+  fill(doc,[17,17,17]); 
   doc.roundedRect(42,770,W-84,285,14,14,'F');
   fill(doc,CFG.red);
-  doc.rect(42,770,W-84,3,'F'); // Ribete rojo superior
+  doc.rect(42,770,W-84,4,'F'); 
 
   drawText(doc,'Información de la propuesta',66,805,W-132,{
-    size:16,
+    size:17,
     style:'bold',
-    color:CFG.dark
+    color:CFG.white 
   });
 
-  const colGap=28;
+  const colGap=32;
   const colW=(W-132-colGap)/2;
   const leftX=66;
   const rightX=66+colW+colGap;
 
-  drawText(doc,'Datos del cliente',leftX,838,colW,{
-    size:12,
+  drawText(doc,'DATOS DEL CLIENTE',leftX,842,colW,{
+    size:11.5,
     style:'bold',
     color:CFG.red
   });
@@ -704,23 +704,23 @@ function drawCoverPage(doc,data,assets){
     ['Ciudad',data.client.city]
   ].filter(row=>String(row[1]||'').trim());
 
-  let y=862;
+  let y=868;
 
   clientRows.forEach(([label,val])=>{
-    setFont(doc,9,'normal',CFG.muted);
+    setFont(doc,9.5,'normal',[176,176,176]); 
     doc.text(`${label}:`,leftX,y);
 
-    setFont(doc,9,'bold',CFG.dark);
+    setFont(doc,9.5,'bold',CFG.white); 
     const lines=textLines(doc,val,colW-115);
-    doc.text(lines,leftX+112,y,{lineHeightFactor:1.15});
-    y+=18+(Math.max(lines.length,1)-1)*12;
+    doc.text(lines,leftX+115,y,{lineHeightFactor:1.15});
+    y+=19+(Math.max(lines.length,1)-1)*12;
   });
 
-  stroke(doc,[210,210,210]);
-  doc.line(rightX-14,833,rightX-14,1016);
+  stroke(doc,[51,51,51]); 
+  doc.line(rightX-16,833,rightX-16,1016);
 
-  drawText(doc,'Datos de la cotización',rightX,838,colW,{
-    size:12,
+  drawText(doc,'DATOS DE LA COTIZACIÓN',rightX,842,colW,{
+    size:11.5,
     style:'bold',
     color:CFG.red
   });
@@ -731,16 +731,16 @@ function drawCoverPage(doc,data,assets){
     ['País',data.quote.country]
   ].filter(row=>String(row[1]||'').trim());
 
-  y=862;
+  y=868;
 
   quoteRows.forEach(([label,val])=>{
-    setFont(doc,9,'normal',CFG.muted);
+    setFont(doc,9.5,'normal',[176,176,176]);
     doc.text(`${label}:`,rightX,y);
 
-    setFont(doc,9,'bold',CFG.dark);
+    setFont(doc,9.5,'bold',CFG.white);
     const lines=textLines(doc,String(val),colW-94);
-    doc.text(lines,rightX+88,y,{lineHeightFactor:1.15});
-    y+=18+(Math.max(lines.length,1)-1)*12;
+    doc.text(lines,rightX+92,y,{lineHeightFactor:1.15});
+    y+=19+(Math.max(lines.length,1)-1)*12;
   });
 }
 
@@ -1248,7 +1248,7 @@ function drawContact(doc,data,assets,y){
   }
 
   if(contact.web){
-    const label=String(contact.web).replace(/^https?:\/\//i,'replace(/\/$/,'');
+    const label=String(contact.web).replace(/^https?:\/\//i,'').replace(/\/$/,'');
     setFont(doc,9.5,'bold',CFG.red);
     doc.textWithLink(label,CFG.pageWidth/2,y,{
       align:'center',
