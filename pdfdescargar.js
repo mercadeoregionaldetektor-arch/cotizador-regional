@@ -460,12 +460,11 @@ async function preloadAssets(data){
    HELPERS PDF Y PAGINACIÓN DINÁMICA
    ========================================================= */
 
-// NUEVO: Verificador de margen inferior inteligente para evitar solapamientos
+// SISTEMA INTELIGENTE DE SALTOS DE PÁGINA
 function checkY(doc, currentY, requiredH) {
-  // El fondo del Footer ocupa unos 150px. Nada debe dibujarse pasando Y=950.
   if (currentY + requiredH > 950) {
       doc.addPage([CFG.pageWidth, CFG.pageHeight], 'portrait');
-      return 52; // Retorna el nuevo Y superior de la hoja en blanco
+      return 52; 
   }
   return currentY;
 }
@@ -862,7 +861,7 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
 }
 
 /* =========================================================
-   PROPUESTA ECONÓMICA (AHORA CON PAGINACIÓN INTERNA)
+   PROPUESTA ECONÓMICA
    ========================================================= */
 
 function money(value,currency){
@@ -879,7 +878,6 @@ function drawEconomicTable(doc,data,y){
   const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','DESC. %','TOTAL'];
   const headerH=34;
 
-  // Renderizado del encabezado encapsulado para poder repetirlo si la tabla salta de página
   function drawHeader(currentY) {
     fill(doc,[7,7,7]);
     doc.rect(x,currentY,w,headerH,'F');
@@ -904,7 +902,6 @@ function drawEconomicTable(doc,data,y){
     const desc=textLines(doc,`- ${row.product}`,widths[0]-16);
     const rowH=Math.max(31,desc.length*12+12);
 
-    // Si la fila no cabe en la hoja actual, generamos una hoja nueva y dibujamos otra vez los encabezados
     if (y + rowH > 950) {
         doc.addPage([CFG.pageWidth, CFG.pageHeight], 'portrait');
         y = 52;
@@ -968,14 +965,12 @@ function drawTotals(doc,data,y){
     const baseline=y+(row.final?25:18);
     setFont(doc,row.final?14:10.5,row.final?'bold':'normal',row.final?CFG.red:CFG.text);
     
-    // AGREGADO: Dinámica inteligente para que nunca salte de línea si es número grande
+    // Ancho dinámico para números grandes: la caja crece hacia la izquierda en una sola línea
     const valWidth = doc.getTextWidth(row.value);
     const lblWidth = doc.getTextWidth(row.label);
-
-    const gap = 30; // Espaciado mínimo entre "TOTAL" y el número
+    const gap = 30; 
     const requiredW = lblWidth + gap + valWidth;
-    const boxW = Math.max(320, requiredW); // Mínimo 320, si es gigantesco, la caja crece hacia la izquierda.
-
+    const boxW = Math.max(320, requiredW); 
     const x = rightEdge - boxW;
 
     doc.text(row.label, x, baseline);
@@ -1109,14 +1104,13 @@ function drawNotes(doc,text,y){
   return y+h;
 }
 
-// AGREGADO: Paginar el contenido de términos si excede el tamaño
 function drawTermsSection(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   const gap=12;
   const colW=(w-gap)/2;
 
-  y = checkY(doc, y, 160); // Validar espacio disponible
+  y = checkY(doc, y, 160); 
 
   setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
@@ -1181,7 +1175,7 @@ function drawTermsSection(doc,data,y){
     const lines=textLines(doc,extra,w-24);
     const h=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
 
-    y = checkY(doc, y, h + 15); // Validar si el texto extra de términos necesita una página entera
+    y = checkY(doc, y, h + 15); 
 
     fill(doc,CFG.soft);
     doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1225,6 +1219,7 @@ function drawConfidentiality(doc,y){
     align:'center',
     lineHeightFactor:1.18
   });
+  return y + 20;
 }
 
 function drawContact(doc,data,assets,y){
@@ -1317,7 +1312,6 @@ function drawFooter(doc,assets){
   );
 }
 
-// AGREGADO: Motor robusto para evaluar saltos de página a lo largo del documento.
 function drawFinalPage(doc,data,assets){
   let y=52;
 
@@ -1341,18 +1335,16 @@ function drawFinalPage(doc,data,assets){
       y=drawNotes(doc,data.quote.notes,y)+18; 
   }
 
-  y=drawTermsSection(doc,data,y);
+  y=drawTermsSection(doc,data,y) + 14;
 
   if(shouldAddConfidentiality(data.terms.extra)){
     y=checkY(doc, y, 40);
-    drawConfidentiality(doc,y);
-    y += 20;
+    y=drawConfidentiality(doc,y);
   }
 
   y=checkY(doc, y, 100);
   drawContact(doc,data,assets,y);
 
-  // El Footer va siempre anclado al fondo de la última hoja creada.
   drawFooter(doc,assets);
 }
 
