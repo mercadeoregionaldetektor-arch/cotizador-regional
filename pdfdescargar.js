@@ -106,10 +106,12 @@ function readEconomicRows(){
   const tbody=$('#dtk-calc-tbody');
   if(!tbody) return [];
 
+  // CORRECCIÓN: Ahora lee correctamente la columna PERIODO para que se imprima en el PDF
   return $$('tr[data-row]',tbody).map(row=>({
     productId:row.dataset.productId||'',
     product:String($('.dtk-prod-name',row)?.value||'').trim(),
     qty:String($('.dtk-qty',row)?.value||'').trim(),
+    period:String($('.dtk-period',row)?.value||'').trim()||'Mensual',
     unit:String($('.dtk-price',row)?.value||'').trim(),
     discount:String($('.dtk-desc',row)?.value||'').trim(),
     subtotal:String($('.dtk-row-subtotal',row)?.textContent||'').trim()
@@ -197,7 +199,8 @@ function collectData(){
       date:valueOf('#quote-date'),
       number:valueOf('#quote-number'),
       country,
-      observations:valueOf('#quote-obs')
+      observations:valueOf('#quote-obs'),
+      notes:valueOf('#quote-notes') // Se lee el nuevo textarea de notas de negociación
     },
     advisor:readAdvisor(),
     client:{
@@ -862,8 +865,11 @@ function money(value,currency){
 function drawEconomicTable(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const widths=[360,70,135,145];
-  const headers=['DESCRIPCIÓN','CANT.','PRECIO/U','TOTAL'];
+  // CORRECCIÓN: Ajustamos los anchos de las columnas para incorporar PERIODO en el PDF.
+  // Original 4 cols: [360, 70, 135, 145]
+  // Nuevo 5 cols: [300, 50, 80, 135, 145]
+  const widths=[300,50,80,135,145];
+  const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
   const headerH=34;
 
   fill(doc,[7,7,7]);
@@ -873,8 +879,11 @@ function drawEconomicTable(doc,data,y){
 
   headers.forEach((header,i)=>{
     setFont(doc,9,'bold',CFG.white);
-    const align=i===3?'right':'left';
-    const tx=i===3?cx+widths[i]-8:cx+8;
+    const align=i===4?'right':(i===1||i===2)?'center':'left';
+    let tx=cx+8;
+    if(i===4) tx=cx+widths[i]-8;
+    if(i===1||i===2) tx=cx+widths[i]/2;
+    
     doc.text(header,tx,y+21,{align});
     cx+=widths[i];
   });
@@ -884,6 +893,7 @@ function drawEconomicTable(doc,data,y){
   const rows=data.economicRows.length?data.economicRows:[{
     product:'Sin productos agregados.',
     qty:'',
+    period:'',
     unit:'',
     subtotal:''
   }];
@@ -901,16 +911,22 @@ function drawEconomicTable(doc,data,y){
     setFont(doc,9.5,'normal',CFG.text);
     doc.text(desc,x+8,y+18,{lineHeightFactor:1.18});
 
-    doc.text(String(row.qty||'1'),x+widths[0]+8,y+18);
+    // COLUMNA CANTIDAD
+    doc.text(String(row.qty||'1'),x+widths[0]+widths[1]/2,y+18,{align:'center'});
 
+    // COLUMNA PERIODO
+    doc.text(String(row.period||'Mensual'),x+widths[0]+widths[1]+widths[2]/2,y+18,{align:'center'});
+
+    // COLUMNA PRECIO
     doc.text(
       money(row.unit||'0',data.totals.currency),
-      x+widths[0]+widths[1]+8,
+      x+widths[0]+widths[1]+widths[2]+8,
       y+18
     );
 
     setFont(doc,9.5,'bold',CFG.text);
 
+    // COLUMNA TOTAL
     doc.text(
       money(row.subtotal||'0',data.totals.currency),
       x+w-8,
@@ -1012,7 +1028,7 @@ function drawLabeledBox(doc,label,text,x,y,w,opts={}){
   return h;
 }
 
-function drawObservation(doc,text,y){
+function drawObservation(doc,title,text,y){
   if(!String(text||'').trim()) return y;
 
   const x=CFG.marginX;
@@ -1031,7 +1047,7 @@ function drawObservation(doc,text,y){
   doc.rect(x,y,4,h,'F');
 
   setFont(doc,8.6,'bold',CFG.dark);
-  doc.text('Observaciones generales:',x+12,y+17);
+  doc.text(title,x+12,y+17);
 
   setFont(doc,fontSize,'normal',CFG.text);
   doc.text(lines,x+12,y+33,{lineHeightFactor:lineHeight});
@@ -1251,7 +1267,11 @@ function drawFinalPage(doc,data,assets){
   y=drawEconomicTable(doc,data,y)+18;
   y=drawTotals(doc,data,y)+10;
   y=drawAdvisor(doc,data,y)+16;
-  y=drawObservation(doc,data.quote.observations,y)+18;
+  y=drawObservation(doc,'Observaciones generales:',data.quote.observations,y)+8;
+  
+  if (data.quote.notes) {
+    y=drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y)+8;
+  }
 
   const termsBottom=850;
   y=drawTermsSection(doc,data,y,termsBottom);
