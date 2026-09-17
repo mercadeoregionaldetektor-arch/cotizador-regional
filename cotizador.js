@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v22-formateo-y-datalist';
+window.DTK_BUILD_VERSION = 'v26-ajuste-final';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -324,7 +324,6 @@ window.DTK_DATA = {
   let noticeTimer = null;
   let pdfPage2BaseHtml = '';
   
-  // Variables para el autoguardado (Borrador)
   let draftTimer = null;
   let isLoadingDraft = false;
 
@@ -700,20 +699,27 @@ window.DTK_DATA = {
   function renderEmptyRow() {
     const tbody = els['dtk-calc-tbody'];
     if (!tbody) return;
-    if (!tbody.querySelector('tr[data-row]')) tbody.innerHTML = '<tr class="dtk-empty-row"><td colspan="6">Agrega uno o más productos para construir la propuesta económica.</td></tr>';
+    if (!tbody.querySelector('tr[data-row]')) tbody.innerHTML = '<tr class="dtk-empty-row"><td colspan="7">Agrega uno o más productos para construir la propuesta económica.</td></tr>';
   }
 
-  function appendRow(name = '', qty = 1, price = 0, discount = 0, productId = '') {
+  function appendRow(name = '', qty = 1, price = 0, discount = 0, productId = '', period = 'Mensual') {
     const tbody = els['dtk-calc-tbody'];
     if (!tbody) return;
     tbody.querySelector('.dtk-empty-row')?.remove();
     const tr = document.createElement('tr');
     tr.dataset.row = '1';
     tr.dataset.productId = productId || '';
-    // Usamos type="text" con inputmode decimal y formatNumberOnly para que cargue la visual inicial con los separadores
+    
+    // SECCIÓN CORREGIDA: Incluye la columna <select> del PERIODO para cuadrar con el HTML de 7 columnas.
     tr.innerHTML = `
       <td><input class="dtk-input dtk-prod-name" value="${escapeHtml(name)}" placeholder="Ej. Detektor GPS"></td>
       <td><input type="number" class="dtk-input dtk-qty" value="${qty}" min="0" step="any" aria-label="Cantidad"></td>
+      <td>
+        <select class="dtk-input dtk-period" aria-label="Periodo">
+          <option value="Mensual" ${period === 'Mensual' ? 'selected' : ''}>Mensual</option>
+          <option value="Anual" ${period === 'Anual' ? 'selected' : ''}>Anual</option>
+        </select>
+      </td>
       <td><input type="text" inputmode="decimal" class="dtk-input dtk-price" value="${formatNumberOnly(price)}" aria-label="Valor unitario"></td>
       <td><input type="number" class="dtk-input dtk-desc" value="${discount}" min="0" max="100" step="any" aria-label="Descuento"></td>
       <td class="dtk-row-subtotal">${formatMoney(0)}</td>
@@ -737,7 +743,7 @@ window.DTK_DATA = {
       return;
     }
     
-    appendRow(product.name, 1, 0, 0, product.id);
+    appendRow(product.name, 1, 0, 0, product.id, 'Mensual');
     showNotice(`${product.name} agregado. Ingresa el valor unitario.`, 'success');
   }
 
@@ -747,10 +753,13 @@ window.DTK_DATA = {
       const price = parseNum(row.querySelector('.dtk-price')?.value);
       const discount = Math.min(100, Math.max(0, parseNum(row.querySelector('.dtk-desc')?.value)));
       const subtotal = qty * price * (1 - discount / 100);
+      const period = row.querySelector('.dtk-period')?.value || 'Mensual';
+      
       return {
         row,
         productId: row.dataset.productId || '',
         name: row.querySelector('.dtk-prod-name')?.value.trim() || '',
+        period,
         qty, price, discount, subtotal
       };
     });
@@ -898,6 +907,8 @@ window.DTK_DATA = {
       if (!item.name) { input?.classList.add('dtk-error'); valid = false; }
     });
 
+    // LA VALIDACIÓN DE PERIODOS MIXTOS SE HA ELIMINADO PARA PERMITIR CUALQUIER COMBINACIÓN
+
     if (!valid) {
       showNotice('Revisa los campos en rojo. Falta información obligatoria (*) o un correo no es válido.', 'error');
       document.querySelector('.dtk-error')?.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -1017,7 +1028,8 @@ window.DTK_DATA = {
     const rows = rowData();
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
-      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td>${item.qty}</td><td>${escapeHtml(formatMoney(item.price))}</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
+      // INCLUIDO PERIODO EN LA VISTA PREVIA
+      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td style="text-align:center">${item.qty}</td><td style="text-align:center">${escapeHtml(item.period)}</td><td style="text-align:center">${escapeHtml(formatMoney(item.price))}</td><td style="text-align:center">${item.discount}%</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
     const chosen = DATA.products.map(product => ({
@@ -1468,10 +1480,6 @@ window.DTK_DATA = {
       requestAnimationFrame(() => requestAnimationFrame(resolve))
     );
 
-    // Si había una función waitForImages se ha eliminado su dependencia implícita o 
-    // debes proveerla en tu archivo original. Asegúrate de tenerla si es necesaria para paginatePdfDynamically.
-    // await waitForImages(els['dtk-pdf-export-content']); 
-    
     paginatePdfDynamically();
 
     requestAnimationFrame(() => {
@@ -1534,21 +1542,19 @@ window.DTK_DATA = {
     try { localStorage.removeItem('dtk_quote_draft'); } catch(e) {}
 
     const fields = ['client-name','client-company','client-role','client-email','client-phone','client-city','quote-advisor-manual','quote-advisor-code','quote-advisor-phone','quote-advisor-email'];
-    fields.forEach(id => { if ($(id)) $(id).value = ''; });
-    $('quote-obs').value = 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.';
+    fields.forEach(id => { if ($(id)) $(id).value = ''; });$('quote-obs').value = 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.';
     els['quote-date'].value = todayLocal();
     els['quote-number'].value = '';
     els['quote-country'].value = '';
     reservedKey = '';
     reservedNumber = '';
     applyCountry();
-    ['terms-installation','terms-payment','terms-validity','terms-warranty','terms-extra'].forEach(id => { if ($(id)) $(id).value = ''; });
+    ['terms-installation','terms-payment','terms-validity','terms-warranty','terms-extra'].forEach(id => { if ($(id))$(id).value = ''; });
     els['dtk-calc-tbody'].innerHTML = '';
     renderEmptyRow();
     resetModes();
     clearErrors();
-    $('confirm-actions').classList.add('dtk-hidden');
-    $('main-actions').classList.remove('dtk-hidden');
+    $('confirm-actions').classList.add('dtk-hidden');$('main-actions').classList.remove('dtk-hidden');
     showNotice('Formulario limpio. Nueva cotización lista.', 'success');
     window.scrollTo({ top:0, behavior:'smooth' });
   }
@@ -1582,7 +1588,7 @@ window.DTK_DATA = {
       currency: els['currency-select']?.value || '',
       taxSelect: els['select-tax']?.value || '',
       taxManual: els['input-tax-manual']?.value || '',
-      rows: rowData().map(r => ({ name: r.name, qty: r.qty, price: r.price, discount: r.discount, productId: r.productId })),
+      rows: rowData().map(r => ({ name: r.name, qty: r.qty, period: r.period, price: r.price, discount: r.discount, productId: r.productId })),
       modes: {
         subtotal: els['val-subtotal']?.dataset.mode || 'auto',
         tax: els['val-tax']?.dataset.mode || 'auto',
@@ -1657,7 +1663,7 @@ window.DTK_DATA = {
 
       els['dtk-calc-tbody'].innerHTML = '';
       if (draft.rows && draft.rows.length) {
-        draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId));
+        draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId, r.period));
       } else {
         renderEmptyRow();
       }
@@ -1725,7 +1731,7 @@ window.DTK_DATA = {
     els['dtk-products-catalog'].addEventListener('click', e => {
       const add = e.target.closest('.dtk-btn-add');
       if (add) addCatalogProduct(add.dataset.productId);
-      if (e.target.id === 'btn-add-custom') appendRow('', 1, 0, 0, '');
+      if (e.target.id === 'btn-add-custom') appendRow('', 1, 0, 0, '', 'Mensual');
     });
 
     // LÓGICA DE FORMATEO EN TABLA (MÁSCARA DE MONEDA DINÁMICA)
@@ -1747,7 +1753,7 @@ window.DTK_DATA = {
     });
 
     els['dtk-calc-tbody'].addEventListener('input', e => {
-      if (e.target.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc')) {
+      if (e.target.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc,.dtk-period')) {
         e.target.classList.remove('dtk-error');
         // Calculamos todo por debajo (parseNum se encarga de leer bien aunque no esté formateado aún)
         calculateAll();
@@ -1784,11 +1790,7 @@ window.DTK_DATA = {
       el.addEventListener('change', () => el.classList.remove('dtk-error'));
     });
 
-    $('btn-preview').addEventListener('click', openPreview);
-    
-    // LOS EVENTOS ORIGINALES DE DESCARGA PDF HAN SIDO REMOVIDOS.
-    
-    $('btn-modal-close').addEventListener('click', closePreview);
+    $('btn-preview').addEventListener('click', openPreview);$('btn-modal-close').addEventListener('click', closePreview);
     els['dtk-preview-modal'].addEventListener('click', e => { if (e.target === els['dtk-preview-modal']) closePreview(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && els['dtk-preview-modal'].classList.contains('open')) closePreview(); });
 
@@ -1797,14 +1799,11 @@ window.DTK_DATA = {
 
     const askClear = (e) => {
       e?.preventDefault?.();
-      $('main-actions').classList.add('dtk-hidden');
-      $('confirm-actions').classList.remove('dtk-hidden');
+      $('main-actions').classList.add('dtk-hidden');$('confirm-actions').classList.remove('dtk-hidden');
     };
     $('btn-clear').addEventListener('click', askClear);
-    $('top-clear')?.addEventListener('click', askClear);
-    $('btn-clear-cancel').addEventListener('click', () => {
-      $('confirm-actions').classList.add('dtk-hidden');
-      $('main-actions').classList.remove('dtk-hidden');
+    $('top-clear')?.addEventListener('click', askClear);$('btn-clear-cancel').addEventListener('click', () => {
+      $('confirm-actions').classList.add('dtk-hidden');$('main-actions').classList.remove('dtk-hidden');
     });
     $('btn-clear-confirm').addEventListener('click', clearForm);
   }
