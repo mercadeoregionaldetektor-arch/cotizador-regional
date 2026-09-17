@@ -725,12 +725,18 @@ window.DTK_DATA = {
   function addCatalogProduct(productId) {
     const product = DATA.products.find(p => p.id === productId);
     if (!product) return;
-    const existing = els['dtk-calc-tbody']?.querySelector(`tr[data-product-id="${CSS.escape(productId)}"]`);
-    if (existing) {
-      existing.querySelector('.dtk-prod-name')?.focus();
-      showNotice('Ese producto ya está en la propuesta económica.', 'error');
+    
+    // CAMBIO: Contar cuántas filas existen con este mismo productId
+    const existingRows = els['dtk-calc-tbody']?.querySelectorAll(`tr[data-product-id="${CSS.escape(productId)}"]`) || [];
+    
+    // Si ya existen 2 o más, bloqueamos la inserción
+    if (existingRows.length >= 2) {
+      // Hacemos focus en el último que se agregó
+      existingRows[existingRows.length - 1].querySelector('.dtk-prod-name')?.focus();
+      showNotice('Límite máximo de 2 unidades alcanzado para este producto en la propuesta.', 'error');
       return;
     }
+    
     appendRow(product.name, 1, 0, 0, product.id);
     showNotice(`${product.name} agregado. Ingresa el valor unitario.`, 'success');
   }
