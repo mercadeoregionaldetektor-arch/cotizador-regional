@@ -2,14 +2,6 @@
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Build VECTOR-TEXT + UICONS + SPACING · 2026-08-12
  * ------------------------------------------------------------
- * PDF nativo con:
- * - texto real, seleccionable y buscable
- * - tablas/cajas vectoriales
- * - imágenes solo para portada/productos/iconos
- * - iconos desde Flaticon UIcons
- * - productos personalizados SOLO en Propuesta Económica
- * - Validación 100% UI (sin alertas nativas del navegador)
- * ------------------------------------------------------------
  */
 (function(){
 'use strict';
@@ -106,7 +98,6 @@ function readEconomicRows(){
   const tbody=$('#dtk-calc-tbody');
   if(!tbody) return [];
 
-  // CORRECCIÓN: Ahora lee correctamente la columna PERIODO para que se imprima en el PDF
   return $$('tr[data-row]',tbody).map(row=>({
     productId:row.dataset.productId||'',
     product:String($('.dtk-prod-name',row)?.value||'').trim(),
@@ -200,7 +191,7 @@ function collectData(){
       number:valueOf('#quote-number'),
       country,
       observations:valueOf('#quote-obs'),
-      notes:valueOf('#quote-notes') // Se lee el nuevo textarea de notas de negociación
+      notes:valueOf('#quote-notes')
     },
     advisor:readAdvisor(),
     client:{
@@ -865,9 +856,6 @@ function money(value,currency){
 function drawEconomicTable(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  // CORRECCIÓN: Ajustamos los anchos de las columnas para incorporar PERIODO en el PDF.
-  // Original 4 cols: [360, 70, 135, 145]
-  // Nuevo 5 cols: [300, 50, 80, 135, 145]
   const widths=[300,50,80,135,145];
   const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
   const headerH=34;
@@ -911,13 +899,9 @@ function drawEconomicTable(doc,data,y){
     setFont(doc,9.5,'normal',CFG.text);
     doc.text(desc,x+8,y+18,{lineHeightFactor:1.18});
 
-    // COLUMNA CANTIDAD
     doc.text(String(row.qty||'1'),x+widths[0]+widths[1]/2,y+18,{align:'center'});
-
-    // COLUMNA PERIODO
     doc.text(String(row.period||'Mensual'),x+widths[0]+widths[1]+widths[2]/2,y+18,{align:'center'});
 
-    // COLUMNA PRECIO
     doc.text(
       money(row.unit||'0',data.totals.currency),
       x+widths[0]+widths[1]+widths[2]+8,
@@ -926,7 +910,6 @@ function drawEconomicTable(doc,data,y){
 
     setFont(doc,9.5,'bold',CFG.text);
 
-    // COLUMNA TOTAL
     doc.text(
       money(row.subtotal||'0',data.totals.currency),
       x+w-8,
@@ -1266,12 +1249,17 @@ function drawFinalPage(doc,data,assets){
   y=sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
   y=drawEconomicTable(doc,data,y)+18;
   y=drawTotals(doc,data,y)+10;
-  y=drawAdvisor(doc,data,y)+16;
-  y=drawObservation(doc,'Observaciones generales:',data.quote.observations,y)+8;
+  y=drawAdvisor(doc,data,y)+24; 
   
-  if (data.quote.notes) {
-    y=drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y)+8;
+  if (String(data.quote.observations||'').trim()) {
+    y=drawObservation(doc,'Observaciones generales:',data.quote.observations,y)+16;
   }
+  
+  if (String(data.quote.notes||'').trim()) {
+    y=drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y)+16;
+  }
+
+  y+=12; // Extra padding
 
   const termsBottom=850;
   y=drawTermsSection(doc,data,y,termsBottom);
