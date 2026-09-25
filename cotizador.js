@@ -1716,7 +1716,10 @@ window.DTK_DATA = {
     els['currency-select'].addEventListener('change', calculateAll);
     els['select-tax'].addEventListener('change', calculateAll);
 
-    els['input-tax-manual']?.addEventListener('input', () => {
+    els['input-tax-manual']?.addEventListener('input', e => {
+      // Límite de 5 caracteres para el impuesto
+      if (e.target.value.length > 5) e.target.value = e.target.value.slice(0, 5);
+      
       if (els['val-tax'].dataset.mode === 'manual') calculateAll();
     });
 
@@ -1753,8 +1756,15 @@ window.DTK_DATA = {
     });
 
     els['dtk-calc-tbody'].addEventListener('input', e => {
-      if (e.target.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc,.dtk-period')) {
-        e.target.classList.remove('dtk-error');
+      const t = e.target;
+      
+      // Límite dinámico de caracteres
+      if (t.matches('.dtk-price') && t.value.length > 12) t.value = t.value.slice(0, 12);
+      if (t.matches('.dtk-qty') && t.value.length > 5) t.value = t.value.slice(0, 5);
+      if (t.matches('.dtk-desc') && t.value.length > 5) t.value = t.value.slice(0, 5);
+
+      if (t.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc,.dtk-period')) {
+        t.classList.remove('dtk-error');
         // Calculamos todo por debajo (parseNum se encarga de leer bien aunque no esté formateado aún)
         calculateAll();
       }
