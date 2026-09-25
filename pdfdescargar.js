@@ -862,7 +862,8 @@ function money(value,currency){
 function drawEconomicTable(doc,data,y){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const widths=[300,50,80,135,145];
+  // Anchos actualizados para dar más espacio a los valores (Total debe sumar 710)
+  const widths=[240,45,75,175,175];
   const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
   const headerH=34;
 
@@ -873,9 +874,10 @@ function drawEconomicTable(doc,data,y){
 
   headers.forEach((header,i)=>{
     setFont(doc,9,'bold',CFG.white);
-    const align=i===4?'right':(i===1||i===2)?'center':'left';
+    // Alineación: Derecha para PRECIO/U (3) y TOTAL (4)
+    const align=(i===3||i===4)?'right':(i===1||i===2)?'center':'left';
     let tx=cx+8;
-    if(i===4) tx=cx+widths[i]-8;
+    if(i===3||i===4) tx=cx+widths[i]-8;
     if(i===1||i===2) tx=cx+widths[i]/2;
     
     doc.text(header,tx,y+21,{align});
@@ -908,14 +910,17 @@ function drawEconomicTable(doc,data,y){
     doc.text(String(row.qty||'1'),x+widths[0]+widths[1]/2,y+18,{align:'center'});
     doc.text(String(row.period||'Mensual'),x+widths[0]+widths[1]+widths[2]/2,y+18,{align:'center'});
 
+    // Imprime PRECIO/U alineado a la derecha dentro de su nueva columna expandida
     doc.text(
       money(row.unit||'0',data.totals.currency),
-      x+widths[0]+widths[1]+widths[2]+8,
-      y+18
+      x+widths[0]+widths[1]+widths[2]+widths[3]-8,
+      y+18,
+      {align:'right'}
     );
 
     setFont(doc,9.5,'bold',CFG.text);
 
+    // Imprime TOTAL
     doc.text(
       money(row.subtotal||'0',data.totals.currency),
       x+w-8,
