@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + UICONS + SPACING · 2026-08-12
+ * Build VECTOR-TEXT + UICONS + SPACING · ACTUALIZADO
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,7 +9,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + UICONS + SPACING 2026-08-12 cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + UICONS + SPACING cargado.');
 
 const CFG={
   pageWidth:794,
@@ -664,16 +664,22 @@ function drawCoverPage(doc,data,assets){
     doc.text(lines,cx,capY+53,{align:'center',lineHeightFactor:1.18});
   });
 
-  // Caja información
-  fill(doc,[247,248,249]);
+  // Caja información (Modificado para diseño oscuro según primera imagen)
+  fill(doc,CFG.dark); 
   doc.roundedRect(42,770,W-84,285,14,14,'F');
   fill(doc,CFG.red);
-  doc.rect(42,770,W-84,3,'F');
+  doc.rect(42,770,W-84,3,'F'); // Línea roja superior
+
+  // Círculo rojo junto al título
+  fill(doc, CFG.red);
+  doc.circle(52, 799, 5, 'F');
+  fill(doc, CFG.dark);
+  doc.circle(52, 799, 2, 'F'); // Centro oscuro 
 
   drawText(doc,'Información de la propuesta',66,805,W-132,{
     size:16,
     style:'bold',
-    color:CFG.dark
+    color:CFG.white 
   });
 
   const colGap=28;
@@ -681,7 +687,7 @@ function drawCoverPage(doc,data,assets){
   const leftX=66;
   const rightX=66+colW+colGap;
 
-  drawText(doc,'Datos del cliente',leftX,838,colW,{
+  drawText(doc,'DATOS DEL CLIENTE',leftX,838,colW,{
     size:12,
     style:'bold',
     color:CFG.red
@@ -699,19 +705,19 @@ function drawCoverPage(doc,data,assets){
   let y=862;
 
   clientRows.forEach(([label,val])=>{
-    setFont(doc,9,'normal',CFG.muted);
+    setFont(doc,9,'normal',[200,200,200]); // Etiquetas gris claro
     doc.text(`${label}:`,leftX,y);
 
-    setFont(doc,9,'bold',CFG.dark);
+    setFont(doc,9,'bold',CFG.white); // Valores en blanco brillante
     const lines=textLines(doc,val,colW-115);
     doc.text(lines,leftX+112,y,{lineHeightFactor:1.15});
     y+=18+(Math.max(lines.length,1)-1)*12;
   });
 
-  stroke(doc,[210,210,210]);
+  stroke(doc,[50,50,50]); // Línea separadora sutil
   doc.line(rightX-14,833,rightX-14,1016);
 
-  drawText(doc,'Datos de la cotización',rightX,838,colW,{
+  drawText(doc,'DATOS DE LA COTIZACIÓN',rightX,838,colW,{
     size:12,
     style:'bold',
     color:CFG.red
@@ -726,10 +732,10 @@ function drawCoverPage(doc,data,assets){
   y=862;
 
   quoteRows.forEach(([label,val])=>{
-    setFont(doc,9,'normal',CFG.muted);
+    setFont(doc,9,'normal',[200,200,200]);
     doc.text(`${label}:`,rightX,y);
 
-    setFont(doc,9,'bold',CFG.dark);
+    setFont(doc,9,'bold',CFG.white);
     const lines=textLines(doc,String(val),colW-94);
     doc.text(lines,rightX+88,y,{lineHeightFactor:1.15});
     y+=18+(Math.max(lines.length,1)-1)*12;
@@ -924,8 +930,8 @@ function drawEconomicTable(doc,data,y){
 }
 
 function drawTotals(doc,data,y){
-  const boxW=320;
-  const x=CFG.pageWidth-CFG.marginX-boxW;
+  const boxW=410; // Antes 320. Ahora abarca todo el bloque de columnas, evitando sobreposición.
+  const x=CFG.pageWidth-CFG.marginX-boxW; 
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
   const rows=[
     {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
@@ -935,7 +941,24 @@ function drawTotals(doc,data,y){
 
   rows.forEach(row=>{
     const baseline=y+(row.final?25:18);
-    setFont(doc,row.final?14:10.5,row.final?'bold':'normal',row.final?CFG.red:CFG.text);
+    let currentSize = row.final?14:10.5;
+    let isBold = row.final?'bold':'normal';
+    let color = row.final?CFG.red:CFG.text;
+
+    setFont(doc,currentSize,isBold,color);
+
+    // Prevención de desbordamiento mediante calculo dinámico.
+    let labelWidth = doc.getTextWidth(row.label);
+    let valueWidth = doc.getTextWidth(row.value);
+
+    // Si los textos alcanzan el mismo ancho del contenedor se reduce su tamaño automáticamente
+    while((labelWidth + valueWidth + 25) > boxW && currentSize > 7) {
+      currentSize -= 0.5;
+      setFont(doc,currentSize,isBold,color);
+      labelWidth = doc.getTextWidth(row.label);
+      valueWidth = doc.getTextWidth(row.value);
+    }
+
     doc.text(row.label,x,baseline);
     doc.text(row.value,x+boxW,baseline,{align:'right'});
     if(!row.final){
