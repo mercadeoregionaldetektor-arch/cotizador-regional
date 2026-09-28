@@ -104,12 +104,13 @@ window.DTK_DATA = {
         { name: 'Jose Joaquin Brenes Torres', code: 'EMP505', role: 'Asesor de Televentas' },
         { name: 'Mariana de los Ángeles Navarro Masis', code: 'EMP305', role: 'Coordinador de Televentas' },
         { name: 'Mario Josue Guzman Aguilar', code: 'EMP537', role: 'Asesor de Televentas' },
-        { name: 'Andrés Gómez Fallas', code: 'EMP573', role: 'Asesor Televentas Fidelizacion' },
+        { name: 'Andrés Fallas Gómez', code: 'EMP573', role: 'Asesor Televentas Fidelizacion' },
         { name: 'Natali Sanchez Benavides', code: 'EMP550', role: 'Asesor Backoffice Televentas' },
         { name: 'Steven Gonzalez Monge', code: 'EMP587', role: 'Asesor de Televentas' },
         { name: 'Stephanie Méndez Pizarro', code: 'EMP606', role: 'Asesor Televentas Fidelizacion' },
         { name: 'Emanuel Bejarano Chacón', code: 'EMP629', role: 'Asesor Televentas Fidelizacion' },
-        { name: 'Maria Gabriela Moya Varela', code: 'EMP644', role: 'Asistente de Televentas' }
+        { name: 'Maria Gabriela Moya Varela', code: 'EMP644', role: 'Asistente de Televentas' },
+        { name: 'Luis Duarte', code: '', role: 'Asesor Comercial' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente oferta y el contrato de servicio.',
@@ -206,7 +207,8 @@ window.DTK_DATA = {
         { name: 'Elvia Carolina Doblado Gonzales', code: 'HN-0508', department: 'VENTAS' },
         { name: 'Ruth Lizbeth Lopez Rodriguez', code: 'HN-0511', department: 'VENTAS' },
         { name: 'Victoria Alejandra Guevara Sabillon', code: 'HN-0516', department: 'VENTAS' },
-        { name: 'Dora Maricela Vasquez Marquez', code: 'HN-0518', department: 'VENTAS' }
+        { name: 'Dora Maricela Vasquez Marquez', code: 'HN-0518', department: 'VENTAS' },
+        { name: 'Stefany Martinez', code: '', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -232,7 +234,10 @@ window.DTK_DATA = {
         { name: 'Daniel Alexander Mejia Montano', code: 'SL0332', department: 'VENTAS' },
         { name: 'Miriam Elizabeth Rodriguez Escobar', code: 'SL0338', department: 'VENTAS' },
         { name: 'José Wilber Vides Alvarez', code: 'SL0340', department: 'VENTAS' },
-        { name: 'Diego Josue Calderon Perez', code: 'SL0344', department: 'VENTAS' }
+        { name: 'Diego Josue Calderon Perez', code: 'SL0344', department: 'VENTAS' },
+        { name: 'Barahona Castro Samuel Eduardo', code: 'SL0347', department: 'VENTAS' },
+        { name: 'Zetino Salmeron Marcela Liliana', code: 'SL0349', department: 'VENTAS' },
+        { name: 'Castro Medrano Daniel Antonio', code: 'SL0350', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -248,7 +253,8 @@ window.DTK_DATA = {
         { name: 'Madeling Martinez', code: 'NI-001', department: 'COMERCIAL' },
         { name: 'Manuel Toruño', code: 'NI-002', department: 'COMERCIAL' },
         { name: 'Xochil Moreno', code: 'NI-003', department: 'COMERCIAL' },
-        { name: 'Amy Ramirez', code: 'NI-004', department: 'TELEVENTAS' }
+        { name: 'Amy Ramirez', code: 'NI-004', department: 'TELEVENTAS' },
+        { name: 'Darlyn Guzman', code: 'NI005', department: 'COMERCIAL' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
