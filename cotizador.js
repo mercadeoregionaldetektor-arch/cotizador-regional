@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v26-ajuste-final';
+window.DTK_BUILD_VERSION = 'v26-ajuste-final-pagounico';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -716,7 +716,7 @@ window.DTK_DATA = {
     tr.dataset.row = '1';
     tr.dataset.productId = productId || '';
     
-    // SECCIÓN CORREGIDA: Incluye la columna <select> del PERIODO para cuadrar con el HTML de 7 columnas.
+    // SECCIÓN CORREGIDA: Incluye la columna <select> del PERIODO con la opción de "Pago único".
     tr.innerHTML = `
       <td><input class="dtk-input dtk-prod-name" value="${escapeHtml(name)}" placeholder="Ej. Detektor GPS"></td>
       <td><input type="number" class="dtk-input dtk-qty" value="${qty}" min="0" step="any" aria-label="Cantidad"></td>
@@ -724,6 +724,7 @@ window.DTK_DATA = {
         <select class="dtk-input dtk-period" aria-label="Periodo">
           <option value="Mensual" ${period === 'Mensual' ? 'selected' : ''}>Mensual</option>
           <option value="Anual" ${period === 'Anual' ? 'selected' : ''}>Anual</option>
+          <option value="Pago único" ${period === 'Pago único' ? 'selected' : ''}>Pago único</option>
         </select>
       </td>
       <td><input type="text" inputmode="decimal" class="dtk-input dtk-price" value="${formatNumberOnly(price)}" aria-label="Valor unitario"></td>
