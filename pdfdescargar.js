@@ -1089,7 +1089,7 @@ function drawObservation(doc,title,text,y, checkSpace){
   return y+h;
 }
 
-// NUEVA ESTRUCTURA AGRUPADA DE TÉRMINOS + CONFIDENCIALIDAD
+// NUEVA ESTRUCTURA: FUSIÓN DE TÉRMINOS + CONFIDENCIALIDAD
 function drawTermsSection(doc,data,y, checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
@@ -1130,8 +1130,6 @@ function drawTermsSection(doc,data,y, checkSpace){
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
   
   const oldY1 = y;
-  
-  // TÍTULO ADHERIDO A LA PRIMERA FILA
   y = checkSpace(y, target + 36); 
   if(y === oldY1 && y !== 52) y += 24; 
 
@@ -1154,8 +1152,14 @@ function drawTermsSection(doc,data,y, checkSpace){
   drawColumn(rightItems,x+colW+gap);
   y+=target;
 
-  const extra=String(data.terms.extra||'').trim();
-  const needsConfidentiality = shouldAddConfidentiality(extra);
+  // LÓGICA DE FUSIÓN DE CONFIDENCIALIDAD
+  const extraRaw = String(data.terms.extra||'').trim();
+  let extra = extraRaw;
+  
+  if (shouldAddConfidentiality(extraRaw)) {
+    const confText = 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización.';
+    extra = extra ? (extra + '\n\n' + confText) : confText;
+  }
 
   if(extra){
     const fontSize=7.3;
@@ -1167,12 +1171,8 @@ function drawTermsSection(doc,data,y, checkSpace){
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
     const h=Math.max(66,desired);
 
-    // AGRUPACIÓN FINAL: Sumamos la altura extra de confidencialidad si existe
-    // Así evitamos que la confidencialidad se quede sola en una hoja nueva.
-    const spaceNeeded = needsConfidentiality ? h + 55 : h;
-
     const oldY2 = y;
-    y = checkSpace(y, spaceNeeded);
+    y = checkSpace(y, h);
     if(y === oldY2 && y !== 52) y += 14; 
 
     fill(doc,CFG.soft);
@@ -1192,11 +1192,6 @@ function drawTermsSection(doc,data,y, checkSpace){
     y+=h;
   }
 
-  if(needsConfidentiality){
-    y += 25; 
-    drawConfidentiality(doc,y);
-  }
-
   return y;
 }
 
@@ -1208,20 +1203,6 @@ function shouldAddConfidentiality(extra){
     n.includes('confidencial')||
     (n.includes('propiedad')&&n.includes('detektor'))
   );
-}
-
-function drawConfidentiality(doc,y){
-  const text=
-    'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. '+
-    'Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización.';
-
-  setFont(doc,6.8,'normal',CFG.muted);
-  const lines=textLines(doc,text,CFG.pageWidth-110);
-
-  doc.text(lines,CFG.pageWidth/2,y,{
-    align:'center',
-    lineHeightFactor:1.18
-  });
 }
 
 function drawContact(doc,data,assets,y){
@@ -1317,7 +1298,7 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
-  const MAX_Y = 850; 
+  const MAX_Y = 860; 
 
   const checkSpace = (currentY, neededSpace) => {
     if (currentY + neededSpace > MAX_Y) {
@@ -1345,17 +1326,15 @@ function drawFinalPage(doc,data,assets){
     y = drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y, checkSpace);
   }
 
-  // La función ahora gestiona también la confidencialidad agrupada
   y = drawTermsSection(doc,data,y, checkSpace);
 
-  // VALIDACIÓN FINAL DEL PIE: 
-  // Ahora el límite es un poco más holgado (885 en vez de 850 o 880) para que 
-  // la confidencialidad chiquita no fuerce saltos vacíos.
-  if (y > 885) {
+  // VALIDACIÓN DEL PIE DE PÁGINA (LÍMITE 840)
+  // Si el bloque de Consideraciones creció mucho y empujó el Y más allá del 840,
+  // damos un salto de página para que las Redes (en Y=900) no se amontonen con el texto.
+  if (y > 840) {
     doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
   }
 
-  // EL PIE SE IMPRIME FIJO AL FINAL DE LA HOJA ACTUAL, SIEMPRE.
   drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
@@ -1587,7 +1566,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Pie FIJO abajo y Confidencialidad agrupada listos.'
+    '[DTK PDF] Pie FIJO abajo y Confidencialidad fusionada activos.'
   );
 }
 
