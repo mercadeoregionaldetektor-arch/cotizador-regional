@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v26-ajuste-final-pagounico';
+window.DTK_BUILD_VERSION = 'v05102026';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -208,7 +208,8 @@ window.DTK_DATA = {
         { name: 'Ruth Lizbeth Lopez Rodriguez', code: 'HN-0511', department: 'VENTAS' },
         { name: 'Victoria Alejandra Guevara Sabillon', code: 'HN-0516', department: 'VENTAS' },
         { name: 'Dora Maricela Vasquez Marquez', code: 'HN-0518', department: 'VENTAS' },
-        { name: 'Stefany Martinez', code: '', department: 'VENTAS' }
+        { name: 'Stefany Martinez', code: '', department: 'VENTAS' },
+        { name: 'Dunia Godoy', code: 'HN-0484', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -265,7 +266,13 @@ window.DTK_DATA = {
       }
     },
     'Venezuela': {
-      code: 'VE', currency: ['VES', 'USD'], locale: 'es-VE', taxName: 'IVA', taxRates: [16, 0], phonePlaceholder: 'Ej. +58 412 000 0000', cityPlaceholder: 'Ej. Caracas', advisorMode: 'manual', agents: [],
+      code: 'VE', currency: ['VES', 'USD'], locale: 'es-VE', taxName: 'IVA', taxRates: [16, 0], phonePlaceholder: 'Ej. +58 412 000 0000', cityPlaceholder: 'Ej. Caracas', advisorMode: 'list',
+      agents: [
+        { name: 'Yusleidy Cuello', code: 'VE001', role: 'Asesor Comercial' },
+        { name: 'Angelica Perez', code: 'VE002', role: 'Asesor Comercial' },
+        { name: 'Erika De Sousa', code: 'VE003', role: 'Asesor Comercial' },
+        { name: 'Lucia Castelo', code: 'VE004', role: 'Asesor Comercial' }
+      ],
       terms: {
         installation: 'En disposición y coordinación con el cliente',
         payment: 'Según las condiciones comerciales acordadas con el cliente',
