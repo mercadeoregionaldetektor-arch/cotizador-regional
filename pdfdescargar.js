@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA
+ * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA (CORREGIDO)
  * ------------------------------------------------------------
  */
 (function(){
@@ -1024,7 +1024,7 @@ function drawLabeledBox(doc,label,text,x,y,w,opts={}){
   const {fontSize=7.7,minH=58,maxH=1000}=opts;
   const clean=String(text||'').trim()||'-';
   const bodyLineHeight=1.30;
-  const bodyStep=fontSize*bodyLineHeight;
+  const lineStep=fontSize*bodyLineHeight;
 
   setFont(doc,fontSize,'normal',CFG.text);
   const lines=textLines(doc,clean,w-24);
