@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + UICONS + SPACING · ACTUALIZADO
+ * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,7 +9,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + UICONS + SPACING cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + PAGINACIÓN DINÁMICA cargado.');
 
 const CFG={
   pageWidth:794,
@@ -276,9 +276,30 @@ async function ensureLibraries(){
     ensureStylesheet(CFG.css.uiconsBrands)
   ]);
 
+  // FORZAR DESCARGA DE FUENTES DE ICONOS PARA PREVENIR CIRCULOS VACÍOS EN EL PDF
+  const fontTester = document.createElement('div');
+  fontTester.innerHTML = `
+    <i class="fi fi-rr-map-marker"></i>
+    <i class="fi fi-brands-whatsapp"></i>
+    <i class="fi fi-brands-facebook"></i>
+    <i class="fi fi-brands-instagram"></i>
+    <i class="fi fi-brands-twitter-alt"></i>
+    <i class="fi fi-brands-linkedin"></i>
+    <i class="fi fi-brands-youtube"></i>
+    <i class="fi fi-brands-tik-tok"></i>
+  `;
+  Object.assign(fontTester.style, {
+    position: 'absolute', width: '0', height: '0', overflow: 'hidden', visibility: 'hidden', pointerEvents: 'none'
+  });
+  document.body.appendChild(fontTester);
+
   if(document.fonts?.ready){
     try{ await document.fonts.ready; }catch(_){}
   }
+  
+  // Timeout de seguridad extra para que el navegador descargue y aplique la fuente .woff2
+  await new Promise(r => setTimeout(r, 650));
+  fontTester.remove();
 }
 
 /* =========================================================
@@ -664,17 +685,15 @@ function drawCoverPage(doc,data,assets){
     doc.text(lines,cx,capY+53,{align:'center',lineHeightFactor:1.18});
   });
 
-  // Caja información (Modificado para diseño oscuro según primera imagen)
   fill(doc,CFG.dark); 
   doc.roundedRect(42,770,W-84,285,14,14,'F');
   fill(doc,CFG.red);
-  doc.rect(42,770,W-84,3,'F'); // Línea roja superior
+  doc.rect(42,770,W-84,3,'F');
 
-  // Círculo rojo junto al título
   fill(doc, CFG.red);
   doc.circle(52, 799, 5, 'F');
   fill(doc, CFG.dark);
-  doc.circle(52, 799, 2, 'F'); // Centro oscuro 
+  doc.circle(52, 799, 2, 'F'); 
 
   drawText(doc,'Información de la propuesta',66,805,W-132,{
     size:16,
@@ -705,16 +724,16 @@ function drawCoverPage(doc,data,assets){
   let y=862;
 
   clientRows.forEach(([label,val])=>{
-    setFont(doc,9,'normal',[200,200,200]); // Etiquetas gris claro
+    setFont(doc,9,'normal',[200,200,200]);
     doc.text(`${label}:`,leftX,y);
 
-    setFont(doc,9,'bold',CFG.white); // Valores en blanco brillante
+    setFont(doc,9,'bold',CFG.white);
     const lines=textLines(doc,val,colW-115);
     doc.text(lines,leftX+112,y,{lineHeightFactor:1.15});
     y+=18+(Math.max(lines.length,1)-1)*12;
   });
 
-  stroke(doc,[50,50,50]); // Línea separadora sutil
+  stroke(doc,[50,50,50]);
   doc.line(rightX-14,833,rightX-14,1016);
 
   drawText(doc,'DATOS DE LA COTIZACIÓN',rightX,838,colW,{
@@ -850,7 +869,7 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
 }
 
 /* =========================================================
-   PROPUESTA ECONÓMICA
+   PROPUESTA ECONÓMICA Y PAGINACIÓN DINÁMICA
    ========================================================= */
 
 function money(value,currency){
@@ -859,44 +878,49 @@ function money(value,currency){
   return `${clean}${currency?` ${currency}`:''}`;
 }
 
-function drawEconomicTable(doc,data,y){
+function drawEconomicTable(doc,data,y, checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  // Anchos actualizados para dar más espacio a los valores (Total debe sumar 710)
   const widths=[240,45,75,175,175];
   const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
   const headerH=34;
 
-  fill(doc,[7,7,7]);
-  doc.rect(x,y,w,headerH,'F');
+  if (checkSpace) y = checkSpace(y, headerH + 40);
 
-  let cx=x;
+  const drawHeader = (cy) => {
+    fill(doc,[7,7,7]);
+    doc.rect(x,cy,w,headerH,'F');
+    let cx=x;
+    headers.forEach((header,i)=>{
+      setFont(doc,9,'bold',CFG.white);
+      const align=(i===3||i===4)?'right':(i===1||i===2)?'center':'left';
+      let tx=cx+8;
+      if(i===3||i===4) tx=cx+widths[i]-8;
+      if(i===1||i===2) tx=cx+widths[i]/2;
+      doc.text(header,tx,cy+21,{align});
+      cx+=widths[i];
+    });
+    return cy + headerH;
+  };
 
-  headers.forEach((header,i)=>{
-    setFont(doc,9,'bold',CFG.white);
-    // Alineación: Derecha para PRECIO/U (3) y TOTAL (4)
-    const align=(i===3||i===4)?'right':(i===1||i===2)?'center':'left';
-    let tx=cx+8;
-    if(i===3||i===4) tx=cx+widths[i]-8;
-    if(i===1||i===2) tx=cx+widths[i]/2;
-    
-    doc.text(header,tx,y+21,{align});
-    cx+=widths[i];
-  });
-
-  y+=headerH;
+  y = drawHeader(y);
 
   const rows=data.economicRows.length?data.economicRows:[{
     product:'Sin productos agregados.',
-    qty:'',
-    period:'',
-    unit:'',
-    subtotal:''
+    qty:'', period:'', unit:'', subtotal:''
   }];
 
   rows.forEach(row=>{
     const desc=textLines(doc,`- ${row.product}`,widths[0]-16);
     const rowH=Math.max(31,desc.length*12+12);
+
+    if (checkSpace) {
+      const oldY = y;
+      y = checkSpace(y, rowH + 10);
+      if (y !== oldY) { 
+        y = drawHeader(y); // Si salto de hoja, redibuja el header
+      }
+    }
 
     fill(doc,CFG.white);
     doc.rect(x,y,w,rowH,'F');
@@ -910,23 +934,10 @@ function drawEconomicTable(doc,data,y){
     doc.text(String(row.qty||'1'),x+widths[0]+widths[1]/2,y+18,{align:'center'});
     doc.text(String(row.period||'Mensual'),x+widths[0]+widths[1]+widths[2]/2,y+18,{align:'center'});
 
-    // Imprime PRECIO/U alineado a la derecha dentro de su nueva columna expandida
-    doc.text(
-      money(row.unit||'0',data.totals.currency),
-      x+widths[0]+widths[1]+widths[2]+widths[3]-8,
-      y+18,
-      {align:'right'}
-    );
+    doc.text(money(row.unit||'0',data.totals.currency),x+widths[0]+widths[1]+widths[2]+widths[3]-8,y+18,{align:'right'});
 
     setFont(doc,9.5,'bold',CFG.text);
-
-    // Imprime TOTAL
-    doc.text(
-      money(row.subtotal||'0',data.totals.currency),
-      x+w-8,
-      y+18,
-      {align:'right'}
-    );
+    doc.text(money(row.subtotal||'0',data.totals.currency),x+w-8,y+18,{align:'right'});
 
     y+=rowH;
   });
@@ -935,7 +946,7 @@ function drawEconomicTable(doc,data,y){
 }
 
 function drawTotals(doc,data,y){
-  const boxW=410; // Antes 320. Ahora abarca todo el bloque de columnas, evitando sobreposición.
+  const boxW=410; 
   const x=CFG.pageWidth-CFG.marginX-boxW; 
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
   const rows=[
@@ -952,11 +963,9 @@ function drawTotals(doc,data,y){
 
     setFont(doc,currentSize,isBold,color);
 
-    // Prevención de desbordamiento mediante calculo dinámico.
     let labelWidth = doc.getTextWidth(row.label);
     let valueWidth = doc.getTextWidth(row.value);
 
-    // Si los textos alcanzan el mismo ancho del contenedor se reduce su tamaño automáticamente
     while((labelWidth + valueWidth + 25) > boxW && currentSize > 7) {
       currentSize -= 0.5;
       setFont(doc,currentSize,isBold,color);
@@ -1012,14 +1021,14 @@ function drawAdvisor(doc,data,y){
 }
 
 function drawLabeledBox(doc,label,text,x,y,w,opts={}){
-  const {fontSize=7.7,minH=58,maxH=128}=opts;
+  const {fontSize=7.7,minH=58,maxH=1000}=opts;
   const clean=String(text||'').trim()||'-';
   const bodyLineHeight=1.30;
   const bodyStep=fontSize*bodyLineHeight;
 
   setFont(doc,fontSize,'normal',CFG.text);
   const lines=textLines(doc,clean,w-24);
-  const desired=38+(Math.max(lines.length,1)-1)*bodyStep+fontSize+12;
+  const desired=38+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
   const h=Math.min(maxH,Math.max(minH,desired));
 
   fill(doc,CFG.soft);
@@ -1039,7 +1048,7 @@ function drawLabeledBox(doc,label,text,x,y,w,opts={}){
   return h;
 }
 
-function drawObservation(doc,title,text,y){
+function drawObservation(doc,title,text,y, checkSpace){
   if(!String(text||'').trim()) return y;
 
   const x=CFG.marginX;
@@ -1051,6 +1060,8 @@ function drawObservation(doc,title,text,y){
   setFont(doc,fontSize,'normal',CFG.text);
   const lines=textLines(doc,text,w-26);
   const h=Math.max(52,34+(Math.max(lines.length,1)-1)*lineStep+fontSize+12);
+
+  if (checkSpace) y = checkSpace(y, h + 20);
 
   fill(doc,CFG.soft);
   doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1066,7 +1077,7 @@ function drawObservation(doc,title,text,y){
   return y+h;
 }
 
-function drawTermsSection(doc,data,y,maxBottom){
+function drawTermsSection(doc,data,y, checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   const gap=12;
@@ -1092,10 +1103,10 @@ function drawTermsSection(doc,data,y,maxBottom){
     const lineStep=fontSize*lineHeight;
     setFont(doc,fontSize,'normal',CFG.text);
     const lines=textLines(doc,text||'-',colW-24);
-    return Math.min(128,Math.max(
+    return Math.max(
       58,
       38+(Math.max(lines.length,1)-1)*lineStep+fontSize+12
-    ));
+    );
   }
 
   function measureColumn(items){
@@ -1108,12 +1119,14 @@ function drawTermsSection(doc,data,y,maxBottom){
   }
 
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
+  
+  if (checkSpace) y = checkSpace(y, target + 40);
 
   function drawColumn(items,cx){
     let cy=y;
     items.forEach((item,index)=>{
       const h=drawLabeledBox(doc,item[0],item[1],cx,cy,colW,{
-        fontSize:7.6,minH:58,maxH:128
+        fontSize:7.6,minH:58,maxH:1000 
       });
       cy+=h;
       if(index<items.length-1) cy+=12;
@@ -1127,15 +1140,17 @@ function drawTermsSection(doc,data,y,maxBottom){
   const extra=String(data.terms.extra||'').trim();
 
   if(extra){
-    const available=Math.max(66,maxBottom-y);
-    const fontSize=available<95?6.9:7.3;
+    const fontSize=7.3;
     const lineHeight=1.27;
     const lineStep=fontSize*lineHeight;
 
     setFont(doc,fontSize,'normal',CFG.text);
     const lines=textLines(doc,extra,w-24);
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
-    const h=Math.min(available,Math.max(66,desired));
+    const h=Math.max(66,desired);
+
+    // Permitimos que la sección de Consideraciones extra evalúe si necesita saltar de hoja
+    if (checkSpace) y = checkSpace(y, h + 20);
 
     fill(doc,CFG.soft);
     doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1274,29 +1289,52 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
 
+  // FUNCIÓN PARA GENERAR PAGINACIÓN DINÁMICA
+  const checkSpace = (currentY, neededSpace) => {
+    // Si la posición actual + el espacio necesario invade el footer (aprox en el 980) 
+    if (currentY + neededSpace > CFG.pageHeight - 145) {
+      drawFooter(doc, assets); // Dibuja el footer antes de cerrar la hoja
+      doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
+      return 52; // Reinicia el origen Y en la nueva hoja
+    }
+    return currentY;
+  };
+
   y=sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
-  y=drawEconomicTable(doc,data,y)+18;
+  y = checkSpace(y, 150);
+  
+  y=drawEconomicTable(doc,data,y, checkSpace)+18;
+  
+  y = checkSpace(y, 100);
   y=drawTotals(doc,data,y)+10;
+  
+  y = checkSpace(y, 160);
   y=drawAdvisor(doc,data,y)+24; 
   
   if (String(data.quote.observations||'').trim()) {
-    y=drawObservation(doc,'Observaciones generales:',data.quote.observations,y)+16;
+    y=drawObservation(doc,'Observaciones generales:',data.quote.observations,y, checkSpace)+16;
   }
   
   if (String(data.quote.notes||'').trim()) {
-    y=drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y)+16;
+    y=drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y, checkSpace)+16;
   }
 
-  y+=12; // Extra padding
+  y+=12; 
 
-  const termsBottom=850;
-  y=drawTermsSection(doc,data,y,termsBottom);
+  y = checkSpace(y, 100);
+  y=drawTermsSection(doc,data,y, checkSpace);
 
   if(shouldAddConfidentiality(data.terms.extra)){
-    drawConfidentiality(doc,Math.min(y+14,865));
+    y += 14;
+    y = checkSpace(y, 50);
+    drawConfidentiality(doc,y);
+    y += 20; 
+  } else {
+    y += 14;
   }
 
-  drawContact(doc,data,assets,900);
+  y = checkSpace(y, 100);
+  y = drawContact(doc,data,assets,y);
   drawFooter(doc,assets);
 }
 
@@ -1527,7 +1565,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] PDF nativo + UIcons activo.'
+    '[DTK PDF] Paginación Dinámica Activa.'
   );
 }
 
