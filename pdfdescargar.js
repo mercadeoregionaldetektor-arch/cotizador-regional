@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + TÉRMINOS CON MÁXIMO APROVECHAMIENTO
+ * Build VECTOR-TEXT + APROVECHAMIENTO 100% HOJA + TÉRMINOS AGRUPADOS
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,7 +9,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + MAX SPACE cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + APROVECHAMIENTO TOTAL cargado.');
 
 const CFG={
   pageWidth:794,
@@ -899,6 +899,13 @@ function drawEconomicTable(doc,data,y, checkSpace){
     return cy + headerH;
   };
 
+  // Evaluamos si cabe la primera fila más el encabezado
+  const firstRowDesc = data.economicRows[0] ? `- ${data.economicRows[0].product}` : '';
+  const firstRowH = Math.max(31, textLines(doc, firstRowDesc, widths[0] - 16).length * 12 + 12);
+  
+  const oldY = y;
+  y = checkSpace(y, headerH + firstRowH);
+  if (y === oldY && y !== 52) y += 12; // Espacio superior
   y = drawHeader(y);
 
   const rows=data.economicRows.length?data.economicRows:[{
@@ -910,9 +917,9 @@ function drawEconomicTable(doc,data,y, checkSpace){
     const desc=textLines(doc,`- ${row.product}`,widths[0]-16);
     const rowH=Math.max(31,desc.length*12+12);
 
-    const oldY = y;
+    const rowOldY = y;
     y = checkSpace(y, rowH);
-    if (y !== oldY) { 
+    if (y !== rowOldY) { 
       y = drawHeader(y); 
     }
 
@@ -1123,9 +1130,10 @@ function drawTermsSection(doc,data,y, checkSpace){
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
   
   const oldY1 = y;
-  // Solo se evalúa si caben los cuadros. El título va pegado con ellos.
-  y = checkSpace(y, target + 36); 
-  if(y === oldY1 && y !== 52) y += 24; // Margen superior si no saltó.
+  
+  // TÍTULO ADHERIDO A LA PRIMERA FILA: Mide el título (24px) + la cuadrícula de una sola vez.
+  y = checkSpace(y, target + 24); 
+  if(y === oldY1 && y !== 52) y += 24; 
 
   setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
@@ -1158,9 +1166,8 @@ function drawTermsSection(doc,data,y, checkSpace){
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
     const h=Math.max(66,desired);
 
-    // MÁXIMO APROVECHAMIENTO: Evaluamos de manera totalmente independiente si la caja final cabe.
-    // Si cabe, se imprime inmediatamente abajo. Si no cabe, salta ella sola a la siguiente hoja (y=52).
     const oldY2 = y;
+    // La caja de "Consideraciones adicionales" se evalúa sola
     y = checkSpace(y, h);
     if(y === oldY2 && y !== 52) y += 14; 
 
@@ -1301,7 +1308,9 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
-  const MAX_Y = 830; 
+  // APROVECHAMIENTO DE HOJA: El texto llenará hasta el píxel 1050 (muy al fondo)
+  // en todas las páginas normales. El pie con redes se revisará solo al puro final.
+  const MAX_Y = 1050; 
 
   const checkSpace = (currentY, neededSpace) => {
     if (currentY + neededSpace > MAX_Y) {
@@ -1311,9 +1320,6 @@ function drawFinalPage(doc,data,assets){
     return currentY;
   };
 
-  const oldY0 = y;
-  y = checkSpace(y, 93);
-  if(y === oldY0 && y !== 52) y += 50; 
   y = sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
   y = drawEconomicTable(doc,data,y, checkSpace);
   
@@ -1336,12 +1342,17 @@ function drawFinalPage(doc,data,assets){
     y = checkSpace(y, 30);
     if(y === oldY && y !== 52) y += 25; 
     drawConfidentiality(doc,y);
+    y += 20; // Actualizamos 'y' para que la validación final sepa dónde terminó este texto
   }
 
-  if (y > 850) {
+  // VALIDACIÓN DEL PIE DE PÁGINA
+  // Las redes sociales se dibujan en Y=900. Si el texto llegó más abajo de 880,
+  // entonces NO hay espacio para el pie en esta hoja y saltamos.
+  if (y > 880) {
     doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
   }
 
+  // Este bloque siempre se dibuja una sola vez al final, en Y=900 fijos.
   drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
@@ -1573,7 +1584,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Maximización de espacio activa y márgenes inteligentes corregidos.'
+    '[DTK PDF] Espacio de hojas maximizado (1050px) activo.'
   );
 }
 
