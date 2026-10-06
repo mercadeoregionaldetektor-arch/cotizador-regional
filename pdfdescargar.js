@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD ESTRICTA (SIN CONDICIONALES)
+ * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER
  * ------------------------------------------------------------
  */
 (function(){
@@ -1151,7 +1151,7 @@ function drawTermsSection(doc,data,y, checkSpace){
   drawColumn(rightItems,x+colW+gap);
   y+=target;
 
-  // Imprime "Consideraciones adicionales" exactamente como viene del formulario
+  // Imprime "Consideraciones adicionales" exactamente como viene del formulario, SIN alterar textos
   const extra=String(data.terms.extra||'').trim();
 
   if(extra){
@@ -1188,8 +1188,8 @@ function drawTermsSection(doc,data,y, checkSpace){
   return y;
 }
 
-// LA CONFIDENCIALIDAD SE IMPRIME SIEMPRE, SEPARADA AL FINAL. SIN NINGUNA CONDICIÓN.
-function drawConfidentiality(doc,y){
+// LA CONFIDENCIALIDAD SE IMPRIME DE FORMA ABSOLUTA AL FINAL DE LA ÚLTIMA HOJA (Y = 1102)
+function drawConfidentiality(doc, y){
   const text=
     'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. '+
     'Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización.';
@@ -1203,6 +1203,7 @@ function drawConfidentiality(doc,y){
   });
 }
 
+// REDES SOCIALES AJUSTADAS Y FIJAS EN Y = 890
 function drawContact(doc,data,assets,y){
   const contact=data.countryContact;
   if(!contact?.web&&!contact?.socials?.length) return y;
@@ -1253,13 +1254,14 @@ function drawContact(doc,data,assets,y){
   return y;
 }
 
+// BANDA NEGRA Y PAÍSES FIJOS
 function drawFooter(doc,assets){
-  const claimY=986;
+  const claimY=970;
 
   setFont(doc,17,'bold',CFG.dark);
   doc.text('SOLUCIONES PARA TU TRANQUILIDAD',CFG.pageWidth/2,claimY,{align:'center'});
 
-  const bannerY=1008;
+  const bannerY=992;
   fill(doc,[5,5,5]);
   doc.rect(0,bannerY,CFG.pageWidth,70,'F');
 
@@ -1288,7 +1290,7 @@ function drawFooter(doc,assets){
   doc.text(
     'Colombia | Guatemala | El Salvador | Honduras | Nicaragua | Costa Rica | Panamá | Venezuela | Brasil',
     CFG.pageWidth/2,
-    1100,
+    1084,
     {align:'center'}
   );
 }
@@ -1296,6 +1298,7 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
+  // EL LÍMITE ABSOLUTO ES 840 (El pie fijo de redes empieza en 890)
   const MAX_Y = 840; 
 
   const checkSpace = (currentY, neededSpace) => {
@@ -1326,24 +1329,14 @@ function drawFinalPage(doc,data,assets){
 
   y = drawTermsSection(doc,data,y, checkSpace);
 
-  // LA CONFIDENCIALIDAD SE IMPRIME SIEMPRE, SEPARADA AL FINAL. 
-  // No hay condiciones que la oculten.
-  const oldYConf = y;
-  y = checkSpace(y, 30);
-  if(y === oldYConf && y !== 52) y += 25; 
-  drawConfidentiality(doc,y);
-  y += 20;
-
-  // Si después de imprimir todo lo de arriba el Y superó el límite de seguridad (880),
-  // se agrega una hoja nueva exclusivamente para que el footer no se encime.
-  // Si no lo superó (ej. y quedó en 600), todo el pie se dibuja en esta misma hoja.
-  if (y > 880) {
-    doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
-  }
-
-  // EL PIE SE IMPRIME FIJO AL FINAL DE LA HOJA ACTUAL, SIEMPRE.
-  drawContact(doc,data,assets,900);
+  // ESTO SE DIBUJA AL FINAL DE LA HOJA SIEMPRE, SE PUSO O NO INFORMACIÓN ARRIBA
+  drawContact(doc,data,assets,890);
   drawFooter(doc,assets);
+
+  // LA CONFIDENCIALIDAD SE IMPRIME DEBAJO DE LOS PAÍSES (Y = 1102)
+  if(shouldAddConfidentiality(data.terms.extra)){
+    drawConfidentiality(doc, 1102);
+  }
 }
 
 /* =========================================================
@@ -1573,7 +1566,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Pie FIJO abajo y Textos Originales Protegidos.'
+    '[DTK PDF] Pie FIJO abajo y Confidencialidad bajo el footer activo.'
   );
 }
 
