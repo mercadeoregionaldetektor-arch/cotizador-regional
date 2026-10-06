@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + PAGINACIÓN MILIMÉTRICA INTELIGENTE
+ * Build VECTOR-TEXT + MOTOR DE PAGINACIÓN AUTÓNOMO (FINAL)
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,7 +9,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + PAGINACIÓN INTELIGENTE cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + MOTOR AUTÓNOMO FINAL cargado.');
 
 const CFG={
   pageWidth:794,
@@ -910,8 +910,6 @@ function drawEconomicTable(doc,data,y, checkSpace){
     const desc=textLines(doc,`- ${row.product}`,widths[0]-16);
     const rowH=Math.max(31,desc.length*12+12);
 
-    // Evalúa si caben los datos de esta fila exacta. 
-    // Si no cabe, salta y vuelve a dibujar el header.
     const oldY = y;
     y = checkSpace(y, rowH);
     if (y !== oldY) { 
@@ -946,7 +944,6 @@ function drawTotals(doc,data,y, checkSpace){
   const x=CFG.pageWidth-CFG.marginX-boxW; 
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
   
-  // Altura exacta del bloque de totales = 26 + 26 + 38 = 90
   y = checkSpace(y, 90); 
 
   const rows=[
@@ -994,7 +991,6 @@ function drawAdvisor(doc,data,y, checkSpace){
   const nameLines=textLines(doc,name,w-34);
   const contacts=[data.advisor.email,data.advisor.phone].filter(Boolean);
 
-  // Calcula exactamente cuánto medirá la caja de la firma
   const h=22+nameLines.length*18+24+contacts.length*16+16;
 
   y = checkSpace(y, h); 
@@ -1063,10 +1059,11 @@ function drawObservation(doc,title,text,y, checkSpace){
   setFont(doc,fontSize,'normal',CFG.text);
   const lines=textLines(doc,text,w-26);
   
-  // Alto exacto que va a ocupar esta caja de observación
   const h=Math.max(52,34+(Math.max(lines.length,1)-1)*lineStep+fontSize+12);
 
+  const oldY = y;
   y = checkSpace(y, h);
+  if (y === oldY && y !== 52) y += 16; 
 
   fill(doc,CFG.soft);
   doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1121,8 +1118,9 @@ function drawTermsSection(doc,data,y, checkSpace){
 
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
   
-  // Medición milimétrica: Título (24) + Cuadrícula (target).
+  const oldY1 = y;
   y = checkSpace(y, target + 24);
+  if (y === oldY1 && y !== 52) y += 24;
 
   setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
@@ -1155,9 +1153,9 @@ function drawTermsSection(doc,data,y, checkSpace){
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
     const h=Math.max(66,desired);
 
-    // Margen antes de la caja extra
-    y += 14; 
+    const oldY2 = y;
     y = checkSpace(y, h);
+    if (y === oldY2 && y !== 52) y += 14; 
 
     fill(doc,CFG.soft);
     doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1296,7 +1294,6 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
-  // El límite máximo es absoluto. Si se supera, se crea nueva página.
   const MAX_Y = 830; 
 
   const checkSpace = (currentY, neededSpace) => {
@@ -1307,7 +1304,6 @@ function drawFinalPage(doc,data,assets){
     return currentY;
   };
 
-  // Se agrupa el Título "Propuesta Económica" (28px), el encabezado de la tabla (34px) y la primera fila (~31px)
   y = checkSpace(y, 93);
   y = sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
   y = drawEconomicTable(doc,data,y, checkSpace);
@@ -1319,25 +1315,22 @@ function drawFinalPage(doc,data,assets){
   y = drawAdvisor(doc,data,y, checkSpace); 
   
   if (String(data.quote.observations||'').trim()) {
-    y += 16;
     y = drawObservation(doc,'Observaciones generales:',data.quote.observations,y, checkSpace);
   }
   
   if (String(data.quote.notes||'').trim()) {
-    y += 16;
     y = drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y, checkSpace);
   }
 
-  y += 24; 
   y = drawTermsSection(doc,data,y, checkSpace);
 
   if(shouldAddConfidentiality(data.terms.extra)){
-    y += 25; 
-    y = checkSpace(y, 30); // Solo necesita 30px para la confidencialidad
+    const oldY = y;
+    y = checkSpace(y, 30);
+    if (y === oldY && y !== 52) y += 25;
     drawConfidentiality(doc,y);
   }
 
-  // Previene de forma extrema superposiciones de última instancia
   if (y > 850) {
     doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
   }
