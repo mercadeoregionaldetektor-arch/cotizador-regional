@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + APROVECHAMIENTO 100% HOJA + PIE INTELIGENTE
+ * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD AGRUPADA
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,7 +9,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + APROVECHAMIENTO TOTAL cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + PIE FIJO cargado.');
 
 const CFG={
   pageWidth:794,
@@ -1089,6 +1089,7 @@ function drawObservation(doc,title,text,y, checkSpace){
   return y+h;
 }
 
+// NUEVA ESTRUCTURA AGRUPADA DE TÉRMINOS + CONFIDENCIALIDAD
 function drawTermsSection(doc,data,y, checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
@@ -1130,7 +1131,7 @@ function drawTermsSection(doc,data,y, checkSpace){
   
   const oldY1 = y;
   
-  // TÍTULO ADHERIDO A LA PRIMERA FILA: Mide el título (24px) + la cuadrícula de una sola vez.
+  // TÍTULO ADHERIDO A LA PRIMERA FILA
   y = checkSpace(y, target + 36); 
   if(y === oldY1 && y !== 52) y += 24; 
 
@@ -1154,6 +1155,7 @@ function drawTermsSection(doc,data,y, checkSpace){
   y+=target;
 
   const extra=String(data.terms.extra||'').trim();
+  const needsConfidentiality = shouldAddConfidentiality(extra);
 
   if(extra){
     const fontSize=7.3;
@@ -1165,9 +1167,12 @@ function drawTermsSection(doc,data,y, checkSpace){
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
     const h=Math.max(66,desired);
 
+    // AGRUPACIÓN FINAL: Sumamos la altura extra de confidencialidad si existe
+    // Así evitamos que la confidencialidad se quede sola en una hoja nueva.
+    const spaceNeeded = needsConfidentiality ? h + 55 : h;
+
     const oldY2 = y;
-    // La caja de "Consideraciones adicionales" se evalúa sola
-    y = checkSpace(y, h);
+    y = checkSpace(y, spaceNeeded);
     if(y === oldY2 && y !== 52) y += 14; 
 
     fill(doc,CFG.soft);
@@ -1185,6 +1190,11 @@ function drawTermsSection(doc,data,y, checkSpace){
     });
 
     y+=h;
+  }
+
+  if(needsConfidentiality){
+    y += 25; 
+    drawConfidentiality(doc,y);
   }
 
   return y;
@@ -1307,12 +1317,9 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
-  // APROVECHAMIENTO TOTAL: El contenido escribirá hasta 850, 
-  // dejando intacto el espacio reservado exclusivamente para el pie.
   const MAX_Y = 850; 
 
   const checkSpace = (currentY, neededSpace) => {
-    // Solo si el elemento va a pisar la línea 850 creamos hoja nueva
     if (currentY + neededSpace > MAX_Y) {
       doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
       return 52; 
@@ -1338,18 +1345,17 @@ function drawFinalPage(doc,data,assets){
     y = drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y, checkSpace);
   }
 
+  // La función ahora gestiona también la confidencialidad agrupada
   y = drawTermsSection(doc,data,y, checkSpace);
 
-  if(shouldAddConfidentiality(data.terms.extra)){
-    const oldY = y;
-    y = checkSpace(y, 30);
-    if(y === oldY && y !== 52) y += 25; 
-    drawConfidentiality(doc,y);
+  // VALIDACIÓN FINAL DEL PIE: 
+  // Ahora el límite es un poco más holgado (885 en vez de 850 o 880) para que 
+  // la confidencialidad chiquita no fuerce saltos vacíos.
+  if (y > 885) {
+    doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
   }
 
   // EL PIE SE IMPRIME FIJO AL FINAL DE LA HOJA ACTUAL, SIEMPRE.
-  // Como aseguramos matemáticamente que el contenido nunca pase de 850,
-  // el pie (que empieza en 900) nunca se encimará y jamás forzaremos hojas vacías inútiles.
   drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
@@ -1581,7 +1587,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Pie FIJO abajo. Términos agrupados.'
+    '[DTK PDF] Pie FIJO abajo y Confidencialidad agrupada listos.'
   );
 }
 
