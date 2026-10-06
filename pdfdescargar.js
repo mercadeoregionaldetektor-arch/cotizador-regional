@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + MOTOR DE PAGINACIÓN AUTÓNOMO (FINAL)
+ * Build VECTOR-TEXT + TÉRMINOS CON MÁXIMO APROVECHAMIENTO
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,7 +9,7 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + MOTOR AUTÓNOMO FINAL cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT + MAX SPACE cargado.');
 
 const CFG={
   pageWidth:794,
@@ -867,7 +867,7 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
 }
 
 /* =========================================================
-   MOTOR DE PAGINACIÓN MILIMÉTRICO
+   PAGINACIÓN DINÁMICA DE MÁXIMO APROVECHAMIENTO
    ========================================================= */
 
 function money(value,currency){
@@ -944,7 +944,9 @@ function drawTotals(doc,data,y, checkSpace){
   const x=CFG.pageWidth-CFG.marginX-boxW; 
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
   
+  const oldY = y;
   y = checkSpace(y, 90); 
+  if(y === oldY && y !== 52) y += 18;
 
   const rows=[
     {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
@@ -993,7 +995,9 @@ function drawAdvisor(doc,data,y, checkSpace){
 
   const h=22+nameLines.length*18+24+contacts.length*16+16;
 
+  const oldY = y;
   y = checkSpace(y, h); 
+  if(y === oldY && y !== 52) y += 24;
 
   stroke(doc,CFG.red);
   doc.setLineDashPattern([3,3],0);
@@ -1063,7 +1067,7 @@ function drawObservation(doc,title,text,y, checkSpace){
 
   const oldY = y;
   y = checkSpace(y, h);
-  if (y === oldY && y !== 52) y += 16; 
+  if(y === oldY && y !== 52) y += 16;
 
   fill(doc,CFG.soft);
   doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1119,8 +1123,9 @@ function drawTermsSection(doc,data,y, checkSpace){
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
   
   const oldY1 = y;
-  y = checkSpace(y, target + 24);
-  if (y === oldY1 && y !== 52) y += 24;
+  // Solo se evalúa si caben los cuadros. El título va pegado con ellos.
+  y = checkSpace(y, target + 36); 
+  if(y === oldY1 && y !== 52) y += 24; // Margen superior si no saltó.
 
   setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
@@ -1153,9 +1158,11 @@ function drawTermsSection(doc,data,y, checkSpace){
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
     const h=Math.max(66,desired);
 
+    // MÁXIMO APROVECHAMIENTO: Evaluamos de manera totalmente independiente si la caja final cabe.
+    // Si cabe, se imprime inmediatamente abajo. Si no cabe, salta ella sola a la siguiente hoja (y=52).
     const oldY2 = y;
     y = checkSpace(y, h);
-    if (y === oldY2 && y !== 52) y += 14; 
+    if(y === oldY2 && y !== 52) y += 14; 
 
     fill(doc,CFG.soft);
     doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1304,14 +1311,14 @@ function drawFinalPage(doc,data,assets){
     return currentY;
   };
 
+  const oldY0 = y;
   y = checkSpace(y, 93);
+  if(y === oldY0 && y !== 52) y += 50; 
   y = sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
   y = drawEconomicTable(doc,data,y, checkSpace);
   
-  y += 18;
   y = drawTotals(doc,data,y, checkSpace);
   
-  y += 24;
   y = drawAdvisor(doc,data,y, checkSpace); 
   
   if (String(data.quote.observations||'').trim()) {
@@ -1327,7 +1334,7 @@ function drawFinalPage(doc,data,assets){
   if(shouldAddConfidentiality(data.terms.extra)){
     const oldY = y;
     y = checkSpace(y, 30);
-    if (y === oldY && y !== 52) y += 25;
+    if(y === oldY && y !== 52) y += 25; 
     drawConfidentiality(doc,y);
   }
 
@@ -1566,7 +1573,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Motor Autónomo Milimétrico Activo y depurado.'
+    '[DTK PDF] Maximización de espacio activa y márgenes inteligentes corregidos.'
   );
 }
 
