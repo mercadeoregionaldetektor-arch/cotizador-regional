@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER
+ * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER (CORREGIDO)
  * ------------------------------------------------------------
  */
 (function(){
@@ -1151,7 +1151,6 @@ function drawTermsSection(doc,data,y, checkSpace){
   drawColumn(rightItems,x+colW+gap);
   y+=target;
 
-  // Imprime "Consideraciones adicionales" exactamente como viene del formulario, SIN alterar textos
   const extra=String(data.terms.extra||'').trim();
 
   if(extra){
@@ -1188,8 +1187,8 @@ function drawTermsSection(doc,data,y, checkSpace){
   return y;
 }
 
-// LA CONFIDENCIALIDAD SE IMPRIME DE FORMA ABSOLUTA AL FINAL DE LA ÚLTIMA HOJA (Y = 1102)
-function drawConfidentiality(doc, y){
+// LA CONFIDENCIALIDAD ESTÁ DIRECTAMENTE ANCLADA AL FONDO
+function drawConfidentiality(doc){
   const text=
     'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. '+
     'Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización.';
@@ -1197,13 +1196,13 @@ function drawConfidentiality(doc, y){
   setFont(doc,6.8,'normal',CFG.muted);
   const lines=textLines(doc,text,CFG.pageWidth-110);
 
-  doc.text(lines,CFG.pageWidth/2,y,{
+  // La dibuja al fondo, debajo de los países (Y = 1102)
+  doc.text(lines,CFG.pageWidth/2,1102,{
     align:'center',
     lineHeightFactor:1.18
   });
 }
 
-// REDES SOCIALES AJUSTADAS Y FIJAS EN Y = 890
 function drawContact(doc,data,assets,y){
   const contact=data.countryContact;
   if(!contact?.web&&!contact?.socials?.length) return y;
@@ -1254,7 +1253,6 @@ function drawContact(doc,data,assets,y){
   return y;
 }
 
-// BANDA NEGRA Y PAÍSES FIJOS
 function drawFooter(doc,assets){
   const claimY=970;
 
@@ -1298,7 +1296,6 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
-  // EL LÍMITE ABSOLUTO ES 840 (El pie fijo de redes empieza en 890)
   const MAX_Y = 840; 
 
   const checkSpace = (currentY, neededSpace) => {
@@ -1329,14 +1326,12 @@ function drawFinalPage(doc,data,assets){
 
   y = drawTermsSection(doc,data,y, checkSpace);
 
-  // ESTO SE DIBUJA AL FINAL DE LA HOJA SIEMPRE, SE PUSO O NO INFORMACIÓN ARRIBA
+  // LA BANDA NEGRA Y REDES SE DIBUJAN FIJAS AL FINAL
   drawContact(doc,data,assets,890);
   drawFooter(doc,assets);
 
-  // LA CONFIDENCIALIDAD SE IMPRIME DEBAJO DE LOS PAÍSES (Y = 1102)
-  if(shouldAddConfidentiality(data.terms.extra)){
-    drawConfidentiality(doc, 1102);
-  }
+  // LA CONFIDENCIALIDAD SE DIBUJA DE FORMA ABSOLUTA AL FONDO, SIEMPRE
+  drawConfidentiality(doc);
 }
 
 /* =========================================================
@@ -1566,7 +1561,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Pie FIJO abajo y Confidencialidad bajo el footer activo.'
+    '[DTK PDF] Pie FIJO abajo y Confidencialidad OBLIGATORIA.'
   );
 }
 
