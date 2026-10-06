@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA (CORREGIDO)
+ * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA (FIX ORPHAN TITLES)
  * ------------------------------------------------------------
  */
 (function(){
@@ -1081,10 +1081,6 @@ function drawTermsSection(doc,data,y, checkSpace){
   const gap=12;
   const colW=(w-gap)/2;
 
-  setFont(doc,11,'bold',CFG.dark);
-  doc.text('Términos y condiciones',x,y);
-  y+=24;
-
   const leftItems=[
     ['Condiciones de pago',data.terms.payment],
     ['Vigencia',data.terms.validity]
@@ -1118,7 +1114,13 @@ function drawTermsSection(doc,data,y, checkSpace){
 
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
   
-  if (checkSpace) y = checkSpace(y, target + 40);
+  // CORRECCIÓN: Medimos el espacio combinando la altura de las cajas (target) 
+  // más el espacio que ocupa el título (~60px) ANTES de imprimir el título.
+  if (checkSpace) y = checkSpace(y, target + 60);
+
+  setFont(doc,11,'bold',CFG.dark);
+  doc.text('Términos y condiciones',x,y);
+  y+=24;
 
   function drawColumn(items,cx){
     let cy=y;
@@ -1286,11 +1288,8 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
 
-  // FUNCIÓN PARA GENERAR PAGINACIÓN DINÁMICA
   const checkSpace = (currentY, neededSpace) => {
-    // CORRECCIÓN: Límite en 880 para proteger SIEMPRE el espacio de las redes sociales y el footer final.
     if (currentY + neededSpace > 880) {
-      // Solo agregamos la página nueva, NO dibujamos el footer aquí.
       doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
       return 52; 
     }
@@ -1302,10 +1301,8 @@ function drawFinalPage(doc,data,assets){
   
   y=drawEconomicTable(doc,data,y, checkSpace)+18;
   
-  y = checkSpace(y, 100);
   y=drawTotals(doc,data,y)+10;
   
-  y = checkSpace(y, 160);
   y=drawAdvisor(doc,data,y)+24; 
   
   if (String(data.quote.observations||'').trim()) {
@@ -1318,7 +1315,8 @@ function drawFinalPage(doc,data,assets){
 
   y+=12; 
 
-  y = checkSpace(y, 100);
+  // CORRECCIÓN: Se eliminó el checkSpace forzado que estaba justo aquí antes de llamar a drawTermsSection,
+  // permitiendo que los Términos calculen y agrupen su propio título y contenido.
   y=drawTermsSection(doc,data,y, checkSpace);
 
   if(shouldAddConfidentiality(data.terms.extra)){
@@ -1328,12 +1326,10 @@ function drawFinalPage(doc,data,assets){
     y += 20; 
   }
 
-  // Al finalizar todo el contenido dinámico, aseguramos que quede en la última hoja
   if (y > 880) {
     doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
   }
 
-  // Dibuja las redes sociales ancladas al final (y=900) y el footer negro, una sola vez.
   drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
@@ -1565,7 +1561,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Paginación Dinámica Activa y Corregida.'
+    '[DTK PDF] Paginación Dinámica Activa y Corregida (Títulos agrupados).'
   );
 }
 
