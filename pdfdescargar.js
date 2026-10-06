@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD AGRUPADA
+ * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD ESTRICTA (SIN CONDICIONALES)
  * ------------------------------------------------------------
  */
 (function(){
@@ -1089,7 +1089,6 @@ function drawObservation(doc,title,text,y, checkSpace){
   return y+h;
 }
 
-// NUEVA ESTRUCTURA: FUSIÓN DE TÉRMINOS + CONFIDENCIALIDAD
 function drawTermsSection(doc,data,y, checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
@@ -1152,14 +1151,8 @@ function drawTermsSection(doc,data,y, checkSpace){
   drawColumn(rightItems,x+colW+gap);
   y+=target;
 
-  // LÓGICA DE FUSIÓN DE CONFIDENCIALIDAD
-  const extraRaw = String(data.terms.extra||'').trim();
-  let extra = extraRaw;
-  
-  if (shouldAddConfidentiality(extraRaw)) {
-    const confText = 'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización.';
-    extra = extra ? (extra + '\n\n' + confText) : confText;
-  }
+  // Imprime "Consideraciones adicionales" exactamente como viene del formulario
+  const extra=String(data.terms.extra||'').trim();
 
   if(extra){
     const fontSize=7.3;
@@ -1195,14 +1188,19 @@ function drawTermsSection(doc,data,y, checkSpace){
   return y;
 }
 
-function shouldAddConfidentiality(extra){
-  const n=normalize(extra);
-  if(!n) return true;
+// LA CONFIDENCIALIDAD SE IMPRIME SIEMPRE, SEPARADA AL FINAL. SIN NINGUNA CONDICIÓN.
+function drawConfidentiality(doc,y){
+  const text=
+    'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. '+
+    'Su contenido no podrá ser divulgado ni utilizado con fines comerciales sin autorización.';
 
-  return !(
-    n.includes('confidencial')||
-    (n.includes('propiedad')&&n.includes('detektor'))
-  );
+  setFont(doc,6.8,'normal',CFG.muted);
+  const lines=textLines(doc,text,CFG.pageWidth-110);
+
+  doc.text(lines,CFG.pageWidth/2,y,{
+    align:'center',
+    lineHeightFactor:1.18
+  });
 }
 
 function drawContact(doc,data,assets,y){
@@ -1298,7 +1296,7 @@ function drawFooter(doc,assets){
 function drawFinalPage(doc,data,assets){
   let y=52;
   
-  const MAX_Y = 860; 
+  const MAX_Y = 840; 
 
   const checkSpace = (currentY, neededSpace) => {
     if (currentY + neededSpace > MAX_Y) {
@@ -1328,13 +1326,22 @@ function drawFinalPage(doc,data,assets){
 
   y = drawTermsSection(doc,data,y, checkSpace);
 
-  // VALIDACIÓN DEL PIE DE PÁGINA (LÍMITE 840)
-  // Si el bloque de Consideraciones creció mucho y empujó el Y más allá del 840,
-  // damos un salto de página para que las Redes (en Y=900) no se amontonen con el texto.
-  if (y > 840) {
+  // LA CONFIDENCIALIDAD SE IMPRIME SIEMPRE, SEPARADA AL FINAL. 
+  // No hay condiciones que la oculten.
+  const oldYConf = y;
+  y = checkSpace(y, 30);
+  if(y === oldYConf && y !== 52) y += 25; 
+  drawConfidentiality(doc,y);
+  y += 20;
+
+  // Si después de imprimir todo lo de arriba el Y superó el límite de seguridad (880),
+  // se agrega una hoja nueva exclusivamente para que el footer no se encime.
+  // Si no lo superó (ej. y quedó en 600), todo el pie se dibuja en esta misma hoja.
+  if (y > 880) {
     doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
   }
 
+  // EL PIE SE IMPRIME FIJO AL FINAL DE LA HOJA ACTUAL, SIEMPRE.
   drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
@@ -1566,7 +1573,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Pie FIJO abajo y Confidencialidad fusionada activos.'
+    '[DTK PDF] Pie FIJO abajo y Textos Originales Protegidos.'
   );
 }
 
