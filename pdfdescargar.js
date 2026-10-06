@@ -276,7 +276,6 @@ async function ensureLibraries(){
     ensureStylesheet(CFG.css.uiconsBrands)
   ]);
 
-  // FORZAR DESCARGA DE FUENTES DE ICONOS PARA PREVENIR CIRCULOS VACÍOS EN EL PDF
   const fontTester = document.createElement('div');
   fontTester.innerHTML = `
     <i class="fi fi-rr-map-marker"></i>
@@ -297,7 +296,6 @@ async function ensureLibraries(){
     try{ await document.fonts.ready; }catch(_){}
   }
   
-  // Timeout de seguridad extra para que el navegador descargue y aplique la fuente .woff2
   await new Promise(r => setTimeout(r, 650));
   fontTester.remove();
 }
@@ -918,7 +916,7 @@ function drawEconomicTable(doc,data,y, checkSpace){
       const oldY = y;
       y = checkSpace(y, rowH + 10);
       if (y !== oldY) { 
-        y = drawHeader(y); // Si salto de hoja, redibuja el header
+        y = drawHeader(y); 
       }
     }
 
@@ -1149,7 +1147,6 @@ function drawTermsSection(doc,data,y, checkSpace){
     const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
     const h=Math.max(66,desired);
 
-    // Permitimos que la sección de Consideraciones extra evalúe si necesita saltar de hoja
     if (checkSpace) y = checkSpace(y, h + 20);
 
     fill(doc,CFG.soft);
@@ -1291,11 +1288,11 @@ function drawFinalPage(doc,data,assets){
 
   // FUNCIÓN PARA GENERAR PAGINACIÓN DINÁMICA
   const checkSpace = (currentY, neededSpace) => {
-    // Si la posición actual + el espacio necesario invade el footer (aprox en el 980) 
-    if (currentY + neededSpace > CFG.pageHeight - 145) {
-      drawFooter(doc, assets); // Dibuja el footer antes de cerrar la hoja
+    // CORRECCIÓN: Límite en 880 para proteger SIEMPRE el espacio de las redes sociales y el footer final.
+    if (currentY + neededSpace > 880) {
+      // Solo agregamos la página nueva, NO dibujamos el footer aquí.
       doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
-      return 52; // Reinicia el origen Y en la nueva hoja
+      return 52; 
     }
     return currentY;
   };
@@ -1329,12 +1326,15 @@ function drawFinalPage(doc,data,assets){
     y = checkSpace(y, 50);
     drawConfidentiality(doc,y);
     y += 20; 
-  } else {
-    y += 14;
   }
 
-  y = checkSpace(y, 100);
-  y = drawContact(doc,data,assets,y);
+  // Al finalizar todo el contenido dinámico, aseguramos que quede en la última hoja
+  if (y > 880) {
+    doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
+  }
+
+  // Dibuja las redes sociales ancladas al final (y=900) y el footer negro, una sola vez.
+  drawContact(doc,data,assets,900);
   drawFooter(doc,assets);
 }
 
@@ -1565,7 +1565,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Paginación Dinámica Activa.'
+    '[DTK PDF] Paginación Dinámica Activa y Corregida.'
   );
 }
 
