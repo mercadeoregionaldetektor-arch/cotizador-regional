@@ -1,6 +1,6 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA (FIX ORPHAN TITLES)
+ * Build VECTOR-TEXT + UICONS + PAGINACIÓN DINÁMICA (FIX ESPACIADO CONFIDENCIALIDAD)
  * ------------------------------------------------------------
  */
 (function(){
@@ -1114,8 +1114,6 @@ function drawTermsSection(doc,data,y, checkSpace){
 
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
   
-  // CORRECCIÓN: Medimos el espacio combinando la altura de las cajas (target) 
-  // más el espacio que ocupa el título (~60px) ANTES de imprimir el título.
   if (checkSpace) y = checkSpace(y, target + 60);
 
   setFont(doc,11,'bold',CFG.dark);
@@ -1315,12 +1313,10 @@ function drawFinalPage(doc,data,assets){
 
   y+=12; 
 
-  // CORRECCIÓN: Se eliminó el checkSpace forzado que estaba justo aquí antes de llamar a drawTermsSection,
-  // permitiendo que los Términos calculen y agrupen su propio título y contenido.
   y=drawTermsSection(doc,data,y, checkSpace);
 
   if(shouldAddConfidentiality(data.terms.extra)){
-    y += 14;
+    y += 30; // <-- Aumentamos de 14 a 30 para separarlo del cuadro anterior
     y = checkSpace(y, 50);
     drawConfidentiality(doc,y);
     y += 20; 
@@ -1561,7 +1557,7 @@ function init(){
   });
 
   console.info(
-    '[DTK PDF] Paginación Dinámica Activa y Corregida (Títulos agrupados).'
+    '[DTK PDF] Paginación Dinámica Activa y Corregida (Espaciado mejorado).'
   );
 }
 
