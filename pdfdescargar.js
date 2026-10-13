@@ -1,6 +1,13 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
- * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER (CORREGIDO)
+ * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER
+ * v2 · 2026-10-13
+ *  - FIX: alto de línea convertido de puntos (jsPDF) a unidades px del documento.
+ *         Antes las cajas se calculaban ~25 % más bajas que el texto real.
+ *  - FIX: Observaciones, Notas y Consideraciones se parten en varias páginas
+ *         si no caben, en vez de desbordarse o montarse sobre otra sección.
+ *  - FIX: filas de tabla, asesor y portada usan el alto de línea real.
+ *  - NUEVO: límites de caracteres (maxlength) en los campos del formulario.
  * ------------------------------------------------------------
  */
 (function(){
@@ -9,13 +16,15 @@
 if(window.__DTK_PDF_DOWNLOAD_ONLY__) return;
 window.__DTK_PDF_DOWNLOAD_ONLY__=true;
 
-console.info('[DTK PDF] Build VECTOR-TEXT + PIE FIJO cargado.');
+console.info('[DTK PDF] Build VECTOR-TEXT v2 cargado.');
 
 const CFG={
   pageWidth:794,
   pageHeight:1123,
   marginX:42,
   solutionsPerPage:5,
+  pageTop:52,
+  maxY:840, // límite inferior del contenido (el pie fijo empieza en ~890)
   libs:{
     jspdf:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
   },
@@ -25,6 +34,25 @@ const CFG={
   },
   coverHero:'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7bd9d6de10902939f52048_Portada-detector-cotizador.webp',
   footerLogo:'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7a8e42775bc4c63e44c311_Recurso%2027%404x.webp',
+  // Máximo de caracteres por campo del formulario
+  maxLength:{
+    '#client-name':80,
+    '#client-company':80,
+    '#client-role':60,
+    '#client-email':80,
+    '#client-phone':20,
+    '#client-city':60,
+    '#quote-advisor-manual':60,
+    '#quote-advisor-phone':20,
+    '#quote-advisor-email':80,
+    '#quote-obs':1500,
+    '#quote-notes':1500,
+    '#terms-installation':400,
+    '#terms-payment':400,
+    '#terms-validity':400,
+    '#terms-warranty':400,
+    '#terms-extra':1500
+  },
   red:[192,0,16],
   red2:[227,6,19],
   dark:[20,20,20],
@@ -276,8 +304,8 @@ async function ensureLibraries(){
     ensureStylesheet(CFG.css.uiconsBrands)
   ]);
 
-  const fontTester = document.createElement('div');
-  fontTester.innerHTML = `
+  const fontTester=document.createElement('div');
+  fontTester.innerHTML=`
     <i class="fi fi-rr-map-marker"></i>
     <i class="fi fi-brands-whatsapp"></i>
     <i class="fi fi-brands-facebook"></i>
@@ -287,16 +315,16 @@ async function ensureLibraries(){
     <i class="fi fi-brands-youtube"></i>
     <i class="fi fi-brands-tik-tok"></i>
   `;
-  Object.assign(fontTester.style, {
-    position: 'absolute', width: '0', height: '0', overflow: 'hidden', visibility: 'hidden', pointerEvents: 'none'
+  Object.assign(fontTester.style,{
+    position:'absolute',width:'0',height:'0',overflow:'hidden',visibility:'hidden',pointerEvents:'none'
   });
   document.body.appendChild(fontTester);
 
   if(document.fonts?.ready){
     try{ await document.fonts.ready; }catch(_){}
   }
-  
-  await new Promise(r => setTimeout(r, 650));
+
+  await new Promise(r=>setTimeout(r,650));
   fontTester.remove();
 }
 
@@ -477,10 +505,28 @@ function setFont(doc,size=10,style='normal',color=CFG.text){
   doc.setTextColor(...color);
 }
 
+/*
+ * jsPDF mide el tamaño de fuente en PUNTOS. Como el documento usa unit:'px'
+ * (con px_scaling), hay que convertir a unidades del documento dividiendo
+ * por scaleFactor (0.75). Sin esto, las cajas quedan ~25 % más bajas que el texto.
+ */
+function fontUnits(doc,fontSize){
+  return fontSize/doc.internal.scaleFactor;
+}
+
+function lineStep(doc,fontSize,lineHeight){
+  return fontSize*lineHeight/doc.internal.scaleFactor;
+}
+
 function textLines(doc,text,maxWidth){
   const clean=String(text||'').trim();
   if(!clean) return [];
   return doc.splitTextToSize(clean,maxWidth);
+}
+
+function newPage(doc){
+  doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
+  return CFG.pageTop;
 }
 
 function drawText(doc,text,x,y,maxWidth,opts={}){
@@ -501,7 +547,7 @@ function drawText(doc,text,x,y,maxWidth,opts={}){
 
   return {
     lines,
-    bottom:y+(Math.max(lines.length,1)-1)*size*lineHeight
+    bottom:y+(Math.max(lines.length,1)-1)*lineStep(doc,size,lineHeight)
   };
 }
 
@@ -683,26 +729,28 @@ function drawCoverPage(doc,data,assets){
     doc.text(lines,cx,capY+53,{align:'center',lineHeightFactor:1.18});
   });
 
-  fill(doc,CFG.dark); 
+  fill(doc,CFG.dark);
   doc.roundedRect(42,770,W-84,285,14,14,'F');
   fill(doc,CFG.red);
   doc.rect(42,770,W-84,3,'F');
 
-  fill(doc, CFG.red);
-  doc.circle(52, 799, 5, 'F');
-  fill(doc, CFG.dark);
-  doc.circle(52, 799, 2, 'F'); 
+  fill(doc,CFG.red);
+  doc.circle(52,799,5,'F');
+  fill(doc,CFG.dark);
+  doc.circle(52,799,2,'F');
 
   drawText(doc,'Información de la propuesta',66,805,W-132,{
     size:16,
     style:'bold',
-    color:CFG.white 
+    color:CFG.white
   });
 
   const colGap=28;
   const colW=(W-132-colGap)/2;
   const leftX=66;
   const rightX=66+colW+colGap;
+  const rowStep=lineStep(doc,9,1.15);
+  const COVER_MAX_Y=1040; // fondo del recuadro oscuro (770+285) con margen
 
   drawText(doc,'DATOS DEL CLIENTE',leftX,838,colW,{
     size:12,
@@ -722,13 +770,19 @@ function drawCoverPage(doc,data,assets){
   let y=862;
 
   clientRows.forEach(([label,val])=>{
+    if(y>COVER_MAX_Y) return;
+
     setFont(doc,9,'normal',[200,200,200]);
     doc.text(`${label}:`,leftX,y);
 
     setFont(doc,9,'bold',CFG.white);
-    const lines=textLines(doc,val,colW-115);
+    let lines=textLines(doc,val,colW-115);
+    if(lines.length>3){
+      lines=lines.slice(0,3);
+      lines[2]=lines[2].replace(/.{0,3}$/,'…');
+    }
     doc.text(lines,leftX+112,y,{lineHeightFactor:1.15});
-    y+=18+(Math.max(lines.length,1)-1)*12;
+    y+=18+(Math.max(lines.length,1)-1)*rowStep;
   });
 
   stroke(doc,[50,50,50]);
@@ -755,7 +809,7 @@ function drawCoverPage(doc,data,assets){
     setFont(doc,9,'bold',CFG.white);
     const lines=textLines(doc,String(val),colW-94);
     doc.text(lines,rightX+88,y,{lineHeightFactor:1.15});
-    y+=18+(Math.max(lines.length,1)-1)*12;
+    y+=18+(Math.max(lines.length,1)-1)*rowStep;
   });
 }
 
@@ -814,14 +868,14 @@ function drawSolutionCard(doc,product,y,assets,cardH=176){
   const titleLines=textLines(doc,product.name,copyW);
   doc.text(titleLines,copyX,titleY,{lineHeightFactor:titleLineHeight});
 
-  const titleStep=titleSize*titleLineHeight;
+  const titleStep=lineStep(doc,titleSize,titleLineHeight);
   let copyY=titleY+(Math.max(titleLines.length,1)-1)*titleStep+27;
   const desc=String(product.description||'').trim();
 
   if(desc){
     const descSize=10.4;
     const descLineHeight=1.32;
-    const descStep=descSize*descLineHeight;
+    const descStep=lineStep(doc,descSize,descLineHeight);
     setFont(doc,descSize,'normal',selected?[250,250,250]:CFG.text);
     const lines=textLines(doc,desc,copyW);
     doc.text(lines,copyX,copyY,{lineHeightFactor:descLineHeight});
@@ -830,7 +884,7 @@ function drawSolutionCard(doc,product,y,assets,cardH=176){
 
   const bulletSize=9.7;
   const bulletLineHeight=1.28;
-  const bulletStep=bulletSize*bulletLineHeight;
+  const bulletStep=lineStep(doc,bulletSize,bulletLineHeight);
   setFont(doc,bulletSize,'normal',selected?[245,245,245]:CFG.text);
 
   productBullets(product).forEach(item=>{
@@ -867,7 +921,7 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
 }
 
 /* =========================================================
-   PAGINACIÓN DINÁMICA DE MÁXIMO APROVECHAMIENTO
+   PAGINACIÓN DINÁMICA
    ========================================================= */
 
 function money(value,currency){
@@ -876,14 +930,19 @@ function money(value,currency){
   return `${clean}${currency?` ${currency}`:''}`;
 }
 
-function drawEconomicTable(doc,data,y, checkSpace){
+function drawEconomicTable(doc,data,y,checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   const widths=[240,45,75,175,175];
   const headerH=34;
   const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
+  const rowFont=9.5;
+  const rowLineHeight=1.18;
+  const rowStep=lineStep(doc,rowFont,rowLineHeight);
 
-  const drawHeader = (cy) => {
+  const rowHeight=lines=>Math.max(31,18+(Math.max(lines.length,1)-1)*rowStep+13);
+
+  const drawHeader=cy=>{
     fill(doc,[7,7,7]);
     doc.rect(x,cy,w,headerH,'F');
     let cx=x;
@@ -896,30 +955,32 @@ function drawEconomicTable(doc,data,y, checkSpace){
       doc.text(header,tx,cy+21,{align});
       cx+=widths[i];
     });
-    return cy + headerH;
+    return cy+headerH;
   };
 
-  const firstRowDesc = data.economicRows[0] ? `- ${data.economicRows[0].product}` : '';
-  const firstRowH = Math.max(31, textLines(doc, firstRowDesc, widths[0] - 16).length * 12 + 12);
-  
-  const oldY = y;
-  y = checkSpace(y, headerH + firstRowH);
-  if (y === oldY && y !== 52) y += 12; 
-  y = drawHeader(y);
+  setFont(doc,rowFont,'normal',CFG.text);
+  const firstRowDesc=data.economicRows[0]?`- ${data.economicRows[0].product}`:'';
+  const firstRowH=rowHeight(textLines(doc,firstRowDesc,widths[0]-16));
+
+  const oldY=y;
+  y=checkSpace(y,headerH+firstRowH);
+  if(y===oldY&&y!==CFG.pageTop) y+=12;
+  y=drawHeader(y);
 
   const rows=data.economicRows.length?data.economicRows:[{
     product:'Sin productos agregados.',
-    qty:'', period:'', unit:'', subtotal:''
+    qty:'',period:'',unit:'',subtotal:''
   }];
 
   rows.forEach(row=>{
+    setFont(doc,rowFont,'normal',CFG.text);
     const desc=textLines(doc,`- ${row.product}`,widths[0]-16);
-    const rowH=Math.max(31,desc.length*12+12);
+    const rowH=rowHeight(desc);
 
-    const rowOldY = y;
-    y = checkSpace(y, rowH);
-    if (y !== rowOldY) { 
-      y = drawHeader(y); 
+    const rowOldY=y;
+    y=checkSpace(y,rowH);
+    if(y!==rowOldY){
+      y=drawHeader(y);
     }
 
     fill(doc,CFG.white);
@@ -928,15 +989,15 @@ function drawEconomicTable(doc,data,y, checkSpace){
     stroke(doc,CFG.line);
     doc.line(x,y+rowH,x+w,y+rowH);
 
-    setFont(doc,9.5,'normal',CFG.text);
-    doc.text(desc,x+8,y+18,{lineHeightFactor:1.18});
+    setFont(doc,rowFont,'normal',CFG.text);
+    doc.text(desc,x+8,y+18,{lineHeightFactor:rowLineHeight});
 
     doc.text(String(row.qty||'1'),x+widths[0]+widths[1]/2,y+18,{align:'center'});
     doc.text(String(row.period||'Mensual'),x+widths[0]+widths[1]+widths[2]/2,y+18,{align:'center'});
 
     doc.text(money(row.unit||'0',data.totals.currency),x+widths[0]+widths[1]+widths[2]+widths[3]-8,y+18,{align:'right'});
 
-    setFont(doc,9.5,'bold',CFG.text);
+    setFont(doc,rowFont,'bold',CFG.text);
     doc.text(money(row.subtotal||'0',data.totals.currency),x+w-8,y+18,{align:'right'});
 
     y+=rowH;
@@ -945,14 +1006,14 @@ function drawEconomicTable(doc,data,y, checkSpace){
   return y;
 }
 
-function drawTotals(doc,data,y, checkSpace){
-  const boxW=410; 
-  const x=CFG.pageWidth-CFG.marginX-boxW; 
+function drawTotals(doc,data,y,checkSpace){
+  const boxW=410;
+  const x=CFG.pageWidth-CFG.marginX-boxW;
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
-  
-  const oldY = y;
-  y = checkSpace(y, 90); 
-  if(y === oldY && y !== 52) y += 18;
+
+  const oldY=y;
+  y=checkSpace(y,90);
+  if(y===oldY&&y!==CFG.pageTop) y+=18;
 
   const rows=[
     {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
@@ -962,20 +1023,20 @@ function drawTotals(doc,data,y, checkSpace){
 
   rows.forEach(row=>{
     const baseline=y+(row.final?25:18);
-    let currentSize = row.final?14:10.5;
-    let isBold = row.final?'bold':'normal';
-    let color = row.final?CFG.red:CFG.text;
+    let currentSize=row.final?14:10.5;
+    const isBold=row.final?'bold':'normal';
+    const color=row.final?CFG.red:CFG.text;
 
     setFont(doc,currentSize,isBold,color);
 
-    let labelWidth = doc.getTextWidth(row.label);
-    let valueWidth = doc.getTextWidth(row.value);
+    let labelWidth=doc.getTextWidth(row.label);
+    let valueWidth=doc.getTextWidth(row.value);
 
-    while((labelWidth + valueWidth + 25) > boxW && currentSize > 7) {
-      currentSize -= 0.5;
+    while((labelWidth+valueWidth+25)>boxW&&currentSize>7){
+      currentSize-=0.5;
       setFont(doc,currentSize,isBold,color);
-      labelWidth = doc.getTextWidth(row.label);
-      valueWidth = doc.getTextWidth(row.value);
+      labelWidth=doc.getTextWidth(row.label);
+      valueWidth=doc.getTextWidth(row.value);
     }
 
     doc.text(row.label,x,baseline);
@@ -990,20 +1051,32 @@ function drawTotals(doc,data,y, checkSpace){
   return y;
 }
 
-function drawAdvisor(doc,data,y, checkSpace){
+function drawAdvisor(doc,data,y,checkSpace){
   const w=330;
   const x=(CFG.pageWidth-w)/2;
   const name=String(data.advisor.name||'Asesor Comercial').trim();
 
-  setFont(doc,14.5,'bold',CFG.dark);
+  const nameSize=14.5;
+  const nameLH=1.18;
+  const nameStep=lineStep(doc,nameSize,nameLH);
+  const contactSize=9.1;
+  const contactLH=1.18;
+  const contactStep=lineStep(doc,contactSize,contactLH);
+
+  setFont(doc,nameSize,'bold',CFG.dark);
   const nameLines=textLines(doc,name,w-34);
-  const contacts=[data.advisor.email,data.advisor.phone].filter(Boolean);
 
-  const h=22+nameLines.length*18+24+contacts.length*16+16;
+  setFont(doc,contactSize,'normal',CFG.text);
+  const contacts=[data.advisor.email,data.advisor.phone]
+    .filter(Boolean)
+    .map(value=>textLines(doc,value,w-30));
 
-  const oldY = y;
-  y = checkSpace(y, h); 
-  if(y === oldY && y !== 52) y += 24;
+  const contactsH=contacts.reduce((acc,lines)=>acc+Math.max(16,lines.length*contactStep),0);
+  const h=27+(Math.max(nameLines.length,1)-1)*nameStep+3+21+contactsH+12;
+
+  const oldY=y;
+  y=checkSpace(y,h);
+  if(y===oldY&&y!==CFG.pageTop) y+=24;
 
   stroke(doc,CFG.red);
   doc.setLineDashPattern([3,3],0);
@@ -1011,34 +1084,35 @@ function drawAdvisor(doc,data,y, checkSpace){
   doc.setLineDashPattern([],0);
 
   let yy=y+27;
-  setFont(doc,14.5,'bold',CFG.dark);
-  doc.text(nameLines,x+w/2,yy,{align:'center',lineHeightFactor:1.18});
+  setFont(doc,nameSize,'bold',CFG.dark);
+  doc.text(nameLines,x+w/2,yy,{align:'center',lineHeightFactor:nameLH});
 
-  yy+=nameLines.length*18+3;
+  yy+=(Math.max(nameLines.length,1)-1)*nameStep+18;
   setFont(doc,10.5,'bold',CFG.red);
   doc.text('Asesor Comercial Corporativo',x+w/2,yy,{align:'center'});
-  yy+=21;
+  yy+=18;
 
-  contacts.forEach(value=>{
-    setFont(doc,9.1,'normal',CFG.text);
-    const lines=textLines(doc,value,w-30);
-    doc.text(lines,x+w/2,yy,{align:'center',lineHeightFactor:1.18});
-    yy+=Math.max(16,lines.length*11);
+  contacts.forEach(lines=>{
+    setFont(doc,contactSize,'normal',CFG.text);
+    doc.text(lines,x+w/2,yy,{align:'center',lineHeightFactor:contactLH});
+    yy+=Math.max(16,lines.length*contactStep);
   });
 
   return y+h;
 }
 
-function drawLabeledBox(doc,label,text,x,y,w,opts={}){
-  const {fontSize=7.7,minH=58,maxH=1000}=opts;
-  const clean=String(text||'').trim()||'-';
-  const bodyLineHeight=1.30;
-  const lineStep=fontSize*bodyLineHeight;
-
+function labeledBoxHeight(doc,text,w,fontSize,lineHeight,minH){
   setFont(doc,fontSize,'normal',CFG.text);
-  const lines=textLines(doc,clean,w-24);
-  const desired=38+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
-  const h=Math.min(maxH,Math.max(minH,desired));
+  const lines=textLines(doc,String(text||'').trim()||'-',w-24);
+  const step=lineStep(doc,fontSize,lineHeight);
+  const desired=37+(Math.max(lines.length,1)-1)*step+fontUnits(doc,fontSize)+10;
+  return {lines,h:Math.max(minH,desired)};
+}
+
+function drawLabeledBox(doc,label,text,x,y,w,opts={}){
+  const {fontSize=7.7,minH=58}=opts;
+  const bodyLineHeight=1.30;
+  const {lines,h}=labeledBoxHeight(doc,text,w,fontSize,bodyLineHeight,minH);
 
   fill(doc,CFG.soft);
   doc.roundedRect(x,y,w,h,5,5,'F');
@@ -1057,43 +1131,76 @@ function drawLabeledBox(doc,label,text,x,y,w,opts={}){
   return h;
 }
 
-function drawObservation(doc,title,text,y, checkSpace){
+/*
+ * Bloque de texto con fondo suave y barra roja.
+ * Calcula el alto real y, si el texto no cabe, lo parte en varias páginas.
+ */
+function drawSoftBlock(doc,title,text,y,checkSpace,opts={}){
   if(!String(text||'').trim()) return y;
+
+  const {
+    fontSize=8,
+    lineHeight=1.30,
+    bar=4,
+    gapBefore=16,
+    titleSize=8.6
+  }=opts;
 
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const fontSize=8;
-  const lineHeight=1.30;
-  const lineStep=fontSize*lineHeight;
+  const step=lineStep(doc,fontSize,lineHeight);
+  const fontU=fontUnits(doc,fontSize);
+  const top=33;
+  const pad=14;
+  const minLines=3;
 
   setFont(doc,fontSize,'normal',CFG.text);
   const lines=textLines(doc,text,w-26);
-  
-  const h=Math.max(52,34+(Math.max(lines.length,1)-1)*lineStep+fontSize+12);
+  let first=true;
 
-  const oldY = y;
-  y = checkSpace(y, h);
-  if(y === oldY && y !== 52) y += 16;
+  while(lines.length){
+    const need=top+(Math.min(lines.length,minLines)-1)*step+fontU+pad;
+    const oldY=y;
+    y=checkSpace(y,need);
+    if(first&&y===oldY&&y!==CFG.pageTop) y+=gapBefore;
 
-  fill(doc,CFG.soft);
-  doc.roundedRect(x,y,w,h,5,5,'F');
-  fill(doc,CFG.red);
-  doc.rect(x,y,4,h,'F');
+    const fit=Math.max(1,Math.floor((CFG.maxY-y-top-fontU-pad)/step)+1);
+    const chunk=lines.splice(0,fit);
+    const h=Math.max(52,top+(chunk.length-1)*step+fontU+pad);
 
-  setFont(doc,8.6,'bold',CFG.dark);
-  doc.text(title,x+12,y+17);
+    fill(doc,CFG.soft);
+    doc.roundedRect(x,y,w,h,5,5,'F');
+    fill(doc,CFG.red);
+    doc.rect(x,y,bar,h,'F');
 
-  setFont(doc,fontSize,'normal',CFG.text);
-  doc.text(lines,x+12,y+33,{lineHeightFactor:lineHeight});
+    setFont(doc,titleSize,'bold',CFG.dark);
+    doc.text(first?title:`${title} (cont.)`,x+12,y+17);
 
-  return y+h;
+    setFont(doc,fontSize,'normal',CFG.text);
+    doc.text(chunk,x+12,y+top,{lineHeightFactor:lineHeight});
+
+    y+=h;
+    first=false;
+
+    if(lines.length){
+      y=newPage(doc);
+    }
+  }
+
+  return y;
 }
 
-function drawTermsSection(doc,data,y, checkSpace){
+function drawObservation(doc,title,text,y,checkSpace){
+  return drawSoftBlock(doc,title,text,y,checkSpace);
+}
+
+function drawTermsSection(doc,data,y,checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
   const gap=12;
   const colW=(w-gap)/2;
+  const boxFont=7.6;
+  const boxLH=1.30;
 
   const leftItems=[
     ['Condiciones de pago',data.terms.payment],
@@ -1105,17 +1212,7 @@ function drawTermsSection(doc,data,y, checkSpace){
     ['Garantía',data.terms.warranty]
   ];
 
-  function measureBox(text){
-    const fontSize=7.6;
-    const lineHeight=1.30;
-    const lineStep=fontSize*lineHeight;
-    setFont(doc,fontSize,'normal',CFG.text);
-    const lines=textLines(doc,text||'-',colW-24);
-    return Math.max(
-      58,
-      38+(Math.max(lines.length,1)-1)*lineStep+fontSize+12
-    );
-  }
+  const measureBox=text=>labeledBoxHeight(doc,text,colW,boxFont,boxLH,58).h;
 
   function measureColumn(items){
     let total=0;
@@ -1127,20 +1224,20 @@ function drawTermsSection(doc,data,y, checkSpace){
   }
 
   const target=Math.max(measureColumn(leftItems),measureColumn(rightItems));
-  
-  const oldY1 = y;
-  y = checkSpace(y, target + 36); 
-  if(y === oldY1 && y !== 52) y += 24; 
+
+  const oldY1=y;
+  y=checkSpace(y,target+36);
+  if(y===oldY1&&y!==CFG.pageTop) y+=24;
 
   setFont(doc,11,'bold',CFG.dark);
   doc.text('Términos y condiciones',x,y);
-  y+=24;
+  y+=14;
 
   function drawColumn(items,cx){
     let cy=y;
     items.forEach((item,index)=>{
       const h=drawLabeledBox(doc,item[0],item[1],cx,cy,colW,{
-        fontSize:7.6,minH:58,maxH:1000 
+        fontSize:boxFont,minH:58
       });
       cy+=h;
       if(index<items.length-1) cy+=12;
@@ -1154,40 +1251,19 @@ function drawTermsSection(doc,data,y, checkSpace){
   const extra=String(data.terms.extra||'').trim();
 
   if(extra){
-    const fontSize=7.3;
-    const lineHeight=1.27;
-    const lineStep=fontSize*lineHeight;
-
-    setFont(doc,fontSize,'normal',CFG.text);
-    const lines=textLines(doc,extra,w-24);
-    const desired=39+(Math.max(lines.length,1)-1)*lineStep+fontSize+12;
-    const h=Math.max(66,desired);
-
-    const oldY2 = y;
-    y = checkSpace(y, h);
-    if(y === oldY2 && y !== 52) y += 14; 
-
-    fill(doc,CFG.soft);
-    doc.roundedRect(x,y,w,h,5,5,'F');
-    fill(doc,CFG.red);
-    doc.rect(x,y,3,h,'F');
-
-    setFont(doc,8.3,'bold',CFG.dark);
-    doc.text('Consideraciones adicionales',x+11,y+18);
-
-    setFont(doc,fontSize,'normal',CFG.text);
-    doc.text(lines,x+11,y+38,{
-      lineHeightFactor:lineHeight,
-      maxWidth:w-24
+    y=drawSoftBlock(doc,'Consideraciones adicionales',extra,y,checkSpace,{
+      fontSize:7.3,
+      lineHeight:1.27,
+      bar:3,
+      gapBefore:14,
+      titleSize:8.3
     });
-
-    y+=h;
   }
 
   return y;
 }
 
-// LA CONFIDENCIALIDAD ESTÁ DIRECTAMENTE ANCLADA AL FONDO
+// LA CONFIDENCIALIDAD ESTÁ ANCLADA AL FONDO DE LA ÚLTIMA PÁGINA
 function drawConfidentiality(doc){
   const text=
     'Esta propuesta es confidencial y propiedad de Detektor hasta su aceptación formal. '+
@@ -1196,7 +1272,6 @@ function drawConfidentiality(doc){
   setFont(doc,6.8,'normal',CFG.muted);
   const lines=textLines(doc,text,CFG.pageWidth-110);
 
-  // La dibuja al fondo, debajo de los países (Y = 1102)
   doc.text(lines,CFG.pageWidth/2,1102,{
     align:'center',
     lineHeightFactor:1.18
@@ -1294,43 +1369,38 @@ function drawFooter(doc,assets){
 }
 
 function drawFinalPage(doc,data,assets){
-  let y=52;
-  
-  const MAX_Y = 840; 
+  let y=CFG.pageTop;
 
-  const checkSpace = (currentY, neededSpace) => {
-    if (currentY + neededSpace > MAX_Y) {
-      doc.addPage([CFG.pageWidth,CFG.pageHeight],'portrait');
-      return 52; 
+  const checkSpace=(currentY,neededSpace)=>{
+    if(currentY+neededSpace>CFG.maxY){
+      return newPage(doc);
     }
     return currentY;
   };
 
-  const oldY0 = y;
-  y = checkSpace(y, 93);
-  if(y === oldY0 && y !== 52) y += 50; 
-  y = sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
-  y = drawEconomicTable(doc,data,y, checkSpace);
-  
-  y = drawTotals(doc,data,y, checkSpace);
-  
-  y = drawAdvisor(doc,data,y, checkSpace); 
-  
-  if (String(data.quote.observations||'').trim()) {
-    y = drawObservation(doc,'Observaciones generales:',data.quote.observations,y, checkSpace);
-  }
-  
-  if (String(data.quote.notes||'').trim()) {
-    y = drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y, checkSpace);
+  const oldY0=y;
+  y=checkSpace(y,93);
+  if(y===oldY0&&y!==CFG.pageTop) y+=50;
+  y=sectionTitle(doc,'PROPUESTA','ECONÓMICA',y);
+  y=drawEconomicTable(doc,data,y,checkSpace);
+
+  y=drawTotals(doc,data,y,checkSpace);
+
+  y=drawAdvisor(doc,data,y,checkSpace);
+
+  if(String(data.quote.observations||'').trim()){
+    y=drawObservation(doc,'Observaciones generales:',data.quote.observations,y,checkSpace);
   }
 
-  y = drawTermsSection(doc,data,y, checkSpace);
+  if(String(data.quote.notes||'').trim()){
+    y=drawObservation(doc,'Notas / Excepciones de negociación:',data.quote.notes,y,checkSpace);
+  }
 
-  // LA BANDA NEGRA Y REDES SE DIBUJAN FIJAS AL FINAL
+  y=drawTermsSection(doc,data,y,checkSpace);
+
+  // PIE FIJO EN LA ÚLTIMA PÁGINA
   drawContact(doc,data,assets,890);
   drawFooter(doc,assets);
-
-  // LA CONFIDENCIALIDAD SE DIBUJA DE FORMA ABSOLUTA AL FONDO, SIEMPRE
   drawConfidentiality(doc);
 }
 
@@ -1375,27 +1445,38 @@ async function generateAndDownload(data){
   }
 
   chunks.forEach((chunk,index)=>{
-    doc.addPage(
-      [CFG.pageWidth,CFG.pageHeight],
-      'portrait'
-    );
-
-    drawSolutionsPage(
-      doc,
-      chunk,
-      index,
-      assets
-    );
+    newPage(doc);
+    drawSolutionsPage(doc,chunk,index,assets);
   });
 
-  doc.addPage(
-    [CFG.pageWidth,CFG.pageHeight],
-    'portrait'
-  );
-
+  newPage(doc);
   drawFinalPage(doc,data,assets);
 
   doc.save(filename(data));
+}
+
+/* =========================================================
+   LÍMITES DE CAMPOS
+   ========================================================= */
+
+function applyFieldLimits(){
+  Object.entries(CFG.maxLength).forEach(([selector,max])=>{
+    const el=$(selector);
+    if(!el) return;
+    // Solo limita lo que se escribe; nunca recorta texto ya cargado
+    if(!el.hasAttribute('maxlength')) el.setAttribute('maxlength',String(max));
+  });
+
+  // Teléfonos: solo números, espacios, +, -, ( )
+  ['#client-phone','#quote-advisor-phone'].forEach(selector=>{
+    const el=$(selector);
+    if(!el||el.__dtkPhoneBound) return;
+    el.__dtkPhoneBound=true;
+    el.addEventListener('input',()=>{
+      const clean=el.value.replace(/[^\d+\-\s()]/g,'');
+      if(clean!==el.value) el.value=clean;
+    });
+  });
 }
 
 /* =========================================================
@@ -1430,16 +1511,17 @@ async function downloadPdf(event){
       button.style.opacity='0.65';
     });
 
+    applyFieldLimits();
     const data=collectData();
     await generateAndDownload(data);
 
   }catch(error){
     console.error('[DTK PDF VECTOR]',error);
 
-    const notice = document.getElementById('dtk-notice');
-    if (notice) {
-      notice.textContent = `No fue posible generar el PDF. ${error.message||error}`;
-      notice.className = 'dtk-notice error';
+    const notice=document.getElementById('dtk-notice');
+    if(notice){
+      notice.textContent=`No fue posible generar el PDF. ${error.message||error}`;
+      notice.className='dtk-notice error';
     }
 
   }finally{
@@ -1461,59 +1543,59 @@ function delegatedDownloadClick(event){
 
   if(!button) return;
 
-  const notice = document.getElementById('dtk-notice');
-  if (notice) {
-    notice.textContent = '';
-    notice.className = 'dtk-notice';
+  const notice=document.getElementById('dtk-notice');
+  if(notice){
+    notice.textContent='';
+    notice.className='dtk-notice';
   }
 
-  const prevErrors = document.querySelectorAll('.dtk-error');
-  prevErrors.forEach(el => el.classList.remove('dtk-error'));
+  const prevErrors=document.querySelectorAll('.dtk-error');
+  prevErrors.forEach(el=>el.classList.remove('dtk-error'));
 
-  const requiredElements = Array.from(document.querySelectorAll('.dtk-required, [required]'));
-  let hasError = false;
-  let firstErrorField = null;
+  const requiredElements=Array.from(document.querySelectorAll('.dtk-required, [required]'));
+  let hasError=false;
+  let firstErrorField=null;
 
-  for (const el of requiredElements) {
-    if (el.offsetParent === null) continue;
+  for(const el of requiredElements){
+    if(el.offsetParent===null) continue;
 
-    if (String(el.value).trim() === '') {
-      hasError = true;
+    if(String(el.value).trim()===''){
+      hasError=true;
       el.classList.add('dtk-error');
-      if (!firstErrorField) firstErrorField = el;
+      if(!firstErrorField) firstErrorField=el;
     }
   }
 
-  const economicRows = readEconomicRows();
-  const hasProducts = economicRows.length > 0;
+  const economicRows=readEconomicRows();
+  const hasProducts=economicRows.length>0;
 
-  if (hasError || !hasProducts) {
+  if(hasError||!hasProducts){
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
 
-    if (hasError) {
-      if (notice) {
-        notice.textContent = 'Por favor, completa los campos obligatorios marcados en rojo.';
-        notice.className = 'dtk-notice error';
+    if(hasError){
+      if(notice){
+        notice.textContent='Por favor, completa los campos obligatorios marcados en rojo.';
+        notice.className='dtk-notice error';
       }
-      
-      firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      firstErrorField.scrollIntoView({behavior:'smooth',block:'center'});
       firstErrorField.focus();
 
-    } else if (!hasProducts) {
-      if (notice) {
-        notice.textContent = 'Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.';
-        notice.className = 'dtk-notice error';
+    }else if(!hasProducts){
+      if(notice){
+        notice.textContent='Debes agregar al menos un producto a la Propuesta Económica antes de generar el PDF.';
+        notice.className='dtk-notice error';
       }
 
-      const productsSection = document.querySelector('.dtk-products') || document.querySelector('#dtk-calc-tbody');
-      if (productsSection) {
-        productsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const productsSection=document.querySelector('.dtk-products')||document.querySelector('#dtk-calc-tbody');
+      if(productsSection){
+        productsSection.scrollIntoView({behavior:'smooth',block:'center'});
       }
     }
 
-    return; 
+    return;
   }
 
   event.preventDefault();
@@ -1532,22 +1614,24 @@ function init(){
       true
     );
 
-    const clearError = (e) => {
-      if (e.target && e.target.classList && e.target.classList.contains('dtk-error')) {
-        if (String(e.target.value).trim() !== '') {
+    const clearError=e=>{
+      if(e.target&&e.target.classList&&e.target.classList.contains('dtk-error')){
+        if(String(e.target.value).trim()!==''){
           e.target.classList.remove('dtk-error');
-          const notice = document.getElementById('dtk-notice');
-          if (notice) {
-             notice.textContent = '';
-             notice.className = 'dtk-notice';
+          const notice=document.getElementById('dtk-notice');
+          if(notice){
+            notice.textContent='';
+            notice.className='dtk-notice';
           }
         }
       }
     };
 
-    document.addEventListener('input', clearError);
-    document.addEventListener('change', clearError);
+    document.addEventListener('input',clearError);
+    document.addEventListener('change',clearError);
   }
+
+  applyFieldLimits();
 
   const mainButton=$('#btn-download');
   const modalButton=$('#btn-modal-download');
@@ -1560,9 +1644,7 @@ function init(){
     download:()=>downloadPdf()
   });
 
-  console.info(
-    '[DTK PDF] Pie FIJO abajo y Confidencialidad OBLIGATORIA.'
-  );
+  console.info('[DTK PDF] v2 listo: alto de línea corregido y bloques paginados.');
 }
 
 if(document.readyState==='loading'){
