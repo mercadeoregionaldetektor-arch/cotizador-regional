@@ -652,14 +652,6 @@ function sectionTitle(doc,left,red,y){
    PÁGINA 1
    ========================================================= */
 
-function coverCompany(data){
-  const company=String(data.client.company||'').trim();
-  const country=String(data.quote.country||'').trim();
-  // Razón social interna (Celltracker S.A., etc.) -> nombre comercial por país
-  if(/celltracker|detektor/i.test(company)&&country) return `Detektor ${country}`;
-  return company;
-}
-
 function drawCoverPage(doc,data,assets){
   const W=CFG.pageWidth;
   const heroH=850;
@@ -769,7 +761,7 @@ function drawCoverPage(doc,data,assets){
 
   const clientRows=[
     ['Nombre del cliente',data.client.name],
-    ['Empresa',coverCompany(data)],
+    ['Empresa',data.client.company],
     ['Cargo',data.client.role],
     ['Correo',data.client.email],
     ['Teléfono',data.client.phone],
@@ -806,7 +798,7 @@ function drawCoverPage(doc,data,assets){
   const quoteRows=[
     ['Fecha',formatDate(data.quote.date)],
     ['Propuesta N°',data.quote.number],
-    ['País',data.quote.country]
+    ['Emitida por',data.quote.country?`Detektor ${data.quote.country}`:'']
   ].filter(row=>String(row[1]||'').trim());
 
   y=862;
@@ -831,7 +823,7 @@ function productBullets(product){
 
   if(n.includes('gps')){
     return [
-      'Sepa siempre dónde está y qué hace cada vehículo de su flota.',
+      'Monitoree en todo momento dónde está y qué hace cada vehículo de su flota.',
       'Evite el mal uso: alertas por exceso de velocidad, geocercas y paradas no autorizadas.',
       'Tome decisiones con reportes gerenciales y reduzca costos operativos.'
     ];
@@ -847,9 +839,9 @@ function productBullets(product){
 
   if(n.includes('cazador')){
     return [
-      'Recupere su vehículo en caso de hurto, incluso donde otras señales no llegan.',
+      'Rastree y localice su vehículo en caso de hurto, incluso donde otras señales no llegan.',
       'Infraestructura propia de Detektor: no depende de la cobertura celular.',
-      'Respaldo de un equipo de reacción 24/7 durante la recuperación.'
+      'Equipo de reacción 24/7 que rastrea y encuentra su vehículo.'
     ];
   }
 
