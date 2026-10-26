@@ -839,9 +839,9 @@ function productBullets(product){
 
   if(n.includes('cazador')){
     return [
-      'Rastree y localice su vehículo en caso de hurto, incluso donde otras señales no llegan.',
-      'Infraestructura propia de Detektor: no depende de la cobertura celular.',
-      'Equipo de reacción 24/7 que rastrea y encuentra su vehículo.'
+      'Proteja su patrimonio: reduzca el riesgo de pérdida total del vehículo.',
+      'Infraestructura propia de Detektor que no depende de la cobertura celular: funciona incluso donde otras señales no llegan.',
+      'Equipo de reacción 24/7 de Detektor que actúa desde el primer reporte.'
     ];
   }
 
