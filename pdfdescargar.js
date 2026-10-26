@@ -177,6 +177,7 @@ function readCatalogProducts(economicRows){
     })).filter(p=>p.name);
   }
 
+  products.sort((a,b)=>Number(!!b.selected)-Number(!!a.selected));
   return products;
 }
 
@@ -651,6 +652,14 @@ function sectionTitle(doc,left,red,y){
    PÁGINA 1
    ========================================================= */
 
+function coverCompany(data){
+  const company=String(data.client.company||'').trim();
+  const country=String(data.quote.country||'').trim();
+  // Razón social interna (Celltracker S.A., etc.) -> nombre comercial por país
+  if(/celltracker|detektor/i.test(company)&&country) return `Detektor ${country}`;
+  return company;
+}
+
 function drawCoverPage(doc,data,assets){
   const W=CFG.pageWidth;
   const heroH=850;
@@ -760,7 +769,7 @@ function drawCoverPage(doc,data,assets){
 
   const clientRows=[
     ['Nombre del cliente',data.client.name],
-    ['Empresa',data.client.company],
+    ['Empresa',coverCompany(data)],
     ['Cargo',data.client.role],
     ['Correo',data.client.email],
     ['Teléfono',data.client.phone],
@@ -821,19 +830,35 @@ function productBullets(product){
   const n=normalize(product.name);
 
   if(n.includes('gps')){
-    return ['Monitoreo y recorridos','Geocercas y alertas','Reportes de operación'];
+    return [
+      'Sepa siempre dónde está y qué hace cada vehículo de su flota.',
+      'Evite el mal uso: alertas por exceso de velocidad, geocercas y paradas no autorizadas.',
+      'Tome decisiones con reportes gerenciales y reduzca costos operativos.'
+    ];
   }
 
   if(n.includes('roadview')){
-    return ['Prevención de riesgos','Alertas de conducción','Analítica para la operación'];
+    return [
+      'Reduzca accidentes y sus costos con alertas de conducción en tiempo real.',
+      'Corrija malos hábitos de manejo antes de que se conviertan en siniestros.',
+      'Proteja a su empresa con evidencia ante incidentes y reclamos.'
+    ];
   }
 
   if(n.includes('cazador')){
-    return ['Localización especializada','Tecnología de radiofrecuencia','Respaldo operativo'];
+    return [
+      'Recupere su vehículo en caso de hurto, incluso donde otras señales no llegan.',
+      'Infraestructura propia de Detektor: no depende de la cobertura celular.',
+      'Respaldo de un equipo de reacción 24/7 durante la recuperación.'
+    ];
   }
 
   if(n.includes('plus')){
-    return ['GPS + localización','Monitoreo diario','Mayor respaldo'];
+    return [
+      'Controle su operación diaria y proteja sus vehículos contra el hurto.',
+      'Doble respaldo: GPS más localización con infraestructura propia.',
+      'Menos pérdidas y menor riesgo operativo en una sola solución.'
+    ];
   }
 
   return ['Tecnología especializada','Configuración según operación','Respaldo Detektor'];
