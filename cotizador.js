@@ -1008,7 +1008,10 @@ window.DTK_DATA = {
   function populatePreview() {
     const gv = id => $(id)?.value?.trim() || '';
     setPdfOptionalText('prev-client-name', gv('client-name'));
-    setPdfOptionalText('prev-client-company', gv('client-company'));
+    const previewCompany = /celltracker|detektor/i.test(gv('client-company')) && gv('quote-country')
+      ? `Detektor ${gv('quote-country')}`
+      : gv('client-company');
+    setPdfOptionalText('prev-client-company', previewCompany);
     setPdfOptionalText('prev-client-role', gv('client-role'));
     setPdfOptionalText('prev-client-email', gv('client-email'));
     setPdfOptionalText('prev-client-phone', gv('client-phone'));
@@ -1070,6 +1073,7 @@ window.DTK_DATA = {
         }
 
         const selectedProductIds = rows.map(r => r.productId).filter(Boolean);
+        chosen.sort((a, b) => Number(selectedProductIds.includes(b.productId)) - Number(selectedProductIds.includes(a.productId)));
 
         solutions.innerHTML = chosen.map((item, i) => {
           const product = DATA.products.find(p => p.id === item.productId);
@@ -1078,10 +1082,29 @@ window.DTK_DATA = {
           const title = product.name;
           const description = product.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
           
-          const bullets =
-            product.id === 'gps'
-              ? ['● Monitoreo y recorridos', '● Geocercas y alertas', '● Reportes de operación']
-              : ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
+          const bulletsById = {
+            gps: [
+              '● Sepa siempre dónde está y qué hace cada vehículo de su flota.',
+              '● Evite el mal uso: alertas por exceso de velocidad, geocercas y paradas no autorizadas.',
+              '● Tome decisiones con reportes gerenciales y reduzca costos operativos.'
+            ],
+            roadview: [
+              '● Reduzca accidentes y sus costos con alertas de conducción en tiempo real.',
+              '● Corrija malos hábitos de manejo antes de que se conviertan en siniestros.',
+              '● Proteja a su empresa con evidencia ante incidentes y reclamos.'
+            ],
+            cazador: [
+              '● Recupere su vehículo en caso de hurto, incluso donde otras señales no llegan.',
+              '● Infraestructura propia de Detektor: no depende de la cobertura celular.',
+              '● Respaldo de un equipo de reacción 24/7 durante la recuperación.'
+            ],
+            plus: [
+              '● Controle su operación diaria y proteja sus vehículos contra el hurto.',
+              '● Doble respaldo: GPS más localización con infraestructura propia.',
+              '● Menos pérdidas y menor riesgo operativo en una sola solución.'
+            ]
+          };
+          const bullets = bulletsById[product.id] || ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
 
           const isSelected = selectedProductIds.includes(product.id);
 
