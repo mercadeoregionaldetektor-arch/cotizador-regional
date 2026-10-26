@@ -1015,7 +1015,7 @@ window.DTK_DATA = {
     setPdfOptionalText('prev-client-city', gv('client-city'));
     setPdfOptionalText('prev-quote-date', gv('quote-date'));
     setPdfOptionalText('prev-quote-number', gv('quote-number'));
-    setPdfOptionalText('prev-country', gv('quote-country'));
+    setPdfOptionalText('prev-country', gv('quote-country') ? `Detektor ${gv('quote-country')}` : '');
     setPdfOptionalText('prev-advisor', getAdvisorName());
 
     setText('prev-adv-name-box', getAdvisorName());
