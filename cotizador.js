@@ -297,9 +297,9 @@ window.DTK_DATA = {
       name: 'Detektor GPS',
       image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6a7b8d482a0eec4e41112bc8_Productos-soluciones-detektor-cotizador%20(5).webp',
       imageLabel: 'IMG: MAPA GPS FLOTA',
-      description: 'Rastreo satelital de alta precisión con geocercas y reportes de ruta.',
+      description: 'Monitoreo satelital de alta precisión con geocercas y reportes de ruta.',
       benefit: '✓ Visibilidad total de tu flota, en cualquier momento.',
-      pdfDescription: 'Dispositivo de rastreo de alta precisión. Permite monitoreo en tiempo real, histórico de rutas y geocercas.'
+      pdfDescription: 'Dispositivo de monitoreo de alta precisión. Permite ver la ubicación en tiempo real, histórico de rutas y geocercas.'
     },
     {
       id: 'roadview',
@@ -1008,10 +1008,7 @@ window.DTK_DATA = {
   function populatePreview() {
     const gv = id => $(id)?.value?.trim() || '';
     setPdfOptionalText('prev-client-name', gv('client-name'));
-    const previewCompany = /celltracker|detektor/i.test(gv('client-company')) && gv('quote-country')
-      ? `Detektor ${gv('quote-country')}`
-      : gv('client-company');
-    setPdfOptionalText('prev-client-company', previewCompany);
+    setPdfOptionalText('prev-client-company', gv('client-company'));
     setPdfOptionalText('prev-client-role', gv('client-role'));
     setPdfOptionalText('prev-client-email', gv('client-email'));
     setPdfOptionalText('prev-client-phone', gv('client-phone'));
@@ -1084,7 +1081,7 @@ window.DTK_DATA = {
           
           const bulletsById = {
             gps: [
-              '● Sepa siempre dónde está y qué hace cada vehículo de su flota.',
+              '● Monitoree en todo momento dónde está y qué hace cada vehículo de su flota.',
               '● Evite el mal uso: alertas por exceso de velocidad, geocercas y paradas no autorizadas.',
               '● Tome decisiones con reportes gerenciales y reduzca costos operativos.'
             ],
@@ -1094,9 +1091,9 @@ window.DTK_DATA = {
               '● Proteja a su empresa con evidencia ante incidentes y reclamos.'
             ],
             cazador: [
-              '● Recupere su vehículo en caso de hurto, incluso donde otras señales no llegan.',
+              '● Rastree y localice su vehículo en caso de hurto, incluso donde otras señales no llegan.',
               '● Infraestructura propia de Detektor: no depende de la cobertura celular.',
-              '● Respaldo de un equipo de reacción 24/7 durante la recuperación.'
+              '● Equipo de reacción 24/7 que rastrea y encuentra su vehículo.'
             ],
             plus: [
               '● Controle su operación diaria y proteja sus vehículos contra el hurto.',
