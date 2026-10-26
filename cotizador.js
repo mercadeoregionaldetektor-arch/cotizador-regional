@@ -290,7 +290,7 @@ window.DTK_DATA = {
       imageLabel: 'IMG: RECUPERACIÓN VEHICULAR',
       description: 'Rastreo y localización vehicular en caso de hurto con tecnología exclusiva y equipo de reacción 24/7.',
       benefit: '✓ La solución más efectiva del mercado',
-      pdfDescription: 'Tecnología especializada para localizar vehículos en caso de hurto, incluso donde otras señales no llegan.'
+      pdfDescription: 'Tecnología especializada para localizar vehículos en caso de hurto.'
     },
     {
       id: 'gps',
@@ -1091,9 +1091,9 @@ window.DTK_DATA = {
               '● Proteja a su empresa con evidencia ante incidentes y reclamos.'
             ],
             cazador: [
-              '● Rastree y localice su vehículo en caso de hurto, incluso donde otras señales no llegan.',
-              '● Infraestructura propia de Detektor: no depende de la cobertura celular.',
-              '● Equipo de reacción 24/7 que rastrea y encuentra su vehículo.'
+              '● Proteja su patrimonio: reduzca el riesgo de pérdida total del vehículo.',
+              '● Infraestructura propia de Detektor que no depende de la cobertura celular: funciona incluso donde otras señales no llegan.',
+              '● Equipo de reacción 24/7 de Detektor que actúa desde el primer reporte.'
             ],
             plus: [
               '● Controle su operación diaria y proteja sus vehículos contra el hurto.',
