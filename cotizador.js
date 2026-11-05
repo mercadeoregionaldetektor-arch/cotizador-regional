@@ -1043,7 +1043,24 @@ window.DTK_DATA = {
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
       // INCLUIDO PERIODO EN LA VISTA PREVIA
-      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td style="text-align:center">${item.qty}</td><td style="text-align:center">${escapeHtml(item.period)}</td><td style="text-align:center">${escapeHtml(formatMoney(item.price))}</td><td style="text-align:center">${item.discount}%</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
+      previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td style="text-align:center">${item.qty}</td><td style="text-align:center">${escapeHtml(item.period)}</td><td style="text-align:center">${escapeHtml(formatMoney(item.price))}</td><td style="text-align:center${item.discount > 0 ? ';color:var(--dtk-red);font-weight:700' : ''}">${item.discount}%</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
+    }
+
+    // TOTAL DESCUENTOS EN LA VISTA PREVIA (suma de los descuentos por producto)
+    const discountTotal = rows.reduce((acc, item) => acc + item.qty * item.price * (item.discount / 100), 0);
+    let discountRow = $('prev-discount-row');
+    const totalsBox = $('prev-subtotal')?.closest('.pdf-totals');
+    if (!discountRow && totalsBox) {
+      discountRow = document.createElement('div');
+      discountRow.className = 'pdf-total-row';
+      discountRow.id = 'prev-discount-row';
+      discountRow.style.color = 'var(--dtk-red)';
+      discountRow.innerHTML = '<span>Total descuentos</span><b id="prev-discount-total"></b>';
+      totalsBox.insertBefore(discountRow, totalsBox.firstChild);
+    }
+    if (discountRow) {
+      discountRow.style.display = discountTotal > 0 ? '' : 'none';
+      setText('prev-discount-total', formatMoney(discountTotal));
     }
 
     const chosen = DATA.products.map(product => ({
