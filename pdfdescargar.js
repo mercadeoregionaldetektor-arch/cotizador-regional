@@ -2,6 +2,7 @@
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER
  * v3 · 2026-11-05
+ *  - FIX: precios con separador de miles (18,888,888.00) se leían como 0.
  *  - NUEVO: columna DCTO. en la propuesta económica (solo si hay descuento)
  *           y filas "Subtotal antes de descuento" / "Descuento" en totales.
  * v2 · 2026-10-13
@@ -941,9 +942,15 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
 }
 
 /* ---------- Descuentos (v3) ---------- */
+// Mismo criterio que parseNum() de cotizador.js: acepta 18,888,888.00 y 18.888.888,00
 function numOf(value){
-  const n=Number(String(value??'').replace(',','.'));
-  return Number.isFinite(n)?n:0;
+  if(typeof value==='number') return Number.isFinite(value)?value:0;
+  let raw=String(value??'').replace(/[^\d.,-]/g,'');
+  const comma=raw.lastIndexOf(',');
+  const dot=raw.lastIndexOf('.');
+  if(comma>dot) raw=raw.replace(/\./g,'').replace(',','.');
+  else if(dot>comma) raw=raw.replace(/,/g,'');
+  return Number.parseFloat(raw)||0;
 }
 
 function discountPct(row){
