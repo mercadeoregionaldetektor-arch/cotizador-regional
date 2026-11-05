@@ -1,6 +1,9 @@
 /*
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER
+ * v3 · 2026-11-05
+ *  - NUEVO: columna DCTO. en la propuesta económica (solo si hay descuento)
+ *           y filas "Subtotal antes de descuento" / "Descuento" en totales.
  * v2 · 2026-10-13
  *  - FIX: alto de línea convertido de puntos (jsPDF) a unidades px del documento.
  *         Antes las cajas se calculaban ~25 % más bajas que el texto real.
@@ -239,7 +242,7 @@ function collectData(){
       extra:valueOf('#terms-extra')
     },
     economicRows,
-    totals:readTotals(),
+    totals:{...readTotals(),...readDiscountSummary(economicRows,country)},
     products:readCatalogProducts(economicRows),
     countryContact:readCountryContact(country)
   };
@@ -937,6 +940,38 @@ function drawSolutionsPage(doc,products,pageIndex,assets){
   });
 }
 
+/* ---------- Descuentos (v3) ---------- */
+function numOf(value){
+  const n=Number(String(value??'').replace(',','.'));
+  return Number.isFinite(n)?n:0;
+}
+
+function discountPct(row){
+  return Math.min(100,Math.max(0,numOf(row.discount)));
+}
+
+function formatPct(value){
+  const n=Math.round(numOf(value)*100)/100;
+  return `${String(n).replace('.',',')}%`;
+}
+
+function readDiscountSummary(rows,countryName){
+  const locale=window.DTK_DATA?.countries?.[countryName]?.locale||'es-CO';
+  const fmt=n=>new Intl.NumberFormat(locale,{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+  let gross=0,discount=0;
+  rows.forEach(row=>{
+    const base=numOf(row.qty)*numOf(row.unit);
+    gross+=base;
+    discount+=base*discountPct(row)/100;
+  });
+  const hasDiscount=rows.some(row=>discountPct(row)>0)&&discount>0;
+  return{
+    hasDiscount,
+    grossSubtotal:fmt(gross),
+    discountAmount:fmt(discount)
+  };
+}
+
 /* =========================================================
    PAGINACIÓN DINÁMICA
    ========================================================= */
@@ -950,9 +985,15 @@ function money(value,currency){
 function drawEconomicTable(doc,data,y,checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const widths=[240,45,75,175,175];
+  const showDiscount=!!data.totals.hasDiscount;
+  // Con descuento se agrega la columna DCTO. (el ancho total sigue siendo 710)
+  const widths=showDiscount?[200,42,70,150,68,180]:[240,45,75,175,175];
   const headerH=34;
-  const headers=['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
+  const headers=showDiscount
+    ?['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','DCTO.','TOTAL']
+    :['DESCRIPCIÓN','CANT.','PERIODO','PRECIO/U','TOTAL'];
+  const lastCol=headers.length-1;
+  const discCol=showDiscount?4:-1;
   const rowFont=9.5;
   const rowLineHeight=1.18;
   const rowStep=lineStep(doc,rowFont,rowLineHeight);
@@ -965,10 +1006,12 @@ function drawEconomicTable(doc,data,y,checkSpace){
     let cx=x;
     headers.forEach((header,i)=>{
       setFont(doc,9,'bold',CFG.white);
-      const align=(i===3||i===4)?'right':(i===1||i===2)?'center':'left';
+      const isRight=(i===3||i===lastCol);
+      const isCenter=(i===1||i===2||i===discCol);
+      const align=isRight?'right':isCenter?'center':'left';
       let tx=cx+8;
-      if(i===3||i===4) tx=cx+widths[i]-8;
-      if(i===1||i===2) tx=cx+widths[i]/2;
+      if(isRight) tx=cx+widths[i]-8;
+      if(isCenter) tx=cx+widths[i]/2;
       doc.text(header,tx,cy+21,{align});
       cx+=widths[i];
     });
@@ -1014,6 +1057,18 @@ function drawEconomicTable(doc,data,y,checkSpace){
 
     doc.text(money(row.unit||'0',data.totals.currency),x+widths[0]+widths[1]+widths[2]+widths[3]-8,y+18,{align:'right'});
 
+    if(showDiscount){
+      const pct=discountPct(row);
+      const dx=x+widths[0]+widths[1]+widths[2]+widths[3]+widths[4]/2;
+      if(pct>0){
+        setFont(doc,rowFont,'bold',CFG.red);
+        doc.text(`-${formatPct(pct)}`,dx,y+18,{align:'center'});
+      }else{
+        setFont(doc,rowFont,'normal',CFG.muted||CFG.text);
+        doc.text('—',dx,y+18,{align:'center'});
+      }
+    }
+
     setFont(doc,rowFont,'bold',CFG.text);
     doc.text(money(row.subtotal||'0',data.totals.currency),x+w-8,y+18,{align:'right'});
 
@@ -1028,12 +1083,18 @@ function drawTotals(doc,data,y,checkSpace){
   const x=CFG.pageWidth-CFG.marginX-boxW;
   const taxPct=data.totals.taxPercent?` (${data.totals.taxPercent}%)`:'';
 
+  const showDiscount=!!data.totals.hasDiscount;
+
   const oldY=y;
-  y=checkSpace(y,90);
+  y=checkSpace(y,showDiscount?142:90);
   if(y===oldY&&y!==CFG.pageTop) y+=18;
 
   const rows=[
-    {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
+    ...(showDiscount?[
+      {label:'Subtotal antes de descuento',value:money(data.totals.grossSubtotal,data.totals.currency),final:false,height:26},
+      {label:'Descuento',value:`- ${money(data.totals.discountAmount,data.totals.currency)}`,final:false,height:26,accent:true}
+    ]:[]),
+    {label:showDiscount?'Subtotal con descuento':'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
     {label:`${data.totals.taxLabel}${taxPct}`,value:money(data.totals.tax,data.totals.currency),final:false,height:26},
     {label:'TOTAL CON IMPUESTO',value:money(data.totals.total,data.totals.currency),final:true,height:38}
   ];
@@ -1042,7 +1103,7 @@ function drawTotals(doc,data,y,checkSpace){
     const baseline=y+(row.final?25:18);
     let currentSize=row.final?14:10.5;
     const isBold=row.final?'bold':'normal';
-    const color=row.final?CFG.red:CFG.text;
+    const color=(row.final||row.accent)?CFG.red:CFG.text;
 
     setFont(doc,currentSize,isBold,color);
 
