@@ -322,7 +322,7 @@ window.DTK_DATA = {
     {
       id: 'smartwork',
       name: 'Detektor SmartWork',
-      image: 'https://cdn.prod.website-files.com/5dae5419e69ca030d3775e57/5dae5419e69ca08f57775ffa_smartwork.png',
+      image: 'https://cdn.prod.website-files.com/6a73658b9794177dcea91af7/6aeca797bda1657fee647230_Sonrisa%20natural%20con%20caja%20SmartWork.webp',
       imageLabel: 'IMG: FUERZA COMERCIAL EN CAMPO',
       description: 'Herramientas de gestión y seguimiento para su fuerza comercial y equipos de servicio en campo.',
       benefit: '✓ Control de rutas, visitas y servicios en tiempo real.',
