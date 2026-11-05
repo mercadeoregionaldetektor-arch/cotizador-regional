@@ -318,6 +318,15 @@ window.DTK_DATA = {
       description: 'Seguridad de sus vehículos y flotas, garantizando que podrán ser monitoreados, rastreados y localizados.',
       benefit: '✓ Control operativo y menores costos.',
       pdfDescription: 'Combina GPS + El Cazador para monitoreo diario y localización especializada en caso de hurto.'
+    },
+    {
+      id: 'smartwork',
+      name: 'Detektor SmartWork',
+      image: 'https://cdn.prod.website-files.com/5dae5419e69ca030d3775e57/5dae5419e69ca08f57775ffa_smartwork.png',
+      imageLabel: 'IMG: FUERZA COMERCIAL EN CAMPO',
+      description: 'Herramientas de gestión y seguimiento para su fuerza comercial y equipos de servicio en campo.',
+      benefit: '✓ Control de rutas, visitas y servicios en tiempo real.',
+      pdfDescription: 'Solución de movilidad empresarial para gestionar rutas, visitas y reportes de su fuerza comercial y técnicos.'
     }
   ]
 };
@@ -1116,6 +1125,11 @@ window.DTK_DATA = {
               '● Controle su operación diaria y proteja sus vehículos contra el hurto.',
               '● Doble respaldo: GPS más localización con infraestructura propia.',
               '● Menos pérdidas y menor riesgo operativo en una sola solución.'
+            ],
+            smartwork: [
+              '● Asigne rutas y visitas, y registre llegadas y salidas de cada servicio en tiempo real.',
+              '● Digitalice su operación con formularios personalizables y reportes de calidad por servicio.',
+              '● Trabaje sin interrupciones: reportes sin conexión a internet e historial de hasta 6 meses por técnico.'
             ]
           };
           const bullets = bulletsById[product.id] || ['● Tecnología especializada', '● Configuración según operación', '● Respaldo Detektor'];
