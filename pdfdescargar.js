@@ -825,6 +825,14 @@ function drawCoverPage(doc,data,assets){
 function productBullets(product){
   const n=normalize(product.name);
 
+  if(n.includes('smartwork')||n.includes('smart work')){
+    return [
+      'Asigne rutas y visitas, y registre llegadas y salidas de cada servicio en tiempo real.',
+      'Digitalice su operación con formularios personalizables y reportes de calidad por servicio.',
+      'Trabaje sin interrupciones: reportes sin conexión a internet e historial de hasta 6 meses por técnico.'
+    ];
+  }
+
   if(n.includes('gps')){
     return [
       'Monitoree en todo momento dónde está y qué hace cada vehículo de su flota.',
