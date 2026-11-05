@@ -2,9 +2,9 @@
  * pdfdescargar.js · Detektor Cotizador Webflow
  * Build VECTOR-TEXT + PIE FIJO + CONFIDENCIALIDAD EN EL FOOTER
  * v3 · 2026-11-05
- *  - FIX: precios con separador de miles (18,888,888.00) se leían como 0.
- *  - NUEVO: columna DCTO. en la propuesta económica (solo si hay descuento)
- *           y filas "Subtotal antes de descuento" / "Descuento" en totales.
+ *  - NUEVO: columna DCTO. con el % de descuento de cada producto en la
+ *           propuesta económica (sin signo menos).
+ *  - NUEVO: fila "Total descuentos" (suma de los descuentos) en los totales.
  * v2 · 2026-10-13
  *  - FIX: alto de línea convertido de puntos (jsPDF) a unidades px del documento.
  *         Antes las cajas se calculaban ~25 % más bajas que el texto real.
@@ -957,26 +957,22 @@ function discountPct(row){
   return Math.min(100,Math.max(0,numOf(row.discount)));
 }
 
-function formatPct(value){
-  const n=Math.round(numOf(value)*100)/100;
-  return `${String(n).replace('.',',')}%`;
-}
-
 function readDiscountSummary(rows,countryName){
   const locale=window.DTK_DATA?.countries?.[countryName]?.locale||'es-CO';
   const fmt=n=>new Intl.NumberFormat(locale,{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
-  let gross=0,discount=0;
+  let discount=0;
   rows.forEach(row=>{
-    const base=numOf(row.qty)*numOf(row.unit);
-    gross+=base;
-    discount+=base*discountPct(row)/100;
+    discount+=numOf(row.qty)*numOf(row.unit)*discountPct(row)/100;
   });
-  const hasDiscount=rows.some(row=>discountPct(row)>0)&&discount>0;
   return{
-    hasDiscount,
-    grossSubtotal:fmt(gross),
+    hasDiscount:discount>0,
     discountAmount:fmt(discount)
   };
+}
+
+function formatPct(value){
+  const n=Math.round(numOf(value)*100)/100;
+  return `${String(n).replace('.',',')}%`;
 }
 
 /* =========================================================
@@ -992,8 +988,8 @@ function money(value,currency){
 function drawEconomicTable(doc,data,y,checkSpace){
   const x=CFG.marginX;
   const w=CFG.pageWidth-CFG.marginX*2;
-  const showDiscount=!!data.totals.hasDiscount;
-  // Con descuento se agrega la columna DCTO. (el ancho total sigue siendo 710)
+  const showDiscount=true;
+  // Columna DCTO. con el % de descuento de cada producto (ancho total 710)
   const widths=showDiscount?[200,42,70,150,68,180]:[240,45,75,175,175];
   const headerH=34;
   const headers=showDiscount
@@ -1069,10 +1065,10 @@ function drawEconomicTable(doc,data,y,checkSpace){
       const dx=x+widths[0]+widths[1]+widths[2]+widths[3]+widths[4]/2;
       if(pct>0){
         setFont(doc,rowFont,'bold',CFG.red);
-        doc.text(`-${formatPct(pct)}`,dx,y+18,{align:'center'});
+        doc.text(formatPct(pct),dx,y+18,{align:'center'});
       }else{
-        setFont(doc,rowFont,'normal',CFG.muted||CFG.text);
-        doc.text('—',dx,y+18,{align:'center'});
+        setFont(doc,rowFont,'normal',CFG.text);
+        doc.text(row.product==='Sin productos agregados.'?'':'0%',dx,y+18,{align:'center'});
       }
     }
 
@@ -1093,15 +1089,14 @@ function drawTotals(doc,data,y,checkSpace){
   const showDiscount=!!data.totals.hasDiscount;
 
   const oldY=y;
-  y=checkSpace(y,showDiscount?142:90);
+  y=checkSpace(y,showDiscount?116:90);
   if(y===oldY&&y!==CFG.pageTop) y+=18;
 
   const rows=[
     ...(showDiscount?[
-      {label:'Subtotal antes de descuento',value:money(data.totals.grossSubtotal,data.totals.currency),final:false,height:26},
-      {label:'Descuento',value:`- ${money(data.totals.discountAmount,data.totals.currency)}`,final:false,height:26,accent:true}
+      {label:'Total descuentos',value:money(data.totals.discountAmount,data.totals.currency),final:false,height:26,accent:true}
     ]:[]),
-    {label:showDiscount?'Subtotal con descuento':'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
+    {label:'Subtotal',value:money(data.totals.subtotal,data.totals.currency),final:false,height:26},
     {label:`${data.totals.taxLabel}${taxPct}`,value:money(data.totals.tax,data.totals.currency),final:false,height:26},
     {label:'TOTAL CON IMPUESTO',value:money(data.totals.total,data.totals.currency),final:true,height:38}
   ];
