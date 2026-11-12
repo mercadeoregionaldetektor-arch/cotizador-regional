@@ -208,7 +208,7 @@ window.DTK_DATA = {
         { name: 'Ruth Lizbeth Lopez Rodriguez', code: 'HN-0511', department: 'VENTAS' },
         { name: 'Victoria Alejandra Guevara Sabillon', code: 'HN-0516', department: 'VENTAS' },
         { name: 'Dora Maricela Vasquez Marquez', code: 'HN-0518', department: 'VENTAS' },
-        { name: 'Stefany Martinez', code: '', department: 'VENTAS' },
+        { name: 'Stefany Martinez', code: 'HN-0522', department: 'VENTAS' },
         { name: 'Dunia Godoy', code: 'HN-0484', department: 'VENTAS' },
         { name: 'Lizzy Carrasco', code: 'HN-0519', department: 'VENTAS' },
         { name: 'Jessenia Lopez', code: 'HN-0520', department: 'VENTAS' },
