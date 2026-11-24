@@ -242,6 +242,9 @@ window.DTK_DATA = {
         { name: 'Barahona Castro Samuel Eduardo', code: 'SL0347', department: 'VENTAS' },
         { name: 'Zetino Salmeron Marcela Liliana', code: 'SL0349', department: 'VENTAS' },
         { name: 'Castro Medrano Daniel Antonio', code: 'SL0350', department: 'VENTAS' }
+         { name: 'Diego Galeano', code: 'SL0351', department: 'VENTAS' }
+         { name: 'Sindy Pena', code: 'SL0352', department: 'VENTAS' }
+         { name: 'Ramon Garcia', code: 'SL0353', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
