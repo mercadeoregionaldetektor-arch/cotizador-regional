@@ -2,7 +2,7 @@
    HTML/CSS viven en Webflow. Este archivo contiene datos + lógica JS.
 */
 
-window.DTK_BUILD_VERSION = 'v12112026';
+window.DTK_BUILD_VERSION = 'v12112026-fix1';
 
 window.DTK_CONFIG = {
   // REEMPLAZA esta URL por la URL pública REAL de tu servicio Render, sin slash al final.
@@ -241,10 +241,10 @@ window.DTK_DATA = {
         { name: 'Diego Josue Calderon Perez', code: 'SL0344', department: 'VENTAS' },
         { name: 'Barahona Castro Samuel Eduardo', code: 'SL0347', department: 'VENTAS' },
         { name: 'Zetino Salmeron Marcela Liliana', code: 'SL0349', department: 'VENTAS' },
-        { name: 'Castro Medrano Daniel Antonio', code: 'SL0350', department: 'VENTAS' }
-         { name: 'Diego Galeano', code: 'SL0351', department: 'VENTAS' }
-         { name: 'Sindy Pena', code: 'SL0352', department: 'VENTAS' }
-         { name: 'Ramon Garcia', code: 'SL0353', department: 'VENTAS' }
+        { name: 'Castro Medrano Daniel Antonio', code: 'SL0350', department: 'VENTAS' },
+        { name: 'Diego Galeano', code: 'SL0351', department: 'VENTAS' },
+        { name: 'Sindy Pena', code: 'SL0352', department: 'VENTAS' },
+        { name: 'Ramon Garcia', code: 'SL0353', department: 'VENTAS' }
       ],
       terms: {
         installation: 'En disposición y coordinación con el cliente, luego de firmada la autorización de la presente propuesta de productos y del contrato de servicio.',
@@ -345,13 +345,13 @@ window.DTK_DATA = {
   const CONTACTS = window.DTK_COUNTRY_CONTACTS || {};
   const $ = (id) => document.getElementById(id);
   const els = {};
-  
+
   let reservedKey = '';
   let reservedNumber = '';
   let quoteTimer = null;
   let noticeTimer = null;
   let pdfPage2BaseHtml = '';
-  
+
   let draftTimer = null;
   let isLoadingDraft = false;
 
@@ -361,7 +361,7 @@ window.DTK_DATA = {
       'quote-advisor-phone','quote-advisor-email','currency-select','select-tax','input-tax-manual','tax-manual-wrap','tax-label','dtk-calc-tbody',
       'val-subtotal','val-tax','val-total','advisor-select-wrap','advisor-manual-wrap','dtk-products-catalog',
       'dtk-preview-modal','modal-scroll-area','dtk-pdf-export-content','dtk-render-host','dtk-notice', 'dtk-app'
-    ].forEach(k => els[k] = $(k));
+    ].forEach(k => { els[k] = $(k); });
   }
 
   function todayLocal() {
@@ -461,7 +461,7 @@ window.DTK_DATA = {
     const c = getCountry();
     if (!c) return '';
     if (countryHasAdvisorList(c)) {
-      const val = els['quote-advisor-select'].value || '';
+      const val = els['quote-advisor-select']?.value || '';
       const parts = val.split(' - ');
       return parts.length > 1 ? parts.slice(1).join(' - ') : val;
     }
@@ -492,8 +492,10 @@ window.DTK_DATA = {
     if (!country || countryHasAdvisorList(country)) return;
 
     const code = buildManualAdvisorCode(els['quote-advisor-manual']?.value || '');
-    els['quote-advisor-code'].value = code;
-    els['quote-advisor-code'].classList.remove('dtk-error');
+    if (els['quote-advisor-code']) {
+      els['quote-advisor-code'].value = code;
+      els['quote-advisor-code'].classList.remove('dtk-error');
+    }
 
     reservedKey = '';
     reservedNumber = '';
@@ -504,7 +506,7 @@ window.DTK_DATA = {
 
   function quoteYear() {
     const val = els['quote-date']?.value;
-    const y = val ? String(val).slice(0,4) : String(new Date().getFullYear());
+    const y = val ? String(val).slice(0, 4) : String(new Date().getFullYear());
     return /^\d{4}$/.test(y) ? y : String(new Date().getFullYear());
   }
 
@@ -528,7 +530,7 @@ window.DTK_DATA = {
     const year = quoteYear();
     const key = `${country.code}|${advisorCode}|${year}`;
     if (!force && key === reservedKey && reservedNumber) {
-      els['quote-number'].value = reservedNumber;
+      if (els['quote-number']) els['quote-number'].value = reservedNumber;
       return reservedNumber;
     }
 
@@ -577,7 +579,7 @@ window.DTK_DATA = {
       els['quote-number'].value = quoteNumber;
       els['quote-number'].classList.remove('dtk-error');
     }
-    
+
     scheduleSaveDraft();
     return quoteNumber;
   }
@@ -623,20 +625,24 @@ window.DTK_DATA = {
     const country = getCountry();
     reservedKey = '';
     reservedNumber = '';
-    els['quote-number'].value = '';
-    els['quote-advisor-code'].value = '';
-    els['quote-advisor-phone'].value = '';
-    els['quote-advisor-email'].value = '';
+    if (els['quote-number']) els['quote-number'].value = '';
+    if (els['quote-advisor-code']) els['quote-advisor-code'].value = '';
+    if (els['quote-advisor-phone']) els['quote-advisor-phone'].value = '';
+    if (els['quote-advisor-email']) els['quote-advisor-email'].value = '';
+
+    const advisorListEl = $('dtk-advisor-list');
 
     if (!country) {
-      els['advisor-select-wrap'].classList.remove('dtk-hidden');
-      els['advisor-manual-wrap'].classList.add('dtk-hidden');
-      els['quote-advisor-select'].value = '';
-      els['quote-advisor-select'].placeholder = 'Seleccione el país primero';
-      els['quote-advisor-code'].readOnly = false;
-      els['currency-select'].innerHTML = '';
-      els['select-tax'].innerHTML = '';
-      $('dtk-advisor-list').innerHTML = '';
+      els['advisor-select-wrap']?.classList.remove('dtk-hidden');
+      els['advisor-manual-wrap']?.classList.add('dtk-hidden');
+      if (els['quote-advisor-select']) {
+        els['quote-advisor-select'].value = '';
+        els['quote-advisor-select'].placeholder = 'Seleccione el país primero';
+      }
+      if (els['quote-advisor-code']) els['quote-advisor-code'].readOnly = false;
+      if (els['currency-select']) els['currency-select'].innerHTML = '';
+      if (els['select-tax']) els['select-tax'].innerHTML = '';
+      if (advisorListEl) advisorListEl.innerHTML = '';
 
       if (els['quote-advisor-phone']) {
         els['quote-advisor-phone'].placeholder = 'Ej. +00 000 0000';
@@ -654,24 +660,26 @@ window.DTK_DATA = {
     }
 
     if (countryHasAdvisorList(country)) {
-      els['advisor-select-wrap'].classList.remove('dtk-hidden');
-      els['advisor-manual-wrap'].classList.add('dtk-hidden');
-      els['quote-advisor-manual'].value = '';
-      els['quote-advisor-code'].readOnly = true;
-      els['quote-advisor-select'].value = '';
-      els['quote-advisor-select'].placeholder = 'Escribe para buscar...';
-      
-      // Llenamos el Datalist
-      $('dtk-advisor-list').innerHTML = country.agents.map(a =>
-        `<option value="${escapeHtml(a.code)} - ${escapeHtml(a.name)}"></option>`
-      ).join('');
-      
+      els['advisor-select-wrap']?.classList.remove('dtk-hidden');
+      els['advisor-manual-wrap']?.classList.add('dtk-hidden');
+      if (els['quote-advisor-manual']) els['quote-advisor-manual'].value = '';
+      if (els['quote-advisor-code']) els['quote-advisor-code'].readOnly = true;
+      if (els['quote-advisor-select']) {
+        els['quote-advisor-select'].value = '';
+        els['quote-advisor-select'].placeholder = 'Escribe para buscar...';
+      }
+
+      if (advisorListEl) {
+        advisorListEl.innerHTML = country.agents.map(a =>
+          `<option value="${escapeHtml(a.code)} - ${escapeHtml(a.name)}"></option>`
+        ).join('');
+      }
     } else {
-      els['advisor-select-wrap'].classList.add('dtk-hidden');
-      els['advisor-manual-wrap'].classList.remove('dtk-hidden');
-      els['quote-advisor-select'].value = '';
-      $('dtk-advisor-list').innerHTML = '';
-      els['quote-advisor-code'].readOnly = true;
+      els['advisor-select-wrap']?.classList.add('dtk-hidden');
+      els['advisor-manual-wrap']?.classList.remove('dtk-hidden');
+      if (els['quote-advisor-select']) els['quote-advisor-select'].value = '';
+      if (advisorListEl) advisorListEl.innerHTML = '';
+      if (els['quote-advisor-code']) els['quote-advisor-code'].readOnly = true;
       syncManualAdvisorCode();
     }
 
@@ -692,33 +700,38 @@ window.DTK_DATA = {
       clientCity.placeholder = cityPlaceholder;
     }
 
-    els['currency-select'].innerHTML = country.currency.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-    els['tax-label'].textContent = country.taxName;
-    els['select-tax'].innerHTML = country.taxRates.map(r => `<option value="${r}">${r}%</option>`).join('');
+    if (els['currency-select']) {
+      els['currency-select'].innerHTML = country.currency.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    }
+    if (els['tax-label']) els['tax-label'].textContent = country.taxName;
+    if (els['select-tax']) {
+      els['select-tax'].innerHTML = country.taxRates.map(r => `<option value="${r}">${r}%</option>`).join('');
+    }
 
     if (els['input-tax-manual']) {
       els['input-tax-manual'].value = String(country.taxRates?.[0] ?? 0);
     }
 
-    $('terms-installation').value = country.terms.installation || '';
-    $('terms-payment').value = country.terms.payment || '';
-    $('terms-validity').value = country.terms.validity || '';
-    $('terms-warranty').value = country.terms.warranty || '';
-    $('terms-extra').value = country.terms.extra || '';
+    if ($('terms-installation')) $('terms-installation').value = country.terms.installation || '';
+    if ($('terms-payment')) $('terms-payment').value = country.terms.payment || '';
+    if ($('terms-validity')) $('terms-validity').value = country.terms.validity || '';
+    if ($('terms-warranty')) $('terms-warranty').value = country.terms.warranty || '';
+    if ($('terms-extra')) $('terms-extra').value = country.terms.extra || '';
     calculateAll();
   }
 
   function onAdvisorSelect() {
     const country = getCountry();
     if (!country || !countryHasAdvisorList(country)) return;
-    
-    // Extracción inteligente del código desde el valor del datalist
-    const val = els['quote-advisor-select'].value || '';
+
+    const val = els['quote-advisor-select']?.value || '';
     const codeMatch = val.match(/^([A-Z0-9-]+)\s-/);
     const code = codeMatch ? codeMatch[1] : val;
-    
-    els['quote-advisor-code'].value = code;
-    els['quote-advisor-code'].classList.remove('dtk-error');
+
+    if (els['quote-advisor-code']) {
+      els['quote-advisor-code'].value = code;
+      els['quote-advisor-code'].classList.remove('dtk-error');
+    }
     reservedKey = '';
     reservedNumber = '';
     reserveQuoteNumber(false, { showError: false });
@@ -737,8 +750,7 @@ window.DTK_DATA = {
     const tr = document.createElement('tr');
     tr.dataset.row = '1';
     tr.dataset.productId = productId || '';
-    
-    // SECCIÓN CORREGIDA: Incluye la columna <select> del PERIODO con la opción de "Pago único".
+
     tr.innerHTML = `
       <td><input class="dtk-input dtk-prod-name" value="${escapeHtml(name)}" placeholder="Ej. Detektor GPS"></td>
       <td><input type="number" class="dtk-input dtk-qty" value="${qty}" min="0" step="any" aria-label="Cantidad"></td>
@@ -760,18 +772,15 @@ window.DTK_DATA = {
   function addCatalogProduct(productId) {
     const product = DATA.products.find(p => p.id === productId);
     if (!product) return;
-    
-    // CAMBIO: Contar cuántas filas existen con este mismo productId
+
     const existingRows = els['dtk-calc-tbody']?.querySelectorAll(`tr[data-product-id="${CSS.escape(productId)}"]`) || [];
-    
-    // Si ya existen 2 o más, bloqueamos la inserción
+
     if (existingRows.length >= 2) {
-      // Hacemos focus en el último que se agregó
       existingRows[existingRows.length - 1].querySelector('.dtk-prod-name')?.focus();
       showNotice('Límite máximo de 2 unidades alcanzado para este producto en la propuesta.', 'error');
       return;
     }
-    
+
     appendRow(product.name, 1, 0, 0, product.id, 'Mensual');
     showNotice(`${product.name} agregado. Ingresa el valor unitario.`, 'success');
   }
@@ -783,7 +792,7 @@ window.DTK_DATA = {
       const discount = Math.min(100, Math.max(0, parseNum(row.querySelector('.dtk-desc')?.value)));
       const subtotal = qty * price * (1 - discount / 100);
       const period = row.querySelector('.dtk-period')?.value || 'Mensual';
-      
+
       return {
         row,
         productId: row.dataset.productId || '',
@@ -818,9 +827,9 @@ window.DTK_DATA = {
       const taxAmount = els['val-tax']?.dataset.mode === 'manual' ? parseNum(els['val-tax'].textContent) : tax;
       els['val-total'].textContent = formatMoney(subtotal + taxAmount);
     }
-    
+
     renderEmptyRow();
-    scheduleSaveDraft(); // Autoguardado silencioso al recalcular
+    scheduleSaveDraft();
   }
 
   function setMode(target, mode) {
@@ -846,16 +855,16 @@ window.DTK_DATA = {
           els['input-tax-manual'].value = String(listRate);
         }
 
-        els['select-tax'].classList.add('dtk-hidden');
-        els['tax-manual-wrap'].classList.remove('dtk-hidden');
+        els['select-tax']?.classList.add('dtk-hidden');
+        els['tax-manual-wrap']?.classList.remove('dtk-hidden');
 
         setTimeout(() => {
           els['input-tax-manual']?.focus();
           els['input-tax-manual']?.select?.();
         }, 0);
       } else {
-        els['select-tax'].classList.remove('dtk-hidden');
-        els['tax-manual-wrap'].classList.add('dtk-hidden');
+        els['select-tax']?.classList.remove('dtk-hidden');
+        els['tax-manual-wrap']?.classList.add('dtk-hidden');
       }
 
       calculateAll();
@@ -881,7 +890,7 @@ window.DTK_DATA = {
     clearErrors();
     if (!countryHasAdvisorList(getCountry())) syncManualAdvisorCode();
     let valid = true;
-    
+
     const requiredIds = [
       'client-name',
       'client-email',
@@ -897,11 +906,10 @@ window.DTK_DATA = {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // 1. Validar solo los campos obligatorios
     for (const id of requiredIds) {
       const el = $(id);
       const value = String(el?.value || '').trim();
-      
+
       if (!el || !value) {
         el?.classList.add('dtk-error');
         valid = false;
@@ -911,7 +919,6 @@ window.DTK_DATA = {
       }
     }
 
-    // 2. Validar formato del correo del asesor SOLO si el usuario escribió algo
     const advEmailEl = $('quote-advisor-email');
     const advEmailVal = String(advEmailEl?.value || '').trim();
     if (advEmailVal && !emailRegex.test(advEmailVal)) {
@@ -921,9 +928,9 @@ window.DTK_DATA = {
 
     const country = getCountry();
     if (countryHasAdvisorList(country)) {
-      if (!els['quote-advisor-select'].value) { els['quote-advisor-select'].classList.add('dtk-error'); valid = false; }
+      if (!els['quote-advisor-select']?.value) { els['quote-advisor-select']?.classList.add('dtk-error'); valid = false; }
     } else if (country) {
-      if (!els['quote-advisor-manual'].value.trim()) { els['quote-advisor-manual'].classList.add('dtk-error'); valid = false; }
+      if (!els['quote-advisor-manual']?.value.trim()) { els['quote-advisor-manual']?.classList.add('dtk-error'); valid = false; }
     }
 
     const rows = rowData();
@@ -936,11 +943,9 @@ window.DTK_DATA = {
       if (!item.name) { input?.classList.add('dtk-error'); valid = false; }
     });
 
-    // LA VALIDACIÓN DE PERIODOS MIXTOS SE HA ELIMINADO PARA PERMITIR CUALQUIER COMBINACIÓN
-
     if (!valid) {
       showNotice('Revisa los campos en rojo. Falta información obligatoria (*) o un correo no es válido.', 'error');
-      document.querySelector('.dtk-error')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      document.querySelector('.dtk-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return false;
     }
 
@@ -948,7 +953,7 @@ window.DTK_DATA = {
     if (!number) {
       if (requireFinalNumber) {
         els['quote-number']?.classList.add('dtk-error');
-        els['quote-number']?.scrollIntoView({ behavior:'smooth', block:'center' });
+        els['quote-number']?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return false;
       }
       const provisional = previewQuoteNumber();
@@ -1003,7 +1008,7 @@ window.DTK_DATA = {
       .map(item => {
         let iconName = item.type;
         if (iconName === 'x') iconName = 'twitter-alt';
-        
+
         return `
         <a
           class="pdf-country-social-link ${escapeHtml(item.type || '')}"
@@ -1012,7 +1017,8 @@ window.DTK_DATA = {
           rel="noopener"
           title="${escapeHtml(item.type || 'Red social')}"
         ><i class="fi fi-brands-${escapeHtml(iconName)}"></i></a>
-      `}).join('');
+      `;
+      }).join('');
 
     web.href = contact.web;
     web.textContent = contact.web
@@ -1057,11 +1063,9 @@ window.DTK_DATA = {
     const rows = rowData();
     const previewBody = $('prev-calc-tbody');
     if (previewBody) {
-      // INCLUIDO PERIODO EN LA VISTA PREVIA
       previewBody.innerHTML = rows.map(item => `<tr><td>• ${escapeHtml(item.name)}</td><td style="text-align:center">${item.qty}</td><td style="text-align:center">${escapeHtml(item.period)}</td><td style="text-align:center">${escapeHtml(formatMoney(item.price))}</td><td style="text-align:center${item.discount > 0 ? ';color:var(--dtk-red);font-weight:700' : ''}">${item.discount}%</td><td style="text-align:right;font-weight:700">${escapeHtml(formatMoney(item.subtotal))}</td></tr>`).join('');
     }
 
-    // TOTAL DESCUENTOS EN LA VISTA PREVIA (suma de los descuentos por producto)
     const discountTotal = rows.reduce((acc, item) => acc + item.qty * item.price * (item.discount / 100), 0);
     let discountRow = $('prev-discount-row');
     const totalsBox = $('prev-subtotal')?.closest('.pdf-totals');
@@ -1104,13 +1108,13 @@ window.DTK_DATA = {
         const selectedProductIds = rows.map(r => r.productId).filter(Boolean);
         chosen.sort((a, b) => Number(selectedProductIds.includes(b.productId)) - Number(selectedProductIds.includes(a.productId)));
 
-        solutions.innerHTML = chosen.map((item, i) => {
+        solutions.innerHTML = chosen.map(item => {
           const product = DATA.products.find(p => p.id === item.productId);
           if (!product) return '';
 
           const title = product.name;
           const description = product.pdfDescription || 'Solución configurada de acuerdo con las necesidades de la operación.';
-          
+
           const bulletsById = {
             gps: [
               '● Monitoree en todo momento dónde está y qué hace cada vehículo de su flota.',
@@ -1207,7 +1211,7 @@ window.DTK_DATA = {
     page.id = `pdf-page-${index}`;
     page.innerHTML = '<div class="pdf-inner"></div>';
 
-    doc.appendChild(page);
+    doc?.appendChild(page);
     return page;
   }
 
@@ -1509,34 +1513,6 @@ window.DTK_DATA = {
     rebuildPageNavigation();
   }
 
-  async function ensurePdfMeasurable(callback) {
-    const modal = els['dtk-preview-modal'];
-
-    if (!modal) {
-      callback();
-      return;
-    }
-
-    const wasOpen = modal.classList.contains('open');
-    const previousVisibility = modal.style.visibility;
-
-    if (!wasOpen) {
-      modal.style.visibility = 'hidden';
-      modal.classList.add('open');
-    }
-
-    await new Promise(resolve =>
-      requestAnimationFrame(() => requestAnimationFrame(resolve))
-    );
-
-    callback();
-
-    if (!wasOpen) {
-      modal.classList.remove('open');
-      modal.style.visibility = previousVisibility;
-    }
-  }
-
   async function openPreview() {
     if (!(await validateForm({ requireFinalNumber: false }))) return;
 
@@ -1544,7 +1520,7 @@ window.DTK_DATA = {
     calculateAll();
     populatePreview();
 
-    els['dtk-preview-modal'].classList.add('open');
+    els['dtk-preview-modal']?.classList.add('open');
     document.body.style.overflow = 'hidden';
 
     await new Promise(resolve =>
@@ -1554,13 +1530,13 @@ window.DTK_DATA = {
     paginatePdfDynamically();
 
     requestAnimationFrame(() => {
-      els['modal-scroll-area'].scrollTop = 0;
+      if (els['modal-scroll-area']) els['modal-scroll-area'].scrollTop = 0;
       updateActiveDot();
     });
   }
 
   function closePreview() {
-    els['dtk-preview-modal'].classList.remove('open');
+    els['dtk-preview-modal']?.classList.remove('open');
     document.body.style.overflow = '';
   }
 
@@ -1586,7 +1562,7 @@ window.DTK_DATA = {
     button?.classList.add('active');
     const areaRect = area.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
-    area.scrollTo({ top: targetRect.top - areaRect.top + area.scrollTop, behavior:'smooth' });
+    area.scrollTo({ top: targetRect.top - areaRect.top + area.scrollTop, behavior: 'smooth' });
   }
 
   function resetModes() {
@@ -1610,30 +1586,31 @@ window.DTK_DATA = {
   }
 
   function clearForm() {
-    try { localStorage.removeItem('dtk_quote_draft'); } catch(e) {}
+    try { localStorage.removeItem('dtk_quote_draft'); } catch (e) {}
 
     const fields = ['client-name','client-company','client-role','client-email','client-phone','client-city','quote-advisor-manual','quote-advisor-code','quote-advisor-phone','quote-advisor-email'];
-    fields.forEach(id => { if ($(id)) $(id).value = ''; });$('quote-obs').value = 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.';
-    els['quote-date'].value = todayLocal();
-    els['quote-number'].value = '';
-    els['quote-country'].value = '';
+    fields.forEach(id => { if ($(id)) $(id).value = ''; });
+    if ($('quote-obs')) $('quote-obs').value = 'Crezca con Detektor: cuando su operación lo requiera, podrá complementar esta solución con nuevas tecnologías de monitoreo, seguridad, gestión de flotas y localización vehicular.';
+    if (els['quote-date']) els['quote-date'].value = todayLocal();
+    if (els['quote-number']) els['quote-number'].value = '';
+    if (els['quote-country']) els['quote-country'].value = '';
     reservedKey = '';
     reservedNumber = '';
     applyCountry();
-    ['terms-installation','terms-payment','terms-validity','terms-warranty','terms-extra'].forEach(id => { if ($(id))$(id).value = ''; });
-    els['dtk-calc-tbody'].innerHTML = '';
+    ['terms-installation','terms-payment','terms-validity','terms-warranty','terms-extra'].forEach(id => { if ($(id)) $(id).value = ''; });
+    if (els['dtk-calc-tbody']) els['dtk-calc-tbody'].innerHTML = '';
     renderEmptyRow();
     resetModes();
     clearErrors();
-    $('confirm-actions').classList.add('dtk-hidden');$('main-actions').classList.remove('dtk-hidden');
+    $('confirm-actions')?.classList.add('dtk-hidden');
+    $('main-actions')?.classList.remove('dtk-hidden');
     showNotice('Formulario limpio. Nueva cotización lista.', 'success');
-    window.scrollTo({ top:0, behavior:'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // --- LÓGICA DE AUTOGUARDADO (BORRADOR) ---
   function saveDraft() {
     if (isLoadingDraft) return;
-    
+
     const draft = {
       quoteDate: els['quote-date']?.value || '',
       quoteNumber: els['quote-number']?.value || '',
@@ -1671,8 +1648,8 @@ window.DTK_DATA = {
         total: els['val-total']?.textContent || '0'
       }
     };
-    
-    try { localStorage.setItem('dtk_quote_draft', JSON.stringify(draft)); } catch(e) {}
+
+    try { localStorage.setItem('dtk_quote_draft', JSON.stringify(draft)); } catch (e) {}
   }
 
   function scheduleSaveDraft() {
@@ -1690,9 +1667,9 @@ window.DTK_DATA = {
 
       isLoadingDraft = true;
 
-      if (draft.quoteCountry) {
+      if (draft.quoteCountry && els['quote-country']) {
         els['quote-country'].value = draft.quoteCountry;
-        applyCountry(); 
+        applyCountry();
       }
 
       reservedKey = draft.reservedKeyState || '';
@@ -1701,16 +1678,16 @@ window.DTK_DATA = {
 
       setVal('quote-date', draft.quoteDate);
       setVal('quote-number', draft.quoteNumber);
-      if (reservedNumber) {
+      if (reservedNumber && els['quote-number']) {
         els['quote-number'].value = reservedNumber;
       }
-      
+
       setVal('quote-advisor-select', draft.quoteAdvisorSelect);
       setVal('quote-advisor-manual', draft.quoteAdvisorManual);
       if (draft.quoteCountry && countryHasAdvisorList(getCountry())) {
-         onAdvisorSelect();
+        onAdvisorSelect();
       } else {
-         syncManualAdvisorCode();
+        syncManualAdvisorCode();
       }
 
       setVal('quote-advisor-phone', draft.quoteAdvisorPhone);
@@ -1728,28 +1705,30 @@ window.DTK_DATA = {
       setVal('terms-warranty', draft.termsWarr);
       setVal('terms-extra', draft.termsExtra);
 
-      if (draft.currency) els['currency-select'].value = draft.currency;
-      if (draft.taxSelect) els['select-tax'].value = draft.taxSelect;
-      if (draft.taxManual) els['input-tax-manual'].value = draft.taxManual;
+      if (draft.currency && els['currency-select']) els['currency-select'].value = draft.currency;
+      if (draft.taxSelect && els['select-tax']) els['select-tax'].value = draft.taxSelect;
+      if (draft.taxManual && els['input-tax-manual']) els['input-tax-manual'].value = draft.taxManual;
 
-      els['dtk-calc-tbody'].innerHTML = '';
-      if (draft.rows && draft.rows.length) {
-        draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId, r.period));
-      } else {
-        renderEmptyRow();
+      if (els['dtk-calc-tbody']) {
+        els['dtk-calc-tbody'].innerHTML = '';
+        if (draft.rows && draft.rows.length) {
+          draft.rows.forEach(r => appendRow(r.name, r.qty, r.price, r.discount, r.productId, r.period));
+        } else {
+          renderEmptyRow();
+        }
       }
 
       if (draft.modes) {
-         if (draft.modes.subtotal === 'manual') { setMode('subtotal', 'manual'); els['val-subtotal'].textContent = draft.manualValues.subtotal; }
-         if (draft.modes.tax === 'manual') { setMode('tax', 'manual'); els['val-tax'].textContent = draft.manualValues.tax; }
-         if (draft.modes.total === 'manual') { setMode('total', 'manual'); els['val-total'].textContent = draft.manualValues.total; }
+        if (draft.modes.subtotal === 'manual') { setMode('subtotal', 'manual'); els['val-subtotal'].textContent = draft.manualValues.subtotal; }
+        if (draft.modes.tax === 'manual') { setMode('tax', 'manual'); els['val-tax'].textContent = draft.manualValues.tax; }
+        if (draft.modes.total === 'manual') { setMode('total', 'manual'); els['val-total'].textContent = draft.manualValues.total; }
       }
 
       calculateAll();
 
       isLoadingDraft = false;
       return true;
-    } catch(e) {
+    } catch (e) {
       console.error('No se pudo cargar el borrador.', e);
       isLoadingDraft = false;
       return false;
@@ -1761,19 +1740,21 @@ window.DTK_DATA = {
     appEl.addEventListener('input', scheduleSaveDraft);
     appEl.addEventListener('change', scheduleSaveDraft);
 
-    els['quote-country'].addEventListener('change', (event) => {
+    els['quote-country']?.addEventListener('change', (event) => {
       event.stopImmediatePropagation();
       applyCountry();
     }, true);
 
-    els['quote-advisor-select'].addEventListener('change', (event) => {
+    els['quote-advisor-select']?.addEventListener('change', (event) => {
       event.stopImmediatePropagation();
       onAdvisorSelect();
     }, true);
-    els['quote-advisor-manual'].addEventListener('input', () => {
+
+    els['quote-advisor-manual']?.addEventListener('input', () => {
       syncManualAdvisorCode();
     });
-    els['quote-advisor-code'].addEventListener('input', e => {
+
+    els['quote-advisor-code']?.addEventListener('input', e => {
       if (!countryHasAdvisorList(getCountry())) {
         const clean = sanitizeCode(e.target.value);
         if (clean !== e.target.value) e.target.value = clean;
@@ -1782,66 +1763,59 @@ window.DTK_DATA = {
         if (els['quote-number']) els['quote-number'].value = '';
       }
     });
-    els['quote-advisor-code'].addEventListener('blur', () => reserveQuoteNumber(false, { showError: false }));
-    els['quote-date'].addEventListener('change', scheduleQuoteNumber);
-    els['currency-select'].addEventListener('change', calculateAll);
-    els['select-tax'].addEventListener('change', calculateAll);
+
+    els['quote-advisor-code']?.addEventListener('blur', () => reserveQuoteNumber(false, { showError: false }));
+    els['quote-date']?.addEventListener('change', scheduleQuoteNumber);
+    els['currency-select']?.addEventListener('change', calculateAll);
+    els['select-tax']?.addEventListener('change', calculateAll);
 
     els['input-tax-manual']?.addEventListener('input', e => {
-      // Límite de 5 caracteres para el impuesto
       if (e.target.value.length > 5) e.target.value = e.target.value.slice(0, 5);
-      
-      if (els['val-tax'].dataset.mode === 'manual') calculateAll();
+      if (els['val-tax']?.dataset.mode === 'manual') calculateAll();
     });
 
     els['input-tax-manual']?.addEventListener('blur', () => {
-      if (els['val-tax'].dataset.mode === 'manual') {
+      if (els['val-tax']?.dataset.mode === 'manual') {
         const safeRate = currentTaxRate();
         els['input-tax-manual'].value = String(safeRate);
         calculateAll();
       }
     });
 
-    els['dtk-products-catalog'].addEventListener('click', e => {
+    els['dtk-products-catalog']?.addEventListener('click', e => {
       const add = e.target.closest('.dtk-btn-add');
       if (add) addCatalogProduct(add.dataset.productId);
       if (e.target.id === 'btn-add-custom') appendRow('', 1, 0, 0, '', 'Mensual');
     });
 
-    // LÓGICA DE FORMATEO EN TABLA (MÁSCARA DE MONEDA DINÁMICA)
-    els['dtk-calc-tbody'].addEventListener('focusin', e => {
+    els['dtk-calc-tbody']?.addEventListener('focusin', e => {
       if (e.target.matches('.dtk-price')) {
-        // Al hacer clic, mostramos el número crudo para teclear fácilmente sin que el cursor salte
         const num = parseNum(e.target.value);
         e.target.value = num === 0 ? '' : num;
       }
     });
-    
-    els['dtk-calc-tbody'].addEventListener('focusout', e => {
+
+    els['dtk-calc-tbody']?.addEventListener('focusout', e => {
       if (e.target.matches('.dtk-price')) {
-        // Al salir del campo, formateamos el número según la moneda del país seleccionado
         const num = parseNum(e.target.value);
         e.target.value = formatNumberOnly(num);
         calculateAll();
       }
     });
 
-    els['dtk-calc-tbody'].addEventListener('input', e => {
+    els['dtk-calc-tbody']?.addEventListener('input', e => {
       const t = e.target;
-      
-      // Límite dinámico de caracteres
       if (t.matches('.dtk-price') && t.value.length > 12) t.value = t.value.slice(0, 12);
       if (t.matches('.dtk-qty') && t.value.length > 5) t.value = t.value.slice(0, 5);
       if (t.matches('.dtk-desc') && t.value.length > 5) t.value = t.value.slice(0, 5);
 
       if (t.matches('.dtk-prod-name,.dtk-qty,.dtk-price,.dtk-desc,.dtk-period')) {
         t.classList.remove('dtk-error');
-        // Calculamos todo por debajo (parseNum se encarga de leer bien aunque no esté formateado aún)
         calculateAll();
       }
     });
 
-    els['dtk-calc-tbody'].addEventListener('click', e => {
+    els['dtk-calc-tbody']?.addEventListener('click', e => {
       if (e.target.closest('.dtk-remove')) {
         e.target.closest('tr[data-row]')?.remove();
         calculateAll();
@@ -1857,6 +1831,7 @@ window.DTK_DATA = {
     }));
 
     [els['val-subtotal'], els['val-total']].forEach(el => {
+      if (!el) return;
       el.addEventListener('input', () => { if (el.dataset.mode === 'manual') calculateAll(); });
       el.addEventListener('blur', () => {
         if (el.dataset.mode === 'manual') {
@@ -1871,26 +1846,30 @@ window.DTK_DATA = {
       el.addEventListener('change', () => el.classList.remove('dtk-error'));
     });
 
-    $('btn-preview').addEventListener('click', openPreview);$('btn-modal-close').addEventListener('click', closePreview);
-    els['dtk-preview-modal'].addEventListener('click', e => { if (e.target === els['dtk-preview-modal']) closePreview(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && els['dtk-preview-modal'].classList.contains('open')) closePreview(); });
+    $('btn-preview')?.addEventListener('click', openPreview);
+    $('btn-modal-close')?.addEventListener('click', closePreview);
+    els['dtk-preview-modal']?.addEventListener('click', e => { if (e.target === els['dtk-preview-modal']) closePreview(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && els['dtk-preview-modal']?.classList.contains('open')) closePreview(); });
 
     document.querySelectorAll('.dtk-nav-dot').forEach(dot => dot.addEventListener('click', e => scrollToPage(dot.dataset.target, dot)));
-    els['modal-scroll-area'].addEventListener('scroll', () => window.requestAnimationFrame(updateActiveDot));
+    els['modal-scroll-area']?.addEventListener('scroll', () => window.requestAnimationFrame(updateActiveDot));
 
     const askClear = (e) => {
       e?.preventDefault?.();
-      $('main-actions').classList.add('dtk-hidden');$('confirm-actions').classList.remove('dtk-hidden');
+      $('main-actions')?.classList.add('dtk-hidden');
+      $('confirm-actions')?.classList.remove('dtk-hidden');
     };
-    $('btn-clear').addEventListener('click', askClear);
-    $('top-clear')?.addEventListener('click', askClear);$('btn-clear-cancel').addEventListener('click', () => {
-      $('confirm-actions').classList.add('dtk-hidden');$('main-actions').classList.remove('dtk-hidden');
+    $('btn-clear')?.addEventListener('click', askClear);
+    $('top-clear')?.addEventListener('click', askClear);
+    $('btn-clear-cancel')?.addEventListener('click', () => {
+      $('confirm-actions')?.classList.add('dtk-hidden');
+      $('main-actions')?.classList.remove('dtk-hidden');
     });
-    $('btn-clear-confirm').addEventListener('click', clearForm);
+    $('btn-clear-confirm')?.addEventListener('click', clearForm);
   }
 
   window.DTK_DEBUG_ADVISORS = function() {
-    const names = ['Costa Rica','Panamá','Guatemala','Honduras','El Salvador','Nicaragua'];
+    const names = ['Costa Rica','Panamá','Guatemala','Honduras','El Salvador','Nicaragua','Venezuela'];
     return Object.fromEntries(names.map(name => {
       const c = DATA.countries[name];
       return [name, {
@@ -1903,7 +1882,7 @@ window.DTK_DATA = {
   function init() {
     initRefs();
 
-    const listCountries = ['Costa Rica','Panamá','Guatemala','Honduras','El Salvador','Nicaragua'];
+    const listCountries = ['Costa Rica','Panamá','Guatemala','Honduras','El Salvador','Nicaragua','Venezuela'];
     const advisorCounts = Object.fromEntries(
       listCountries.map(name => [name, DATA.countries[name]?.agents?.length || 0])
     );
@@ -1920,8 +1899,8 @@ window.DTK_DATA = {
     const isDraftLoaded = loadDraft();
 
     if (!isDraftLoaded) {
-      els['quote-date'].value = todayLocal();
-      els['dtk-calc-tbody'].innerHTML = '';
+      if (els['quote-date']) els['quote-date'].value = todayLocal();
+      if (els['dtk-calc-tbody']) els['dtk-calc-tbody'].innerHTML = '';
       renderEmptyRow();
       calculateAll();
     } else {
@@ -1929,7 +1908,7 @@ window.DTK_DATA = {
         showNotice('Borrador previo cargado con éxito. No perdiste tus datos.', 'success');
       }, 500);
     }
-    
+
     wireEvents();
   }
 
